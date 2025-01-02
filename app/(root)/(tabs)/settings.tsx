@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -8,7 +8,8 @@ import {
   ScrollView,
   Alert,
   Image,
-} from 'react-native';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const Settings = () => {
   const [settings, setSettings] = useState({
@@ -20,32 +21,28 @@ const Settings = () => {
     tradingConfirmation: true,
   });
 
-  const [currency, setCurrency] = useState('USD');
-  const [language, setLanguage] = useState('English');
+  const [currency, setCurrency] = useState("USD");
+  const [language, setLanguage] = useState("English");
 
   const toggleSetting = (key) => {
-    setSettings(prev => ({
+    setSettings((prev) => ({
       ...prev,
-      [key]: !prev[key]
+      [key]: !prev[key],
     }));
   };
 
   const handleLogout = () => {
-    Alert.alert(
-      "Logout",
-      "Are you sure you want to logout?",
-      [
-        {
-          text: "Cancel",
-          style: "cancel"
-        },
-        {
-          text: "Logout",
-          style: "destructive",
-          onPress: () => console.log("Logout pressed")
-        }
-      ]
-    );
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      {
+        text: "Cancel",
+        style: "cancel",
+      },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: () => console.log("Logout pressed"),
+      },
+    ]);
   };
 
   const handleDeleteAccount = () => {
@@ -55,13 +52,13 @@ const Settings = () => {
       [
         {
           text: "Cancel",
-          style: "cancel"
+          style: "cancel",
         },
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => console.log("Delete account pressed")
-        }
+          onPress: () => console.log("Delete account pressed"),
+        },
       ]
     );
   };
@@ -98,103 +95,109 @@ const Settings = () => {
   );
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Profile Section */}
-      <View style={styles.profileSection}>
-        <Image
-          source={{ uri: "/api/placeholder/80/80" }}
-          style={styles.profileImage}
-        />
-        <View style={styles.profileInfo}>
-          <Text style={styles.profileName}>John Doe</Text>
-          <Text style={styles.profileEmail}>john.doe@example.com</Text>
+    <SafeAreaView>
+      <ScrollView style={styles.container}>
+        {/* Profile Section */}
+        <View style={styles.profileSection}>
+          <Image
+            source={{ uri: "/api/placeholder/80/80" }}
+            style={styles.profileImage}
+          />
+          <View style={styles.profileInfo}>
+            <Text style={styles.profileName}>John Doe</Text>
+            <Text style={styles.profileEmail}>john.doe@example.com</Text>
+          </View>
+          <TouchableOpacity style={styles.editButton}>
+            <Text style={styles.editButtonText}>Edit</Text>
+          </TouchableOpacity>
         </View>
-        <TouchableOpacity style={styles.editButton}>
-          <Text style={styles.editButtonText}>Edit</Text>
+
+        {/* General Settings */}
+        {renderSection("General")}
+        {renderSelectItem("Currency", currency, () =>
+          console.log("Currency pressed")
+        )}
+        {renderSelectItem("Language", language, () =>
+          console.log("Language pressed")
+        )}
+        {renderSwitchItem("Dark Mode", "darkMode")}
+        {renderSwitchItem("Hide Balance", "hideBalance")}
+
+        {/* Security */}
+        {renderSection("Security")}
+        {renderSwitchItem(
+          "Biometric Login",
+          "biometricLogin",
+          "Use fingerprint or Face ID to login"
+        )}
+        {renderSwitchItem(
+          "Trading Confirmation",
+          "tradingConfirmation",
+          "Require confirmation for all trades"
+        )}
+        <TouchableOpacity style={styles.settingItem}>
+          <Text style={styles.settingTitle}>Change Password</Text>
         </TouchableOpacity>
-      </View>
 
-      {/* General Settings */}
-      {renderSection("General")}
-      {renderSelectItem("Currency", currency, () => console.log("Currency pressed"))}
-      {renderSelectItem("Language", language, () => console.log("Language pressed"))}
-      {renderSwitchItem("Dark Mode", "darkMode")}
-      {renderSwitchItem("Hide Balance", "hideBalance")}
+        {/* Notifications */}
+        {renderSection("Notifications")}
+        {renderSwitchItem(
+          "Push Notifications",
+          "notifications",
+          "Receive important updates and news"
+        )}
+        {renderSwitchItem(
+          "Price Alerts",
+          "priceAlerts",
+          "Get notified about significant price changes"
+        )}
 
-      {/* Security */}
-      {renderSection("Security")}
-      {renderSwitchItem(
-        "Biometric Login",
-        "biometricLogin",
-        "Use fingerprint or Face ID to login"
-      )}
-      {renderSwitchItem(
-        "Trading Confirmation",
-        "tradingConfirmation",
-        "Require confirmation for all trades"
-      )}
-      <TouchableOpacity style={styles.settingItem}>
-        <Text style={styles.settingTitle}>Change Password</Text>
-      </TouchableOpacity>
+        {/* Support */}
+        {renderSection("Support")}
+        <TouchableOpacity style={styles.settingItem}>
+          <Text style={styles.settingTitle}>Help Center</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.settingItem}>
+          <Text style={styles.settingTitle}>Contact Support</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.settingItem}>
+          <Text style={styles.settingTitle}>Privacy Policy</Text>
+        </TouchableOpacity>
+        <TouchableOpacity style={styles.settingItem}>
+          <Text style={styles.settingTitle}>Terms of Service</Text>
+        </TouchableOpacity>
 
-      {/* Notifications */}
-      {renderSection("Notifications")}
-      {renderSwitchItem(
-        "Push Notifications",
-        "notifications",
-        "Receive important updates and news"
-      )}
-      {renderSwitchItem(
-        "Price Alerts",
-        "priceAlerts",
-        "Get notified about significant price changes"
-      )}
+        {/* Account Actions */}
+        {renderSection("Account")}
+        <TouchableOpacity
+          style={[styles.settingItem, styles.logoutButton]}
+          onPress={handleLogout}
+        >
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.settingItem, styles.deleteButton]}
+          onPress={handleDeleteAccount}
+        >
+          <Text style={styles.deleteText}>Delete Account</Text>
+        </TouchableOpacity>
 
-      {/* Support */}
-      {renderSection("Support")}
-      <TouchableOpacity style={styles.settingItem}>
-        <Text style={styles.settingTitle}>Help Center</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.settingItem}>
-        <Text style={styles.settingTitle}>Contact Support</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.settingItem}>
-        <Text style={styles.settingTitle}>Privacy Policy</Text>
-      </TouchableOpacity>
-      <TouchableOpacity style={styles.settingItem}>
-        <Text style={styles.settingTitle}>Terms of Service</Text>
-      </TouchableOpacity>
-
-      {/* Account Actions */}
-      {renderSection("Account")}
-      <TouchableOpacity
-        style={[styles.settingItem, styles.logoutButton]}
-        onPress={handleLogout}
-      >
-        <Text style={styles.logoutText}>Logout</Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[styles.settingItem, styles.deleteButton]}
-        onPress={handleDeleteAccount}
-      >
-        <Text style={styles.deleteText}>Delete Account</Text>
-      </TouchableOpacity>
-
-      <Text style={styles.version}>Version 1.0.0</Text>
-    </ScrollView>
+        <Text style={styles.version}>Version 1.0.0</Text>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
   },
   profileSection: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     padding: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 20,
   },
   profileImage: {
@@ -208,83 +211,83 @@ const styles = StyleSheet.create({
   },
   profileName: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1a1a1a',
+    fontWeight: "bold",
+    color: "#1a1a1a",
   },
   profileEmail: {
     fontSize: 14,
-    color: '#666',
+    color: "#666",
     marginTop: 4,
   },
   editButton: {
     padding: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: '#2196F3',
+    borderColor: "#2196F3",
   },
   editButtonText: {
-    color: '#2196F3',
+    color: "#2196F3",
     fontSize: 14,
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: '600',
-    color: '#666',
+    fontWeight: "600",
+    color: "#666",
     marginTop: 20,
     marginBottom: 10,
     marginLeft: 20,
   },
   settingItem: {
-    backgroundColor: '#fff',
-    flexDirection: 'row',
-    alignItems: 'center',
+    backgroundColor: "#fff",
+    flexDirection: "row",
+    alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-    justifyContent: 'space-between',
+    borderBottomColor: "#f0f0f0",
+    justifyContent: "space-between",
   },
   settingInfo: {
     flex: 1,
   },
   settingTitle: {
     fontSize: 16,
-    color: '#1a1a1a',
+    color: "#1a1a1a",
   },
   settingDescription: {
     fontSize: 12,
-    color: '#666',
+    color: "#666",
     marginTop: 4,
   },
   selectValue: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   valueText: {
     fontSize: 16,
-    color: '#666',
+    color: "#666",
     marginRight: 8,
   },
   chevron: {
     fontSize: 18,
-    color: '#666',
+    color: "#666",
   },
   logoutButton: {
     marginTop: 20,
   },
   logoutText: {
-    color: '#2196F3',
+    color: "#2196F3",
     fontSize: 16,
   },
   deleteButton: {
     marginTop: 0,
   },
   deleteText: {
-    color: '#F44336',
+    color: "#F44336",
     fontSize: 16,
   },
   version: {
-    textAlign: 'center',
-    color: '#666',
+    textAlign: "center",
+    color: "#666",
     fontSize: 14,
     marginVertical: 20,
   },

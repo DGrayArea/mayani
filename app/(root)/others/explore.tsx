@@ -1,51 +1,153 @@
 import React, { useState } from "react";
-import { View, Text, StyleSheet, FlatList, Image, TouchableOpacity } from "react-native";
+import {
+  View,
+  Text,
+  StyleSheet,
+  FlatList,
+  Image,
+  TouchableOpacity,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const CryptoExplorer = () => {
   const [selectedFilter, setSelectedFilter] = useState("all");
 
   const topGainers = [
-    { id: "1", name: "MIRA", percentage: "317K%", avatar: "/api/placeholder/40/40", type: "other" },
-    { id: "2", name: "RM9000", percentage: "67.4%", avatar: "/api/placeholder/40/40", type: "other" },
-    { id: "3", name: "SOL", percentage: "12.4%", avatar: "/api/placeholder/40/40", type: "sol" },
-    { id: "4", name: "ETH", percentage: "8.2%", avatar: "/api/placeholder/40/40", type: "eth" },
+    {
+      id: "1",
+      name: "MIRA",
+      percentage: "317K%",
+      avatar: "/api/placeholder/40/40",
+      type: "other",
+    },
+    {
+      id: "2",
+      name: "RM9000",
+      percentage: "67.4%",
+      avatar: "/api/placeholder/40/40",
+      type: "other",
+    },
+    {
+      id: "3",
+      name: "SOL",
+      percentage: "12.4%",
+      avatar: "/api/placeholder/40/40",
+      type: "sol",
+    },
+    {
+      id: "4",
+      name: "ETH",
+      percentage: "8.2%",
+      avatar: "/api/placeholder/40/40",
+      type: "eth",
+    },
   ];
 
   const trending = [
-    { id: "1", name: "MIRA", price: "$0.0177", marketCap: "$17.7M MKT CAP", change: "317K%", avatar: "/api/placeholder/40/40", type: "other" },
-    { id: "2", name: "PENGU", price: "$0.0378", marketCap: "$3.4B MKT CAP", change: "2.93%", avatar: "/api/placeholder/40/40", type: "other" },
-    { id: "3", name: "SOL", price: "$123.45", marketCap: "$52.8B MKT CAP", change: "5.67%", avatar: "/api/placeholder/40/40", type: "sol" },
-    { id: "4", name: "ETH", price: "$3,245.90", marketCap: "$389.2B MKT CAP", change: "-2.28%", avatar: "/api/placeholder/40/40", type: "eth" },
-    { id: "5", name: "Fartcoin", price: "$0.903", marketCap: "$903M MKT CAP", change: "-24.28%", avatar: "/api/placeholder/40/40", type: "other" },
+    {
+      id: "1",
+      name: "MIRA",
+      price: "$0.0177",
+      marketCap: "$17.7M MKT CAP",
+      change: "317K%",
+      avatar: "/api/placeholder/40/40",
+      type: "other",
+    },
+    {
+      id: "2",
+      name: "PENGU",
+      price: "$0.0378",
+      marketCap: "$3.4B MKT CAP",
+      change: "2.93%",
+      avatar: "/api/placeholder/40/40",
+      type: "other",
+    },
+    {
+      id: "3",
+      name: "SOL",
+      price: "$123.45",
+      marketCap: "$52.8B MKT CAP",
+      change: "5.67%",
+      avatar: "/api/placeholder/40/40",
+      type: "sol",
+    },
+    {
+      id: "4",
+      name: "ETH",
+      price: "$3,245.90",
+      marketCap: "$389.2B MKT CAP",
+      change: "-2.28%",
+      avatar: "/api/placeholder/40/40",
+      type: "eth",
+    },
+    {
+      id: "5",
+      name: "Fartcoin",
+      price: "$0.903",
+      marketCap: "$903M MKT CAP",
+      change: "-24.28%",
+      avatar: "/api/placeholder/40/40",
+      type: "other",
+    },
   ];
 
-  const filteredTopGainers = topGainers.filter(item => 
-    selectedFilter === "all" || item.type === selectedFilter
+  const filteredTopGainers = topGainers.filter(
+    (item) => selectedFilter === "all" || item.type === selectedFilter
   );
 
-  const filteredTrending = trending.filter(item => 
-    selectedFilter === "all" || item.type === selectedFilter
+  const filteredTrending = trending.filter(
+    (item) => selectedFilter === "all" || item.type === selectedFilter
   );
 
   const renderFilterButtons = () => (
     <View style={styles.filterContainer}>
       <TouchableOpacity
-        style={[styles.filterButton, selectedFilter === "all" && styles.filterButtonActive]}
+        style={[
+          styles.filterButton,
+          selectedFilter === "all" && styles.filterButtonActive,
+        ]}
         onPress={() => setSelectedFilter("all")}
       >
-        <Text style={[styles.filterText, selectedFilter === "all" && styles.filterTextActive]}>All</Text>
+        <Text
+          style={[
+            styles.filterText,
+            selectedFilter === "all" && styles.filterTextActive,
+          ]}
+        >
+          All
+        </Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.filterButton, selectedFilter === "sol" && styles.filterButtonActive]}
+        style={[
+          styles.filterButton,
+          selectedFilter === "sol" && styles.filterButtonActive,
+        ]}
         onPress={() => setSelectedFilter("sol")}
       >
-        <Text style={[styles.filterText, selectedFilter === "sol" && styles.filterTextActive]}>SOL</Text>
+        <Text
+          style={[
+            styles.filterText,
+            selectedFilter === "sol" && styles.filterTextActive,
+          ]}
+        >
+          SOL
+        </Text>
       </TouchableOpacity>
       <TouchableOpacity
-        style={[styles.filterButton, selectedFilter === "eth" && styles.filterButtonActive]}
+        style={[
+          styles.filterButton,
+          selectedFilter === "eth" && styles.filterButtonActive,
+        ]}
         onPress={() => setSelectedFilter("eth")}
       >
-        <Text style={[styles.filterText, selectedFilter === "eth" && styles.filterTextActive]}>ETH</Text>
+        <Text
+          style={[
+            styles.filterText,
+            selectedFilter === "eth" && styles.filterTextActive,
+          ]}
+        >
+          ETH
+        </Text>
       </TouchableOpacity>
     </View>
   );
@@ -69,10 +171,12 @@ const CryptoExplorer = () => {
       </View>
       <View style={styles.trendingPriceInfo}>
         <Text style={styles.trendingPrice}>{item.price}</Text>
-        <Text style={[
-          styles.trendingChange,
-          item.change.includes("-") ? styles.negative : styles.positive
-        ]}>
+        <Text
+          style={[
+            styles.trendingChange,
+            item.change.includes("-") ? styles.negative : styles.positive,
+          ]}
+        >
           {item.change}
         </Text>
       </View>
@@ -80,9 +184,9 @@ const CryptoExplorer = () => {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <Text style={styles.header}>Explore</Text>
-      
+
       {renderFilterButtons()}
 
       <View style={styles.section}>
@@ -90,7 +194,7 @@ const CryptoExplorer = () => {
         <FlatList
           data={filteredTopGainers}
           renderItem={renderTopGainers}
-          keyExtractor={item => item.id}
+          keyExtractor={(item) => item.id}
           horizontal
           showsHorizontalScrollIndicator={false}
         />
@@ -101,11 +205,11 @@ const CryptoExplorer = () => {
         <FlatList
           data={filteredTrending}
           renderItem={renderTrendingItem}
-          keyExtractor={item => item.id}
+          keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
         />
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
@@ -114,7 +218,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#0A0F0D",
     paddingHorizontal: 20,
-    paddingTop: 20,
+    // paddingTop: 20,
   },
   header: {
     color: "#E0E0E0",

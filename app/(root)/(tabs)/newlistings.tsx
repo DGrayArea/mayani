@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -8,36 +8,37 @@ import {
   Image,
   FlatList,
   Animated,
-} from 'react-native';
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const NewListings = () => {
-  const [selectedCategory, setSelectedCategory] = useState('all');
-  const [sortBy, setSortBy] = useState('newest');
+  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [sortBy, setSortBy] = useState("newest");
 
   // Sample data for new listings
   const tokens = [
     {
-      id: '1',
-      name: 'RocketMoon',
-      symbol: 'RMOON',
-      price: '$0.00004523',
-      change: '+425%',
-      marketCap: '$1.2M',
-      volume: '$890K',
-      category: 'pumpfun',
-      launchTime: '2 hours ago',
+      id: "1",
+      name: "RocketMoon",
+      symbol: "RMOON",
+      price: "$0.00004523",
+      change: "+425%",
+      marketCap: "$1.2M",
+      volume: "$890K",
+      category: "pumpfun",
+      launchTime: "2 hours ago",
       holders: 342,
     },
     {
-      id: '2',
-      name: 'SafeGalaxy',
-      symbol: 'SGXY',
-      price: '$0.0000234',
-      change: '+892%',
-      marketCap: '$3.4M',
-      volume: '$2.1M',
-      category: 'moonshot',
-      launchTime: '5 hours ago',
+      id: "2",
+      name: "SafeGalaxy",
+      symbol: "SGXY",
+      price: "$0.0000234",
+      change: "+892%",
+      marketCap: "$3.4M",
+      volume: "$2.1M",
+      category: "moonshot",
+      launchTime: "5 hours ago",
       holders: 1205,
     },
   ];
@@ -45,35 +46,35 @@ const NewListings = () => {
   // Sample data for dethrone tokens
   const dethroneTokens = [
     {
-      id: '1',
-      name: 'MegaShiba',
-      symbol: 'MSHIB',
-      achievement: 'Surpassed SHIB in 24h volume',
-      price: '$0.00000789',
-      change: '+1256%',
-      volume: '$45M',
+      id: "1",
+      name: "MegaShiba",
+      symbol: "MSHIB",
+      achievement: "Surpassed SHIB in 24h volume",
+      price: "$0.00000789",
+      change: "+1256%",
+      volume: "$45M",
     },
     {
-      id: '2',
-      name: 'UltraDoge',
-      symbol: 'UDOGE',
-      achievement: 'Reached DOGE market cap',
-      price: '$0.0000234',
-      change: '+567%',
-      volume: '$28M',
+      id: "2",
+      name: "UltraDoge",
+      symbol: "UDOGE",
+      achievement: "Reached DOGE market cap",
+      price: "$0.0000234",
+      change: "+567%",
+      volume: "$28M",
     },
   ];
 
   const filterTokens = () => {
-    if (selectedCategory === 'all') return tokens;
-    return tokens.filter(token => token.category === selectedCategory);
+    if (selectedCategory === "all") return tokens;
+    return tokens.filter((token) => token.category === selectedCategory);
   };
 
   const renderTokenCard = ({ item }) => (
     <View style={styles.tokenCard}>
       <View style={styles.tokenHeader}>
         <View style={styles.tokenIdentity}>
-          <Image 
+          <Image
             source={{ uri: "/api/placeholder/40/40" }}
             style={styles.tokenIcon}
           />
@@ -84,7 +85,7 @@ const NewListings = () => {
         </View>
         <View style={styles.categoryTag}>
           <Text style={styles.categoryText}>
-            {item.category === 'pumpfun' ? '🚀 PumpFun' : '🌙 Moonshot'}
+            {item.category === "pumpfun" ? "🚀 PumpFun" : "🌙 Moonshot"}
           </Text>
         </View>
       </View>
@@ -120,7 +121,7 @@ const NewListings = () => {
   const renderDethroneCard = ({ item }) => (
     <View style={styles.dethroneCard}>
       <View style={styles.dethroneHeader}>
-        <Image 
+        <Image
           source={{ uri: "/api/placeholder/40/40" }}
           style={styles.tokenIcon}
         />
@@ -144,152 +145,184 @@ const NewListings = () => {
   );
 
   return (
-    <ScrollView style={styles.container}>
-      {/* Category Filter */}
-      <View style={styles.filterContainer}>
-        <TouchableOpacity 
-          style={[styles.filterButton, selectedCategory === 'all' && styles.filterActive]}
-          onPress={() => setSelectedCategory('all')}
-        >
-          <Text style={[styles.filterText, selectedCategory === 'all' && styles.filterTextActive]}>
-            All New
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.filterButton, selectedCategory === 'pumpfun' && styles.filterActive]}
-          onPress={() => setSelectedCategory('pumpfun')}
-        >
-          <Text style={[styles.filterText, selectedCategory === 'pumpfun' && styles.filterTextActive]}>
-            🚀 PumpFun
-          </Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.filterButton, selectedCategory === 'moonshot' && styles.filterActive]}
-          onPress={() => setSelectedCategory('moonshot')}
-        >
-          <Text style={[styles.filterText, selectedCategory === 'moonshot' && styles.filterTextActive]}>
-            🌙 Moonshot
-          </Text>
-        </TouchableOpacity>
-      </View>
+    <SafeAreaView>
+      <ScrollView style={styles.container}>
+        {/* Category Filter */}
+        <View style={styles.filterContainer}>
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              selectedCategory === "all" && styles.filterActive,
+            ]}
+            onPress={() => setSelectedCategory("all")}
+          >
+            <Text
+              style={[
+                styles.filterText,
+                selectedCategory === "all" && styles.filterTextActive,
+              ]}
+            >
+              All New
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              selectedCategory === "pumpfun" && styles.filterActive,
+            ]}
+            onPress={() => setSelectedCategory("pumpfun")}
+          >
+            <Text
+              style={[
+                styles.filterText,
+                selectedCategory === "pumpfun" && styles.filterTextActive,
+              ]}
+            >
+              🚀 PumpFun
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.filterButton,
+              selectedCategory === "moonshot" && styles.filterActive,
+            ]}
+            onPress={() => setSelectedCategory("moonshot")}
+          >
+            <Text
+              style={[
+                styles.filterText,
+                selectedCategory === "moonshot" && styles.filterTextActive,
+              ]}
+            >
+              🌙 Moonshot
+            </Text>
+          </TouchableOpacity>
+        </View>
 
-      {/* Sort Options */}
-      <View style={styles.sortContainer}>
-        <Text style={styles.sortLabel}>Sort by:</Text>
-        <TouchableOpacity 
-          style={[styles.sortButton, sortBy === 'newest' && styles.sortActive]}
-          onPress={() => setSortBy('newest')}
-        >
-          <Text style={styles.sortText}>Newest</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={[styles.sortButton, sortBy === 'trending' && styles.sortActive]}
-          onPress={() => setSortBy('trending')}
-        >
-          <Text style={styles.sortText}>Trending</Text>
-        </TouchableOpacity>
-      </View>
+        {/* Sort Options */}
+        <View style={styles.sortContainer}>
+          <Text style={styles.sortLabel}>Sort by:</Text>
+          <TouchableOpacity
+            style={[
+              styles.sortButton,
+              sortBy === "newest" && styles.sortActive,
+            ]}
+            onPress={() => setSortBy("newest")}
+          >
+            <Text style={styles.sortText}>Newest</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[
+              styles.sortButton,
+              sortBy === "trending" && styles.sortActive,
+            ]}
+            onPress={() => setSortBy("trending")}
+          >
+            <Text style={styles.sortText}>Trending</Text>
+          </TouchableOpacity>
+        </View>
 
-      {/* New Listings Section */}
-      <Text style={styles.sectionTitle}>New Listings</Text>
-      <FlatList
-        data={filterTokens()}
-        renderItem={renderTokenCard}
-        keyExtractor={item => item.id}
-        scrollEnabled={false}
-      />
+        {/* New Listings Section */}
+        <Text style={styles.sectionTitle}>New Listings</Text>
+        <FlatList
+          data={filterTokens()}
+          renderItem={renderTokenCard}
+          keyExtractor={(item) => item.id}
+          scrollEnabled={false}
+        />
 
-      {/* Dethrone Section */}
-      <Text style={styles.sectionTitle}>Dethrone Kings 👑</Text>
-      <FlatList
-        data={dethroneTokens}
-        renderItem={renderDethroneCard}
-        keyExtractor={item => item.id}
-        scrollEnabled={false}
-      />
-    </ScrollView>
+        {/* Dethrone Section */}
+        <Text style={styles.sectionTitle}>Dethrone Kings 👑</Text>
+        <FlatList
+          data={dethroneTokens}
+          renderItem={renderDethroneCard}
+          keyExtractor={(item) => item.id}
+          scrollEnabled={false}
+        />
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: "#f5f5f5",
     padding: 16,
   },
   filterContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 16,
   },
   filterButton: {
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     marginRight: 8,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: "#e0e0e0",
   },
   filterActive: {
-    backgroundColor: '#2196F3',
-    borderColor: '#2196F3',
+    backgroundColor: "#2196F3",
+    borderColor: "#2196F3",
   },
   filterText: {
-    color: '#666',
-    fontWeight: '600',
+    color: "#666",
+    fontWeight: "600",
   },
   filterTextActive: {
-    color: '#fff',
+    color: "#fff",
   },
   sortContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 16,
   },
   sortLabel: {
-    color: '#666',
+    color: "#666",
     marginRight: 8,
   },
   sortButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     marginRight: 8,
   },
   sortActive: {
-    backgroundColor: '#e3f2fd',
+    backgroundColor: "#e3f2fd",
   },
   sortText: {
-    color: '#2196F3',
+    color: "#2196F3",
     fontSize: 12,
   },
   sectionTitle: {
     fontSize: 20,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginBottom: 16,
     marginTop: 8,
   },
   tokenCard: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     elevation: 2,
-    shadowColor: '#000',
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
   },
   tokenHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   tokenIdentity: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
   },
   tokenIcon: {
     width: 40,
@@ -299,76 +332,76 @@ const styles = StyleSheet.create({
   },
   tokenName: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   tokenSymbol: {
-    color: '#666',
+    color: "#666",
   },
   categoryTag: {
-    backgroundColor: '#e3f2fd',
+    backgroundColor: "#e3f2fd",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 12,
   },
   categoryText: {
-    color: '#2196F3',
+    color: "#2196F3",
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   tokenMetrics: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 12,
   },
   metricItem: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   metricLabel: {
-    color: '#666',
+    color: "#666",
     fontSize: 12,
     marginBottom: 4,
   },
   metricValue: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   changePositive: {
-    color: '#4CAF50',
+    color: "#4CAF50",
   },
   tokenFooter: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    justifyContent: "space-between",
     marginBottom: 12,
   },
   launchTime: {
-    color: '#666',
+    color: "#666",
     fontSize: 12,
   },
   holders: {
-    color: '#666',
+    color: "#666",
     fontSize: 12,
   },
   buyButton: {
-    backgroundColor: '#2196F3',
+    backgroundColor: "#2196F3",
     padding: 12,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   buyButtonText: {
-    color: '#fff',
-    fontWeight: '600',
+    color: "#fff",
+    fontWeight: "600",
   },
   dethroneCard: {
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
     borderWidth: 2,
-    borderColor: '#FFD700',
+    borderColor: "#FFD700",
   },
   dethroneHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 12,
   },
   dethroneInfo: {
@@ -377,35 +410,35 @@ const styles = StyleSheet.create({
   },
   dethroneName: {
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
   },
   dethroneAchievement: {
-    color: '#666',
+    color: "#666",
     fontSize: 12,
   },
   dethroneMetrics: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     marginBottom: 12,
   },
   dethronePrice: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   dethroneChange: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   dethroneButton: {
-    backgroundColor: '#FFD700',
+    backgroundColor: "#FFD700",
     padding: 12,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   dethroneButtonText: {
-    color: '#000',
-    fontWeight: '600',
+    color: "#000",
+    fontWeight: "600",
   },
 });
 

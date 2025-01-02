@@ -11,6 +11,7 @@ import {
   ScrollView,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 const Trending = () => {
   const [isModalVisible, setModalVisible] = useState(false);
@@ -52,7 +53,12 @@ const Trending = () => {
 
   const handleSubmitToken = () => {
     // Validation
-    if (!newToken.name || !newToken.symbol || !newToken.price || !newToken.contractAddress) {
+    if (
+      !newToken.name ||
+      !newToken.symbol ||
+      !newToken.price ||
+      !newToken.contractAddress
+    ) {
       Alert.alert("Error", "Please fill in all required fields");
       return;
     }
@@ -90,7 +96,7 @@ const Trending = () => {
           <Text style={styles.spotlightText}>Spotlight</Text>
         </View>
       )}
-      
+
       <View style={styles.tokenHeader}>
         <Image source={{ uri: item.avatar }} style={styles.tokenImage} />
         <View style={styles.tokenInfo}>
@@ -99,13 +105,19 @@ const Trending = () => {
         </View>
         <View style={styles.priceInfo}>
           <Text style={styles.tokenPrice}>{item.price}</Text>
-          <Text style={[styles.changeText, 
-            item.change.includes("+") ? styles.positiveChange : styles.negativeChange]}>
+          <Text
+            style={[
+              styles.changeText,
+              item.change.includes("+")
+                ? styles.positiveChange
+                : styles.negativeChange,
+            ]}
+          >
             {item.change}
           </Text>
         </View>
       </View>
-      
+
       <View style={styles.tokenDetails}>
         <Text style={styles.marketCap}>Market Cap: {item.marketCap}</Text>
         <Text style={styles.description}>{item.description}</Text>
@@ -114,7 +126,7 @@ const Trending = () => {
   );
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>Trending Tokens</Text>
         <TouchableOpacity
@@ -133,75 +145,85 @@ const Trending = () => {
         contentContainerStyle={styles.listContainer}
       />
 
-      <Modal
-        visible={isModalVisible}
-        animationType="slide"
-        transparent={true}
-      >
+      <Modal visible={isModalVisible} animationType="slide" transparent={true}>
         <View style={styles.modalContainer}>
           <View style={styles.modalContent}>
             <Text style={styles.modalTitle}>List Your Token</Text>
-            
+
             <ScrollView showsVerticalScrollIndicator={false}>
               <TextInput
                 style={styles.input}
                 placeholder="Token Name *"
                 placeholderTextColor="#666"
                 value={newToken.name}
-                onChangeText={(text) => setNewToken({...newToken, name: text})}
+                onChangeText={(text) =>
+                  setNewToken({ ...newToken, name: text })
+                }
               />
-              
+
               <TextInput
                 style={styles.input}
                 placeholder="Token Symbol *"
                 placeholderTextColor="#666"
                 value={newToken.symbol}
-                onChangeText={(text) => setNewToken({...newToken, symbol: text})}
+                onChangeText={(text) =>
+                  setNewToken({ ...newToken, symbol: text })
+                }
               />
-              
+
               <TextInput
                 style={styles.input}
                 placeholder="Price (USD) *"
                 placeholderTextColor="#666"
                 keyboardType="decimal-pad"
                 value={newToken.price}
-                onChangeText={(text) => setNewToken({...newToken, price: text})}
+                onChangeText={(text) =>
+                  setNewToken({ ...newToken, price: text })
+                }
               />
-              
+
               <TextInput
                 style={styles.input}
                 placeholder="Market Cap (USD)"
                 placeholderTextColor="#666"
                 keyboardType="decimal-pad"
                 value={newToken.marketCap}
-                onChangeText={(text) => setNewToken({...newToken, marketCap: text})}
+                onChangeText={(text) =>
+                  setNewToken({ ...newToken, marketCap: text })
+                }
               />
-              
+
               <TextInput
                 style={[styles.input, styles.multilineInput]}
                 placeholder="Description"
                 placeholderTextColor="#666"
                 multiline
                 value={newToken.description}
-                onChangeText={(text) => setNewToken({...newToken, description: text})}
+                onChangeText={(text) =>
+                  setNewToken({ ...newToken, description: text })
+                }
               />
-              
+
               <TextInput
                 style={styles.input}
                 placeholder="Website"
                 placeholderTextColor="#666"
                 value={newToken.website}
-                onChangeText={(text) => setNewToken({...newToken, website: text})}
+                onChangeText={(text) =>
+                  setNewToken({ ...newToken, website: text })
+                }
               />
-              
+
               <TextInput
                 style={styles.input}
                 placeholder="Contract Address *"
                 placeholderTextColor="#666"
                 value={newToken.contractAddress}
-                onChangeText={(text) => setNewToken({...newToken, contractAddress: text})}
+                onChangeText={(text) =>
+                  setNewToken({ ...newToken, contractAddress: text })
+                }
               />
-              
+
               <View style={styles.modalButtons}>
                 <TouchableOpacity
                   style={[styles.modalButton, styles.cancelButton]}
@@ -209,7 +231,7 @@ const Trending = () => {
                 >
                   <Text style={styles.cancelButtonText}>Cancel</Text>
                 </TouchableOpacity>
-                
+
                 <TouchableOpacity
                   style={[styles.modalButton, styles.submitButton]}
                   onPress={handleSubmitToken}
@@ -221,7 +243,7 @@ const Trending = () => {
           </View>
         </View>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 };
 

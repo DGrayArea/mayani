@@ -1,39 +1,41 @@
-import React, { useState, useEffect } from "react";
+import React, { useEffect } from "react";
+import { Link } from "expo-router";
 import {
-  View,
   Text,
-  TextInput,
+  View,
+  Image,
   Pressable,
   StyleSheet,
   Animated,
   Dimensions,
   Platform,
 } from "react-native";
-import { useRouter } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import Constants from "expo-constants";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const SignIn = () => {
-  const [email, setEmail] = useState("");
-  const router = useRouter();
-
-  // Animation values
+const Home = () => {
   const fadeAnim = new Animated.Value(0);
-  const slideAnim = new Animated.Value(30);
+  const scaleAnim = new Animated.Value(0.9);
+  const slideAnim = new Animated.Value(-50);
   const buttonScaleAnim = new Animated.Value(1);
 
   useEffect(() => {
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
-        duration: 800,
+        duration: 1000,
         useNativeDriver: true,
       }),
-      Animated.spring(slideAnim, {
-        toValue: 0,
+      Animated.spring(scaleAnim, {
+        toValue: 1,
         friction: 8,
         tension: 40,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 800,
         useNativeDriver: true,
       }),
     ]).start();
@@ -54,11 +56,6 @@ const SignIn = () => {
     }).start();
   };
 
-  const handleSubmit = () => {
-    // Add email validation here later
-    router.push("/explore");
-  };
-
   return (
     <View style={styles.safeArea}>
       <LinearGradient
@@ -67,59 +64,54 @@ const SignIn = () => {
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
       >
-        <View style={styles.bgCircles}>
-          <View style={[styles.bgCircle, styles.bgCircle1]} />
-          <View style={[styles.bgCircle, styles.bgCircle2]} />
-          <View style={[styles.bgCircle, styles.bgCircle3]} />
-        </View>
-
         <View style={styles.content}>
+          <Animated.View
+            style={[
+              styles.logoContainer,
+              {
+                opacity: fadeAnim,
+                transform: [{ scale: scaleAnim }],
+              },
+            ]}
+          >
+            <Image
+              source={require("../../../assets/renner.jpeg")}
+              style={styles.logo}
+            />
+            <LinearGradient
+              colors={["rgba(0,77,64,0.2)", "rgba(0,121,107,0.2)"]}
+              style={styles.logoOverlay}
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 1 }}
+            />
+          </Animated.View>
+
           <Animated.Text
             style={[
               styles.title,
               {
                 opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
+                transform: [{ translateX: slideAnim }],
               },
             ]}
           >
-            Sign In
+            Welcome to Mayani
           </Animated.Text>
 
           <Animated.View
             style={[
-              styles.form,
+              styles.buttonContainer,
               {
                 opacity: fadeAnim,
-                transform: [{ translateY: slideAnim }],
+                transform: [{ scale: buttonScaleAnim }],
               },
             ]}
           >
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Email Address"
-                placeholderTextColor="rgba(0,0,0,0.5)"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
-                onChangeText={setEmail}
-              />
-            </View>
-
-            <Animated.View
-              style={[
-                styles.buttonContainer,
-                {
-                  transform: [{ scale: buttonScaleAnim }],
-                },
-              ]}
-            >
+            <Link href="/sign-in" asChild>
               <Pressable
-                onPress={handleSubmit}
+                style={styles.button}
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
-                style={styles.button}
                 android_ripple={{ color: "rgba(255,255,255,0.2)" }}
               >
                 <LinearGradient
@@ -128,11 +120,17 @@ const SignIn = () => {
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                 >
-                  <Text style={styles.buttonText}>Continue</Text>
+                  <Text style={styles.buttonText}>Sign In</Text>
                 </LinearGradient>
               </Pressable>
-            </Animated.View>
+            </Link>
           </Animated.View>
+        </View>
+
+        <View style={styles.bgCircles}>
+          <View style={[styles.bgCircle, styles.bgCircle1]} />
+          <View style={[styles.bgCircle, styles.bgCircle2]} />
+          <View style={[styles.bgCircle, styles.bgCircle3]} />
         </View>
       </LinearGradient>
     </View>
@@ -148,10 +146,43 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: "center",
+    alignItems: "center",
   },
   content: {
-    padding: 20,
+    alignItems: "center",
+    width: "100%",
+    paddingHorizontal: 20,
     zIndex: 1,
+  },
+  logoContainer: {
+    marginBottom: 30,
+    ...Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: {
+          width: 0,
+          height: 8,
+        },
+        shadowOpacity: 0.44,
+        shadowRadius: 10.32,
+      },
+      android: {
+        elevation: 16,
+      },
+    }),
+  },
+  logo: {
+    width: 140,
+    height: 140,
+    borderRadius: 70,
+  },
+  logoOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 70,
   },
   title: {
     fontSize: 36,
@@ -170,34 +201,9 @@ const styles = StyleSheet.create({
       },
     }),
   },
-  form: {
-    gap: 20,
-  },
-  inputContainer: {
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: {
-          width: 0,
-          height: 4,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 4.65,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
-  input: {
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderRadius: 15,
-    fontSize: 16,
-    color: "#333",
-  },
   buttonContainer: {
+    width: "80%",
+    maxWidth: 300,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
@@ -214,8 +220,9 @@ const styles = StyleSheet.create({
     }),
   },
   button: {
+    width: "100%",
     overflow: "hidden",
-    borderRadius: 15,
+    borderRadius: 30,
   },
   buttonGradient: {
     paddingVertical: 16,
@@ -257,4 +264,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default SignIn;
+export default Home;
