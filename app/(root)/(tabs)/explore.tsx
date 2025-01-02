@@ -9,7 +9,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const CryptoExplorer = () => {
+const Explore = () => {
   const [selectedFilter, setSelectedFilter] = useState("all");
 
   const topGainers = [
@@ -337,4 +337,4 @@ const styles = StyleSheet.create({
   },
 });
 
-export default CryptoExplorer;
+export default Explore;

@@ -75,7 +75,7 @@ const Home = () => {
             ]}
           >
             <Image
-              source={require("../../../assets/renner.jpeg")}
+              source={require("../assets/renner.jpeg")}
               style={styles.logo}
             />
             <LinearGradient
