@@ -53,6 +53,10 @@ const NewListings = () => {
       price: "$0.00000789",
       change: "+1256%",
       volume: "$45M",
+      marketCap: "$68.2M",
+      category: "moonshot",
+      launchTime: "19 hours ago",
+      holders: 9864,
     },
     {
       id: "2",
@@ -62,6 +66,10 @@ const NewListings = () => {
       price: "$0.0000234",
       change: "+567%",
       volume: "$28M",
+      marketCap: "$4.9M",
+      category: "pumpfun",
+      launchTime: "7 hours ago",
+      holders: 572,
     },
   ];
 
@@ -121,23 +129,50 @@ const NewListings = () => {
   const renderDethroneCard = ({ item }) => (
     <View style={styles.dethroneCard}>
       <View style={styles.dethroneHeader}>
-        <Image
-          source={{ uri: "/api/placeholder/40/40" }}
-          style={styles.tokenIcon}
-        />
-        <View style={styles.dethroneInfo}>
-          <Text style={styles.dethroneName}>{item.name}</Text>
-          <Text style={styles.dethroneAchievement}>{item.achievement}</Text>
+        <View style={styles.tokenIdentity}>
+          <Image
+            source={{ uri: "/api/placeholder/40/40" }}
+            style={styles.dethroneIcon}
+          />
+          <View>
+            <Text style={styles.dethroneName}>{item.name}</Text>
+            <Text style={styles.dethroneAchievement}>{item.achievement}</Text>
+          </View>
+        </View>
+        <View style={styles.dethroneCategoryTag}>
+          <Text style={styles.dethroneCategoryText}>
+            {item.category === "pumpfun" ? "🚀 PumpFun" : "🌙 Moonshot"}
+          </Text>
         </View>
       </View>
 
-      <View style={styles.dethroneMetrics}>
+      {/* <View style={styles.dethroneMetrics}>
         <Text style={styles.dethronePrice}>{item.price}</Text>
         <Text style={[styles.dethroneChange, styles.changePositive]}>
           {item.change}
         </Text>
+      </View> */}
+      <View style={styles.tokenMetrics}>
+        <View style={styles.metricItem}>
+          <Text style={styles.metricLabel}>Price</Text>
+          <Text style={styles.metricValue}>{item.price}</Text>
+        </View>
+        <View style={styles.metricItem}>
+          <Text style={styles.metricLabel}>Change</Text>
+          <Text style={[styles.metricValue, styles.changePositive]}>
+            {item.change}
+          </Text>
+        </View>
+        <View style={styles.metricItem}>
+          <Text style={styles.metricLabel}>MCap</Text>
+          <Text style={styles.metricValue}>{item.marketCap}</Text>
+        </View>
       </View>
 
+      <View style={styles.tokenFooter}>
+        <Text style={styles.launchTime}>Listed {item.launchTime}</Text>
+        <Text style={styles.holders}>{item.holders} holders</Text>
+      </View>
       <TouchableOpacity style={styles.dethroneButton}>
         <Text style={styles.dethroneButtonText}>Trade Now</Text>
       </TouchableOpacity>
@@ -145,8 +180,8 @@ const NewListings = () => {
   );
 
   return (
-    <SafeAreaView>
-      <ScrollView style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <ScrollView>
         {/* Category Filter */}
         <View style={styles.filterContainer}>
           <TouchableOpacity
@@ -247,32 +282,34 @@ const NewListings = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#0A0F0D", //f5f5f5
     padding: 16,
+    paddingHorizontal: 20,
   },
   filterContainer: {
     flexDirection: "row",
     marginBottom: 16,
   },
   filterButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 20,
+    paddingVertical: 10,
+    marginRight: 10,
     borderRadius: 20,
-    backgroundColor: "#fff",
-    marginRight: 8,
+    backgroundColor: "#1A231E",
     borderWidth: 1,
-    borderColor: "#e0e0e0",
+    borderColor: "#2A3F33",
   },
   filterActive: {
-    backgroundColor: "#2196F3",
-    borderColor: "#2196F3",
+    backgroundColor: "#2A3F33",
+    borderColor: "#3A5F43",
   },
   filterText: {
-    color: "#666",
+    color: "#8FA396",
+    fontSize: 14,
     fontWeight: "600",
   },
   filterTextActive: {
-    color: "#fff",
+    color: "#E0E0E0",
   },
   sortContainer: {
     flexDirection: "row",
@@ -280,32 +317,35 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   sortLabel: {
-    color: "#666",
+    color: "#B8C3BC",
     marginRight: 8,
   },
   sortButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: "#fff",
+    backgroundColor: "#1A231E",
     marginRight: 8,
   },
   sortActive: {
-    backgroundColor: "#e3f2fd",
+    backgroundColor: "#2A3F33",
   },
   sortText: {
-    color: "#2196F3",
+    color: "#8FA396",
     fontSize: 12,
   },
   sectionTitle: {
     fontSize: 20,
+    color: "#B8C3BC",
     fontWeight: "bold",
     marginBottom: 16,
     marginTop: 8,
   },
   tokenCard: {
-    backgroundColor: "#fff",
+    backgroundColor: "#1A231E",
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#2A3F33",
     padding: 16,
     marginBottom: 12,
     elevation: 2,
@@ -329,41 +369,67 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     marginRight: 8,
+    backgroundColor: "#2A3F33",
+  },
+  dethroneIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 8,
+    backgroundColor: "#3F372A",
   },
   tokenName: {
     fontSize: 18,
     fontWeight: "bold",
+    color: "#E0E0E0",
   },
   tokenSymbol: {
-    color: "#666",
+    color: "#8FA396",
   },
   categoryTag: {
-    backgroundColor: "#e3f2fd",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    backgroundColor: "#1A231E",
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#2A3F33",
+    paddingHorizontal: 8,
+    paddingVertical: 5,
   },
   categoryText: {
-    color: "#2196F3",
+    color: "#E0E0E0",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  dethroneCategoryTag: {
+    backgroundColor: "#2E281A",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#3F372A",
+    paddingHorizontal: 8,
+    paddingVertical: 5,
+  },
+  dethroneCategoryText: {
+    color: "#E0E0E0",
     fontSize: 12,
     fontWeight: "600",
   },
   tokenMetrics: {
     flexDirection: "row",
     justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: 12,
   },
   metricItem: {
-    alignItems: "center",
+    alignItems: "flex-start",
   },
   metricLabel: {
-    color: "#666",
+    color: "#8FA396",
     fontSize: 12,
     marginBottom: 4,
   },
   metricValue: {
     fontSize: 16,
     fontWeight: "600",
+    color: "#E0E0E0",
   },
   changePositive: {
     color: "#4CAF50",
@@ -374,33 +440,34 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   launchTime: {
-    color: "#666",
+    color: "#8FA396",
     fontSize: 12,
   },
   holders: {
-    color: "#666",
+    color: "#8FA396",
     fontSize: 12,
   },
   buyButton: {
-    backgroundColor: "#2196F3",
+    backgroundColor: "#3BAF74", //#3BAF74
     padding: 12,
     borderRadius: 8,
     alignItems: "center",
   },
   buyButtonText: {
-    color: "#fff",
+    color: "#E0E0E0",
     fontWeight: "600",
   },
   dethroneCard: {
-    backgroundColor: "#fff",
+    backgroundColor: "#2E281A",
     borderRadius: 12,
     padding: 16,
     marginBottom: 12,
-    borderWidth: 2,
-    borderColor: "#FFD700",
+    borderWidth: 1,
+    borderColor: "#3F372A",
   },
   dethroneHeader: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 12,
   },
@@ -411,9 +478,10 @@ const styles = StyleSheet.create({
   dethroneName: {
     fontSize: 18,
     fontWeight: "bold",
+    color: "#E0E0E0",
   },
   dethroneAchievement: {
-    color: "#666",
+    color: "#8FA396",
     fontSize: 12,
   },
   dethroneMetrics: {
@@ -425,6 +493,7 @@ const styles = StyleSheet.create({
   dethronePrice: {
     fontSize: 16,
     fontWeight: "600",
+    color: "#E0E0E0",
   },
   dethroneChange: {
     fontSize: 16,

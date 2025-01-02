@@ -141,8 +141,8 @@ const Wallet = () => {
   );
 
   return (
-    <SafeAreaView>
-      <ScrollView style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <ScrollView>
         <View style={styles.totalAssetsCard}>
           <Text style={styles.totalAssetsLabel}>Total Assets</Text>
           <Text style={styles.totalAssetsAmount}>
@@ -185,12 +185,15 @@ const Wallet = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#0A0F0D", //f5f5f5
     padding: 16,
   },
   totalAssetsCard: {
-    backgroundColor: "#2196F3",
+    // backgroundColor: "#21F36A", //2196F3
+    backgroundColor: "#1A231E",
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#2A3F33",
     padding: 20,
     marginBottom: 16,
   },
@@ -199,7 +202,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   totalAssetsAmount: {
-    color: "#ffffff",
+    color: "#E0E0E0",
     fontSize: 32,
     fontWeight: "bold",
     marginTop: 8,
@@ -208,8 +211,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   cryptoCard: {
-    backgroundColor: "#ffffff",
+    backgroundColor: "#1A231E",
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#2A3F33",
     padding: 16,
     marginBottom: 12,
     elevation: 2,
@@ -228,11 +233,12 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     marginRight: 8,
+    backgroundColor: "#2A3F33",
   },
   cryptoName: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#1a1a1a",
+    color: "#8FA396",
   },
   balanceContainer: {
     marginBottom: 12,
@@ -240,7 +246,7 @@ const styles = StyleSheet.create({
   balanceAmount: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#1a1a1a",
+    color: "#8FA396",
   },
   balanceUsd: {
     fontSize: 16,
@@ -254,7 +260,7 @@ const styles = StyleSheet.create({
   },
   priceText: {
     fontSize: 16,
-    color: "#1a1a1a",
+    color: "#8FA396",
   },
   changeText: {
     fontSize: 16,
@@ -267,8 +273,10 @@ const styles = StyleSheet.create({
     color: "#F44336",
   },
   p2pButton: {
-    backgroundColor: "#ffffff",
+    backgroundColor: "#1A231E",
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#2A3F33",
     padding: 16,
     flexDirection: "row",
     justifyContent: "space-between",
@@ -278,7 +286,7 @@ const styles = StyleSheet.create({
   p2pButtonText: {
     fontSize: 18,
     fontWeight: "600",
-    color: "#1a1a1a",
+    color: "#8FA396",
   },
   p2pToggle: {
     fontSize: 18,
@@ -288,20 +296,22 @@ const styles = StyleSheet.create({
     overflow: "hidden",
   },
   p2pContent: {
-    backgroundColor: "#ffffff",
+    backgroundColor: "#1A231E",
     borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#2A3F33",
     padding: 16,
   },
   p2pTitle: {
     fontSize: 18,
     fontWeight: "bold",
     marginBottom: 16,
-    color: "#1a1a1a",
+    color: "#8FA396",
   },
   p2pOrder: {
     borderWidth: 1,
-    borderColor: "#eee",
-    borderRadius: 8,
+    borderColor: "#2A3F33",
+    borderRadius: 12,
     padding: 12,
     marginBottom: 12,
   },
@@ -329,7 +339,7 @@ const styles = StyleSheet.create({
   p2pCrypto: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#1a1a1a",
+    color: "#8FA396",
   },
   p2pDetails: {
     marginBottom: 12,
@@ -343,7 +353,7 @@ const styles = StyleSheet.create({
     color: "#666",
   },
   p2pValue: {
-    color: "#1a1a1a",
+    color: "#8FA396",
     fontWeight: "500",
   },
   p2pUser: {
@@ -352,12 +362,12 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#eee",
+    borderTopColor: "#2A3F33",
   },
   userName: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#1a1a1a",
+    color: "#8FA396",
   },
   userRating: {
     fontSize: 14,

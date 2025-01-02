@@ -78,8 +78,8 @@ const Settings = () => {
       <Switch
         value={settings[key]}
         onValueChange={() => toggleSetting(key)}
-        trackColor={{ false: "#767577", true: "#81b0ff" }}
-        thumbColor={settings[key] ? "#2196F3" : "#f4f3f4"}
+        trackColor={{ false: "#767577", true: "#2A3F33" }}
+        thumbColor={settings[key] ? "#14201B" : "#f4f3f4"}
       />
     </View>
   );
@@ -95,8 +95,8 @@ const Settings = () => {
   );
 
   return (
-    <SafeAreaView>
-      <ScrollView style={styles.container}>
+    <SafeAreaView style={styles.container}>
+      <ScrollView>
         {/* Profile Section */}
         <View style={styles.profileSection}>
           <Image
@@ -187,14 +187,16 @@ const Settings = () => {
     </SafeAreaView>
   );
 };
+// #E0E0E0
+// #8FA396
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#f5f5f5",
+    backgroundColor: "#0A0F0D",
   },
   profileSection: {
-    backgroundColor: "#fff",
+    backgroundColor: "#1C2925", //121A17 1C2925 131A17
     padding: 20,
     flexDirection: "row",
     alignItems: "center",
@@ -204,6 +206,7 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
+    backgroundColor: "#121A17",
   },
   profileInfo: {
     marginLeft: 15,
@@ -212,33 +215,34 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#1a1a1a",
+    color: "#8FA396",
   },
   profileEmail: {
     fontSize: 14,
-    color: "#666",
+    color: "#E0E0E0",
     marginTop: 4,
   },
   editButton: {
-    padding: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 8,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "#2196F3",
+    borderColor: "#3D5A48",
   },
   editButtonText: {
-    color: "#2196F3",
+    color: "#3D5A48",
     fontSize: 14,
   },
   sectionTitle: {
     fontSize: 16,
     fontWeight: "600",
-    color: "#666",
+    color: "#E0E0E0",
     marginTop: 20,
     marginBottom: 10,
     marginLeft: 20,
   },
   settingItem: {
-    backgroundColor: "#fff",
+    backgroundColor: "#1C2925",
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
@@ -251,11 +255,11 @@ const styles = StyleSheet.create({
   },
   settingTitle: {
     fontSize: 16,
-    color: "#1a1a1a",
+    color: "#8FA396",
   },
   settingDescription: {
     fontSize: 12,
-    color: "#666",
+    color: "#E0E0E0",
     marginTop: 4,
   },
   selectValue: {
@@ -264,12 +268,12 @@ const styles = StyleSheet.create({
   },
   valueText: {
     fontSize: 16,
-    color: "#666",
+    color: "#E0E0E0",
     marginRight: 8,
   },
   chevron: {
     fontSize: 18,
-    color: "#666",
+    color: "#E0E0E0",
   },
   logoutButton: {
     marginTop: 20,
@@ -287,7 +291,7 @@ const styles = StyleSheet.create({
   },
   version: {
     textAlign: "center",
-    color: "#666",
+    color: "#E0E0E0",
     fontSize: 14,
     marginVertical: 20,
   },
