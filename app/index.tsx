@@ -1,3 +1,4 @@
+import "../crypto-polyfill";
 import React, { useEffect } from "react";
 import { Link } from "expo-router";
 import {

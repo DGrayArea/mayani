@@ -1,5 +1,9 @@
 import React, { useState, useEffect } from "react";
 import {
+  Alert,
+  Image,
+  ScrollView,
+  TouchableOpacity,
   View,
   Text,
   TextInput,
@@ -9,9 +13,12 @@ import {
   Dimensions,
   Platform,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { login } from "@/lib/appwrite";
+import { useRouter, Redirect } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
-import Constants from "expo-constants";
+import { useGlobalContext } from "@/lib/global-provider";
+import icons from "@/constants/icons";
+import images from "@/constants/images";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const SignIn = () => {
@@ -59,6 +66,20 @@ const SignIn = () => {
     router.push("/explore");
   };
 
+  const { refetch, loading, isLogged } = useGlobalContext();
+
+  if (!loading && isLogged) return <Redirect href="/" />;
+
+  const handleLogin = async () => {
+    // const result = await login();
+    // if (result) {
+    //   refetch();
+    // } else {
+    //   Alert.alert("Error", "Failed to login");
+    // }
+    router.push("/explore");
+  };
+
   return (
     <View style={styles.safeArea}>
       <LinearGradient
@@ -95,7 +116,7 @@ const SignIn = () => {
               },
             ]}
           >
-            <View style={styles.inputContainer}>
+            {/* <View style={styles.inputContainer}>
               <TextInput
                 style={styles.input}
                 placeholder="Email Address"
@@ -105,7 +126,7 @@ const SignIn = () => {
                 value={email}
                 onChangeText={setEmail}
               />
-            </View>
+            </View> */}
 
             <Animated.View
               style={[
@@ -115,7 +136,26 @@ const SignIn = () => {
                 },
               ]}
             >
-              <Pressable
+              <Text className="text-xl font-semibold font-rubik text-white text-center mt-16 mb-5">
+                Login to Mayani with Google
+              </Text>
+
+              <TouchableOpacity
+                onPress={handleLogin}
+                className="bg-white shadow-md shadow-zinc-300 rounded-full w-full py-4 mt-5"
+              >
+                <View className="flex flex-row items-center justify-center">
+                  <Image
+                    source={icons.google}
+                    className="w-5 h-5"
+                    resizeMode="contain"
+                  />
+                  <Text className="text-lg font-rubik-medium text-black-300 ml-2">
+                    Continue with Google
+                  </Text>
+                </View>
+              </TouchableOpacity>
+              {/* <Pressable
                 onPress={handleSubmit}
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
@@ -130,7 +170,7 @@ const SignIn = () => {
                 >
                   <Text style={styles.buttonText}>Continue</Text>
                 </LinearGradient>
-              </Pressable>
+              </Pressable> */}
             </Animated.View>
           </Animated.View>
         </View>

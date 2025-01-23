@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -9,10 +9,23 @@ import {
   Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import ReceiveModal from "@/components/dialog/ReceiveModal";
+import SendModal from "@/components/dialog/SendModal";
+import useWalletStore from "@/hooks/walletStore";
 
 const Wallet = () => {
   const [showP2P, setShowP2P] = useState(false);
   const [animation] = useState(new Animated.Value(0));
+  const [receiveModalVisible, setReceiveModalVisible] = useState(false);
+  const [sendModalVisible, setSendModalVisible] = useState(false);
+
+  const { walletAddress, generateNewWallet } = useWalletStore();
+
+  useEffect(() => {
+    if (!walletAddress) {
+      generateNewWallet();
+    }
+  }, []);
 
   // Sample wallet data
   const walletData = {
@@ -143,11 +156,28 @@ const Wallet = () => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
-        <View style={styles.totalAssetsCard}>
-          <Text style={styles.totalAssetsLabel}>Total Assets</Text>
-          <Text style={styles.totalAssetsAmount}>
-            ${calculateTotalAssets()}
-          </Text>
+        <View style={styles.headerContainer}>
+          <View style={styles.totalAssetsCard}>
+            <Text style={styles.totalAssetsLabel}>Total Assets</Text>
+            <Text style={styles.totalAssetsAmount}>
+              ${calculateTotalAssets()}
+            </Text>
+          </View>
+
+          <View style={styles.walletActions}>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => setReceiveModalVisible(true)}
+            >
+              <Text style={styles.actionButtonText}>Receive</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.actionButton}
+              onPress={() => setSendModalVisible(true)}
+            >
+              <Text style={styles.actionButtonText}>Send</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.cryptoContainer}>
@@ -177,6 +207,14 @@ const Wallet = () => {
             {p2pOrders.map((order) => renderP2POrder(order))}
           </View>
         </Animated.View>
+        <ReceiveModal
+          visible={receiveModalVisible}
+          onClose={() => setReceiveModalVisible(false)}
+        />
+        <SendModal
+          visible={sendModalVisible}
+          onClose={() => setSendModalVisible(false)}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -372,6 +410,28 @@ const styles = StyleSheet.create({
   userRating: {
     fontSize: 14,
     color: "#666",
+  },
+  headerContainer: {
+    marginBottom: 16,
+  },
+  walletActions: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 16,
+  },
+  actionButton: {
+    backgroundColor: "#1A231E",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#2A3F33",
+    padding: 16,
+    flex: 0.48,
+    alignItems: "center",
+  },
+  actionButtonText: {
+    color: "#8FA396",
+    fontSize: 16,
+    fontWeight: "bold",
   },
 });
 
