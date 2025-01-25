@@ -5,12 +5,15 @@ import useWalletStore from "@/hooks/walletStore";
 import * as Clipboard from "expo-clipboard";
 
 const ReceiveModal = ({ visible, onClose }: any) => {
-  const { walletAddress } = useWalletStore();
+  const { solWalletAddress, ethWalletAddress, currentChain } = useWalletStore();
   const [copied, setCopied] = useState(false);
 
+  const currentAddress =
+    currentChain === "SOL" ? solWalletAddress : ethWalletAddress;
+
   const copyAddress = async () => {
-    if (walletAddress) {
-      await Clipboard.setStringAsync(walletAddress);
+    if (currentAddress) {
+      await Clipboard.setStringAsync(currentAddress);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
@@ -25,20 +28,19 @@ const ReceiveModal = ({ visible, onClose }: any) => {
     >
       <View style={styles.modalContainer}>
         <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Receive SOL</Text>
+          <Text style={styles.modalTitle}>Receive {currentChain}</Text>
 
-          {walletAddress ? (
+          {currentAddress ? (
             <View className="flex w-full justify-center items-center">
               <QRCode
-                value={walletAddress}
+                value={currentAddress}
                 size={250}
                 backgroundColor="#1A231E"
                 color="#8FA396"
               />
-
               <View style={styles.addressContainer}>
                 <Text style={styles.addressText} numberOfLines={1}>
-                  {walletAddress}
+                  {currentAddress}
                 </Text>
                 <TouchableOpacity
                   onPress={copyAddress}
@@ -64,6 +66,7 @@ const ReceiveModal = ({ visible, onClose }: any) => {
 };
 
 const styles = StyleSheet.create({
+  // Styles remain the same as in your original component
   modalContainer: {
     flex: 1,
     justifyContent: "center",

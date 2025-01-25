@@ -1,7 +1,6 @@
 import { View, Text, Image } from "react-native";
 import React from "react";
 import { Tabs } from "expo-router";
-import icons from "@/constants/icons";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import FontAwesome6 from "@expo/vector-icons/FontAwesome6";
 import Entypo from "@expo/vector-icons/Entypo";
@@ -91,6 +90,21 @@ const TabsLayout = () => {
               Icon={Entypo}
               focused={focused}
               title="Wallet"
+            />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="p2p"
+        options={{
+          title: "P2P",
+          headerShown: false,
+          tabBarIcon: ({ focused }) => (
+            <TabIcon
+              name="people"
+              Icon={Ionicons}
+              focused={focused}
+              title="P2P"
             />
           ),
         }}

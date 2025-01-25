@@ -1,3 +1,4 @@
+import FilterModal from "@/components/FilterModal";
 import React, { useState } from "react";
 import {
   View,
@@ -7,7 +8,6 @@ import {
   ScrollView,
   Image,
   FlatList,
-  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -182,7 +182,6 @@ const NewListings = () => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView>
-        {/* Category Filter */}
         <View style={styles.filterContainer}>
           <TouchableOpacity
             style={[
@@ -234,7 +233,6 @@ const NewListings = () => {
           </TouchableOpacity>
         </View>
 
-        {/* Sort Options */}
         <View style={styles.sortContainer}>
           <Text style={styles.sortLabel}>Sort by:</Text>
           <TouchableOpacity
@@ -257,7 +255,7 @@ const NewListings = () => {
           </TouchableOpacity>
         </View>
 
-        {/* New Listings Section */}
+        <FilterModal />
         <Text style={styles.sectionTitle}>New Listings</Text>
         <FlatList
           data={filterTokens()}
@@ -266,7 +264,6 @@ const NewListings = () => {
           scrollEnabled={false}
         />
 
-        {/* Dethrone Section */}
         <Text style={styles.sectionTitle}>Dethrone Kings 👑</Text>
         <FlatList
           data={dethroneTokens}
@@ -314,7 +311,7 @@ const styles = StyleSheet.create({
   sortContainer: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: 18,
   },
   sortLabel: {
     color: "#B8C3BC",
@@ -339,7 +336,7 @@ const styles = StyleSheet.create({
     color: "#B8C3BC",
     fontWeight: "bold",
     marginBottom: 16,
-    marginTop: 8,
+    marginTop: 10,
   },
   tokenCard: {
     backgroundColor: "#1A231E",

@@ -1,3 +1,4 @@
+import FilterModal from "@/components/FilterModal";
 import React, { useState } from "react";
 import {
   View,
@@ -188,7 +189,7 @@ const Explore = () => {
       <Text style={styles.header}>Explore</Text>
 
       {renderFilterButtons()}
-
+      <FilterModal />
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Top Gainers</Text>
         <FlatList
@@ -252,7 +253,7 @@ const styles = StyleSheet.create({
     color: "#E0E0E0",
   },
   section: {
-    marginTop: 20,
+    marginTop: 5,
   },
   sectionTitle: {
     color: "#B8C3BC",
