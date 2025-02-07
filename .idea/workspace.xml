@@ -1,19 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="bd261ebe-dd66-4ee6-a327-cc8e266c1bff" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/app.json" beforeDir="false" afterPath="$PROJECT_DIR$/app.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(root)/(tabs)/explore.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(root)/(tabs)/explore.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(root)/(tabs)/index.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(root)/(tabs)/index.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(root)/(tabs)/newlistings.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(root)/(tabs)/newlistings.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(root)/(tabs)/settings.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(root)/(tabs)/settings.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(root)/(tabs)/trending.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(root)/(tabs)/trending.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(root)/(tabs)/wallet.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(root)/(tabs)/wallet.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/(root)/tokens/[id].tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/(root)/tokens/[id].tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/_layout.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/_layout.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/app/sign-in.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/app/sign-in.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/pnpm-lock.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/pnpm-lock.yaml" afterDir="false" />
-    </list>
+    <list default="true" id="bd261ebe-dd66-4ee6-a327-cc8e266c1bff" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -22,24 +10,24 @@
   <component name="Git.Settings">
     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
   </component>
-  <component name="ProjectColorInfo"><![CDATA[{
-  "associatedIndex": 6
-}]]></component>
+  <component name="ProjectColorInfo">{
+  &quot;associatedIndex&quot;: 6
+}</component>
   <component name="ProjectId" id="2r4YoKQMEwliHJ0HpAWD2jJo4L9" />
   <component name="ProjectViewState">
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "master",
-    "nodejs_package_manager_path": "npm",
-    "ts.external.directory.path": "/Users/odeyalexander/Desktop/Jobs/apps/mayani/node_modules/typescript/lib",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;master&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;ts.external.directory.path&quot;: &quot;/Users/odeyalexander/Desktop/Jobs/apps/mayani/node_modules/typescript/lib&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
@@ -56,6 +44,7 @@
       <option name="presentableId" value="Default" />
       <updated>1735819987298</updated>
       <workItem from="1735819988437" duration="115000" />
+      <workItem from="1738538085006" duration="51000" />
     </task>
     <servers />
   </component>
