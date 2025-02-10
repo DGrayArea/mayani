@@ -1,5 +1,17 @@
 import FilterModal from "@/components/FilterModal";
-import React, { useState } from "react";
+import { LoadingIndicator } from "@/components/LoadingIndicator";
+import { useRefreshByUser } from "@/hooks/useRefreshByUser";
+import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
+import { formatNumber, formatPrice } from "@/utils/numbers";
+import {
+  CGToken,
+  fetchTrending,
+  JupiterToken,
+  MoralisToken,
+  Trendingtoken,
+} from "@/utils/query";
+import { useQuery } from "@tanstack/react-query";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -12,7 +24,48 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 const Explore = () => {
   const [selectedFilter, setSelectedFilter] = useState("all");
+  const [tokenInfoMap, setTokenInfoMap] = useState<
+    Record<string, JupiterToken | MoralisToken | undefined>
+  >({});
 
+  const { isPending, error, data, refetch } = useQuery<CGToken[] | null>({
+    queryKey: ["trending"],
+    queryFn: fetchTrending,
+  });
+  const { isRefetchingByUser, refetchByUser } = useRefreshByUser(refetch);
+  useRefreshOnFocus(refetch);
+  // useEffect(() => {
+  //   if (data) {
+  //     const fetchAllTokenInfo = async () => {
+  //       const newTokenInfoMap: Record<string, JupiterToken | MoralisToken | undefined> = {};
+
+  //       for (const item of data) {
+  //         const tokenAddress = item.attributes.base_token_address;
+  //         if (tokenAddress && !tokenInfoMap[tokenAddress]) {
+  //           const tokenInfo = await fetchTokenInfo(tokenAddress);
+  //           newTokenInfoMap[tokenAddress] = tokenInfo;
+
+  //           // Rate limiting: Add a delay of 100ms between requests
+  //           await new Promise((resolve) => setTimeout(resolve, 100));
+  //         }
+  //       }
+
+  //       setTokenInfoMap((prev) => ({ ...prev, ...newTokenInfoMap }));
+  //     };
+
+  //     fetchAllTokenInfo()}}, [])
+  //   <FlatList
+  //   data={data}
+  //   renderItem={renderItem}
+  //   keyExtractor={(item) => item.title}
+  //   ItemSeparatorComponent={() => <Divider />}
+  //   refreshControl={
+  //     <RefreshControl
+  //       refreshing={isRefetchingByUser}
+  //       onRefresh={refetchByUser}
+  //     />
+  //   }
+  // ></FlatList>
   const topGainers = [
     {
       id: "1",
@@ -163,27 +216,34 @@ const Explore = () => {
     </View>
   );
 
-  const renderTrendingItem = ({ item }) => (
+  const renderTrendingItem = ({ item }: { item: CGToken }) => (
     <View style={styles.trendingItem}>
-      <Image source={{ uri: item.avatar }} style={styles.avatar} />
+      <Image source={{ uri: "/api/placeholder/40/40" }} style={styles.avatar} />
       <View style={styles.trendingInfo}>
-        <Text style={styles.trendingName}>{item.name}</Text>
-        <Text style={styles.marketCap}>{item.marketCap}</Text>
+        <Text style={styles.trendingName}>{"item.name"}</Text>
+        <Text style={styles.marketCap}>
+          {formatNumber(Number(item.attributes.market_cap_usd))} MKT CAP
+        </Text>
       </View>
       <View style={styles.trendingPriceInfo}>
-        <Text style={styles.trendingPrice}>{item.price}</Text>
+        <Text style={styles.trendingPrice}>
+          ${formatPrice(Number(item.attributes.base_token_price_usd))}
+        </Text>
         <Text
           style={[
             styles.trendingChange,
-            item.change.includes("-") ? styles.negative : styles.positive,
+            item.attributes.price_change_percentage.m5.includes("-")
+              ? styles.negative
+              : styles.positive,
           ]}
         >
-          {item.change}
+          {item.attributes.price_change_percentage.m5}%
         </Text>
       </View>
     </View>
   );
-
+  if (isPending) return <LoadingIndicator />;
+  console.log(data);
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.header}>Explore</Text>
@@ -204,7 +264,7 @@ const Explore = () => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Trending</Text>
         <FlatList
-          data={filteredTrending}
+          data={data}
           renderItem={renderTrendingItem}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}

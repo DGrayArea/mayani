@@ -24,6 +24,7 @@ export const config = {
     process.env.EXPO_PUBLIC_APPWRITE_PROPERTIES_COLLECTION_ID,
   bucketId: process.env.EXPO_PUBLIC_APPWRITE_BUCKET_ID,
   infuraId: process.env.EXPO_PUBLIC_INFURA_ID,
+  moralisKey: process.env.EXPO_PUBLIC_MORALIS_KEY,
 };
 
 export const client = new Client();
