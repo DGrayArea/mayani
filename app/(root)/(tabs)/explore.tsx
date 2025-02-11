@@ -5,6 +5,7 @@ import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { formatNumber, formatPrice } from "@/utils/numbers";
 import {
   CGToken,
+  fetchTokenInfo,
   fetchTrending,
   JupiterToken,
   MoralisToken,
@@ -34,26 +35,42 @@ const Explore = () => {
   });
   const { isRefetchingByUser, refetchByUser } = useRefreshByUser(refetch);
   useRefreshOnFocus(refetch);
-  // useEffect(() => {
-  //   if (data) {
-  //     const fetchAllTokenInfo = async () => {
-  //       const newTokenInfoMap: Record<string, JupiterToken | MoralisToken | undefined> = {};
+  useEffect(() => {
+    if (data) {
+      const fetchAllTokenInfo = async () => {
+        const newTokenInfoMap: Record<
+          string,
+          JupiterToken | MoralisToken | undefined
+        > = {};
+        const toFetch = data.slice(0, 5);
+        for (const item of data) {
+          const tokenAddress = item.attributes.address;
+          if (tokenAddress && !tokenInfoMap[tokenAddress]) {
+            // const tokenInfo = await fetchTokenInfo(
+            //   tokenAddress,
+            //   item.relationships.network.data.id === "solana"
+            //     ? "solana"
+            //     : item.relationships.network.data.id === "eth"
+            //     ? "eth"
+            //     : "solana"
+            // );
+            if (item.relationships.network.data.id === "solana") {
+              const tokenInfo = await fetchTokenInfo(tokenAddress, "solana");
+              newTokenInfoMap[tokenAddress] = tokenInfo;
+              console.log(tokenInfo);
+              // Rate limiting: Add a delay of 100ms between requests
+              await new Promise((resolve) => setTimeout(resolve, 100));
+            }
+          }
+        }
 
-  //       for (const item of data) {
-  //         const tokenAddress = item.attributes.base_token_address;
-  //         if (tokenAddress && !tokenInfoMap[tokenAddress]) {
-  //           const tokenInfo = await fetchTokenInfo(tokenAddress);
-  //           newTokenInfoMap[tokenAddress] = tokenInfo;
+        setTokenInfoMap((prev) => ({ ...prev, ...newTokenInfoMap }));
+      };
 
-  //           // Rate limiting: Add a delay of 100ms between requests
-  //           await new Promise((resolve) => setTimeout(resolve, 100));
-  //         }
-  //       }
-
-  //       setTokenInfoMap((prev) => ({ ...prev, ...newTokenInfoMap }));
-  //     };
-
-  //     fetchAllTokenInfo()}}, [])
+      fetchAllTokenInfo();
+    }
+  }, []);
+  // console.log(tokenInfoMap);
   //   <FlatList
   //   data={data}
   //   renderItem={renderItem}
@@ -243,7 +260,7 @@ const Explore = () => {
     </View>
   );
   if (isPending) return <LoadingIndicator />;
-  console.log(data);
+
   return (
     <SafeAreaView style={styles.container}>
       <Text style={styles.header}>Explore</Text>
