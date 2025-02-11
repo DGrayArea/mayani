@@ -1,5 +1,4 @@
 import { QueryClient } from "@tanstack/react-query";
-import movies from "@/assets/movies.json";
 import axios from "axios";
 import { config } from "@/lib/appwrite";
 
@@ -95,6 +94,59 @@ const moralisToken = {
   },
   description: null,
 };
+const moralisToken2 = [
+  {
+    chain_id: "0x1",
+    token_address: "0x9f8f72aa9304c8b593d555f12ef6589cc3a579a2",
+    token_name: "Maker",
+    token_symbol: "MKR",
+    token_logo: "string",
+    price_usd: 1,
+    token_age_in_days: 1,
+    on_chain_strength_index: 1,
+    security_score: 88,
+    market_cap: 1351767630.85,
+    fully_diluted_valuation: 1363915420.28,
+    twitter_followers: 255217,
+    holders_change: {
+      "1h": 14,
+      "1d": 14,
+      "1w": 162,
+      "1M": 162,
+    },
+    liquidity_change_usd: {
+      "1h": 14,
+      "1d": 14,
+      "1w": 162,
+      "1M": 162,
+    },
+    experienced_net_buyers_change: {
+      "1h": 14,
+      "1d": 14,
+      "1w": 162,
+      "1M": 162,
+    },
+    volume_change_usd: {
+      "1h": 14,
+      "1d": 14,
+      "1w": 162,
+      "1M": 162,
+    },
+    net_volume_change_usd: {
+      "1h": 14,
+      "1d": 14,
+      "1w": 162,
+      "1M": 162,
+    },
+    price_percent_change_usd: {
+      "1h": 14,
+      "1d": 14,
+      "1w": 162,
+      "1M": 162,
+    },
+  },
+];
+export type MoralisToken2 = typeof moralisToken2;
 export type JupiterToken = {
   type: "moralis" | "jupiter";
   data: typeof JupToken;
@@ -121,7 +173,7 @@ export type CGToken = {
     transactions: {};
     volume_usd: {};
   };
-  relationships: {};
+  relationships: any;
 };
 export type MoralisToken = {
   type: "moralis" | "jupiter";
@@ -244,32 +296,15 @@ export async function fetchSolScanMetadata(
 }
 
 export async function fetchTokenInfo(
-  tokenAddress: string
+  tokenAddress: string,
+  chain: "solana" | "eth"
 ): Promise<JupiterToken | MoralisToken | undefined> {
-  try {
-    const response = await axios.get(
-      `https://solana-gateway.moralis.io/token/mainnet/${tokenAddress}/metadata`,
-      {
-        headers: {
-          accept: "application/json",
-          "X-API-Key": config.moralisKey,
-        },
-      }
-    );
-
-    return { type: "moralis", data: response.data };
-  } catch (error) {
-    console.log(error);
-    try {
-      const response = await axios.get(
-        `https://api.jup.ag/tokens/v1/token/${tokenAddress}'`
-      );
-
-      return { type: "jupiter", data: response.data };
-    } catch (error) {
-      console.log(error);
-      return undefined;
-    }
+  if (chain === "sol") {
+    const res = await getSolTokenInfo(tokenAddress);
+    return res as any;
+  } else {
+    const res = await getEthTokenInfo(tokenAddress);
+    return res as any;
   }
 }
 
@@ -298,3 +333,84 @@ export async function fetchTaggedTokens(
     return undefined;
   }
 }
+
+export const getSolTokenInfo = async (address: string) => {
+  try {
+    const response = await axios.get(
+      `https://solana-gateway.moralis.io/token/mainnet/${address}/metadata`,
+      {
+        headers: {
+          accept: "application/json",
+          "X-API-Key": config.moralisKey,
+        },
+      }
+    );
+
+    return { type: "moralis" as const, data: response.data };
+  } catch (error) {
+    try {
+      const response = await axios.get(
+        `https://api.jup.ag/tokens/v1/token/${address}'`
+      );
+      return { type: "jupiter" as const, data: response.data };
+    } catch (error) {
+      console.log(error);
+      return undefined;
+    }
+  }
+};
+
+export const getEthTokenInfo = async (address: string) => {
+  try {
+    const response = await axios.get(
+      `https://deep-index.moralis.io/api/v2.2/discovery/token?chain=eth&token_address=${address}`,
+      {
+        headers: {
+          accept: "application/json",
+          "X-API-Key": config.moralisKey,
+        },
+      }
+    );
+
+    return { type: "moralis", data: response.data };
+  } catch (error) {
+    console.log(error);
+    return undefined;
+    // try {
+    //   const response = await axios.get(
+    //     `https://api.jup.ag/tokens/v1/token/${address}'`
+    //   );
+
+    //   return { type: "jupiter", data: response.data };
+    // } catch (error) {
+    //   console.log(error);
+    //   return undefined;
+    // }
+  }
+};
+
+export const getMultipleEthTokenInfo = async (
+  tokensArray: { token_address: string }[]
+) => {
+  const headers = {
+    accept: "application/json",
+    "X-API-Key": config.moralisKey,
+    "content-type": "application/json",
+  };
+
+  const data = {
+    tokens: [
+      ...tokensArray,
+      // { token_address: "0xdac17f958d2ee523a2206206994597c13d831ec7" },
+      // { token_address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48" },
+      // { token_address: "0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0" }
+    ],
+  };
+
+  const response = await axios.post(
+    `https://deep-index.moralis.io/api/v2.2/erc20/prices?chain=eth&include=percent_change`,
+    data,
+    { headers }
+  );
+  return response.data;
+};
