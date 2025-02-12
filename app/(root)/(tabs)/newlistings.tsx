@@ -8,13 +8,28 @@ import {
   ScrollView,
   Image,
   FlatList,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { LoadingIndicator } from "@/components/LoadingIndicator";
+import SkeletonLoader from "@/components/SkeletonLoader";
+import { useRefreshByUser } from "@/hooks/useRefreshByUser";
+import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
+import { useQuery } from "@tanstack/react-query";
+import { fetchPumpShots, JupiterToken } from "@/utils/query";
 
 const NewListings = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
+  const [isTokenInfoLoading, setIsTokenInfoLoading] = useState(true);
 
+  const { isPending, error, data, refetch } = useQuery<JupiterToken[]>({
+    queryKey: ["newListings"],
+    queryFn: fetchPumpShots,
+  });
+  const { isRefetchingByUser, refetchByUser } = useRefreshByUser(refetch);
+  useRefreshOnFocus(refetch);
+  console.log(data);
   // Sample data for new listings
   const tokens = [
     {

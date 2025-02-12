@@ -1,18 +1,20 @@
 import FilterModal from "@/components/FilterModal";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
+import SkeletonLoader from "@/components/SkeletonLoader";
 import { useRefreshByUser } from "@/hooks/useRefreshByUser";
 import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { formatNumber, formatPrice } from "@/utils/numbers";
 import {
   CGToken,
-  fetchTokenInfo,
   fetchTrending,
+  getMultipleEthTokenInfo,
+  getSolTokenInfo,
   JupiterToken,
   MoralisToken,
-  Trendingtoken,
 } from "@/utils/query";
 import { useQuery } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
+import { useMemo } from "react";
 import {
   View,
   Text,
@@ -20,21 +22,27 @@ import {
   FlatList,
   Image,
   TouchableOpacity,
+  RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { Link } from "expo-router";
 
 const Explore = () => {
   const [selectedFilter, setSelectedFilter] = useState("all");
   const [tokenInfoMap, setTokenInfoMap] = useState<
     Record<string, JupiterToken | MoralisToken | undefined>
   >({});
+  const [isTokenInfoLoading, setIsTokenInfoLoading] = useState(true);
 
-  const { isPending, error, data, refetch } = useQuery<CGToken[] | null>({
+  const { isPending, error, data, refetch } = useQuery<
+    { eth: CGToken[]; sol: CGToken[] } | undefined
+  >({
     queryKey: ["trending"],
     queryFn: fetchTrending,
   });
   const { isRefetchingByUser, refetchByUser } = useRefreshByUser(refetch);
   useRefreshOnFocus(refetch);
+
   useEffect(() => {
     if (data) {
       const fetchAllTokenInfo = async () => {
@@ -42,133 +50,98 @@ const Explore = () => {
           string,
           JupiterToken | MoralisToken | undefined
         > = {};
-        const toFetch = data.slice(0, 5);
-        for (const item of data) {
-          const tokenAddress = item.attributes.address;
+
+        for (const item of data.sol) {
+          const tokenAddress = item.relationships.base_token.data.id.startsWith(
+            "solana_"
+          )
+            ? item.relationships.base_token.data.id.slice(7)
+            : item.relationships.base_token.data.id;
           if (tokenAddress && !tokenInfoMap[tokenAddress]) {
-            // const tokenInfo = await fetchTokenInfo(
-            //   tokenAddress,
-            //   item.relationships.network.data.id === "solana"
-            //     ? "solana"
-            //     : item.relationships.network.data.id === "eth"
-            //     ? "eth"
-            //     : "solana"
-            // );
-            if (item.relationships.network.data.id === "solana") {
-              const tokenInfo = await fetchTokenInfo(tokenAddress, "solana");
-              newTokenInfoMap[tokenAddress] = tokenInfo;
-              console.log(tokenInfo);
-              // Rate limiting: Add a delay of 100ms between requests
-              await new Promise((resolve) => setTimeout(resolve, 100));
-            }
+            const tokenInfo = await getSolTokenInfo(tokenAddress);
+            newTokenInfoMap[tokenAddress] = tokenInfo;
+            await new Promise((resolve) => setTimeout(resolve, 100));
           }
         }
+        const ethTokenAddresses = data.eth.map((item) =>
+          item.relationships.base_token.data.id.startsWith("eth_")
+            ? item.relationships.base_token.data.id.slice(4)
+            : item.relationships.base_token.data.id
+        );
 
-        setTokenInfoMap((prev) => ({ ...prev, ...newTokenInfoMap }));
+        if (ethTokenAddresses.length > 0) {
+          const ethTokenInfoArray = await getMultipleEthTokenInfo(
+            ethTokenAddresses.map((tokenAddress) => ({
+              token_address: tokenAddress,
+            }))
+          );
+
+          ethTokenInfoArray.forEach((tokenInfo, index) => {
+            const tokenAddress = ethTokenAddresses[index];
+            newTokenInfoMap[tokenAddress] = tokenInfo;
+          });
+        }
+
+        setTokenInfoMap(newTokenInfoMap);
+        setIsTokenInfoLoading(false);
       };
 
       fetchAllTokenInfo();
     }
-  }, []);
-  // console.log(tokenInfoMap);
-  //   <FlatList
-  //   data={data}
-  //   renderItem={renderItem}
-  //   keyExtractor={(item) => item.title}
-  //   ItemSeparatorComponent={() => <Divider />}
-  //   refreshControl={
-  //     <RefreshControl
-  //       refreshing={isRefetchingByUser}
-  //       onRefresh={refetchByUser}
-  //     />
-  //   }
-  // ></FlatList>
-  const topGainers = [
-    {
-      id: "1",
-      name: "MIRA",
-      percentage: "317K%",
-      avatar: "/api/placeholder/40/40",
-      type: "other",
-    },
-    {
-      id: "2",
-      name: "RM9000",
-      percentage: "67.4%",
-      avatar: "/api/placeholder/40/40",
-      type: "other",
-    },
-    {
-      id: "3",
-      name: "SOL",
-      percentage: "12.4%",
-      avatar: "/api/placeholder/40/40",
-      type: "sol",
-    },
-    {
-      id: "4",
-      name: "ETH",
-      percentage: "8.2%",
-      avatar: "/api/placeholder/40/40",
-      type: "eth",
-    },
-  ];
+  }, [data]);
 
-  const trending = [
-    {
-      id: "1",
-      name: "MIRA",
-      price: "$0.0177",
-      marketCap: "$17.7M MKT CAP",
-      change: "317K%",
-      avatar: "/api/placeholder/40/40",
-      type: "other",
-    },
-    {
-      id: "2",
-      name: "PENGU",
-      price: "$0.0378",
-      marketCap: "$3.4B MKT CAP",
-      change: "2.93%",
-      avatar: "/api/placeholder/40/40",
-      type: "other",
-    },
-    {
-      id: "3",
-      name: "SOL",
-      price: "$123.45",
-      marketCap: "$52.8B MKT CAP",
-      change: "5.67%",
-      avatar: "/api/placeholder/40/40",
-      type: "sol",
-    },
-    {
-      id: "4",
-      name: "ETH",
-      price: "$3,245.90",
-      marketCap: "$389.2B MKT CAP",
-      change: "-2.28%",
-      avatar: "/api/placeholder/40/40",
-      type: "eth",
-    },
-    {
-      id: "5",
-      name: "Fartcoin",
-      price: "$0.903",
-      marketCap: "$903M MKT CAP",
-      change: "-24.28%",
-      avatar: "/api/placeholder/40/40",
-      type: "other",
-    },
-  ];
+  const mergedData = useMemo(() => {
+    if (data) {
+      const combinedData = [
+        ...(data?.eth.map((item) => ({
+          ...item,
+          tokenInfo:
+            tokenInfoMap[
+              item.relationships.base_token.data.id.startsWith("eth_")
+                ? item.relationships.base_token.data.id.slice(4)
+                : item.relationships.base_token.data.id
+            ],
+        })) || []),
+        ...(data?.sol.map((item) => ({
+          ...item,
+          tokenInfo:
+            tokenInfoMap[
+              item.relationships.base_token.data.id.startsWith("solana_")
+                ? item.relationships.base_token.data.id.slice(7)
+                : item.relationships.base_token.data.id
+            ],
+        })) || []),
+      ];
 
-  const filteredTopGainers = topGainers.filter(
-    (item) => selectedFilter === "all" || item.type === selectedFilter
-  );
+      const filteredData = combinedData.filter((item) => {
+        if (selectedFilter === "all") return true;
+        if (
+          selectedFilter === "sol" &&
+          item.relationships.base_token.data.id.startsWith("solana_")
+        )
+          return true;
+        if (
+          selectedFilter === "eth" &&
+          item.relationships.base_token.data.id.startsWith("eth_")
+        )
+          return true;
+        return false;
+      });
 
-  const filteredTrending = trending.filter(
-    (item) => selectedFilter === "all" || item.type === selectedFilter
-  );
+      return filteredData.sort(
+        (a, b) =>
+          parseFloat(b.attributes.price_change_percentage.h24) -
+          parseFloat(a.attributes.price_change_percentage.h24)
+      );
+    }
+    return [];
+  }, [data, tokenInfoMap, selectedFilter]);
+
+  const filteredTopGainers = useMemo(() => {
+    return mergedData.filter(
+      (item) => parseFloat(item.attributes.price_change_percentage.h24) > 0
+    );
+  }, [mergedData]);
 
   const renderFilterButtons = () => (
     <View style={styles.filterContainer}>
@@ -223,43 +196,208 @@ const Explore = () => {
     </View>
   );
 
-  const renderTopGainers = ({ item }) => (
-    <View style={styles.gainerCard}>
-      <Image source={{ uri: item.avatar }} style={styles.avatar} />
-      <View style={styles.gainerContent}>
-        <Text style={styles.gainerText}>{item.name}</Text>
-        <Text style={styles.gainerPercentage}>{item.percentage}</Text>
-      </View>
-    </View>
-  );
+  const renderTopGainers = ({ item }) => {
+    const isEth = item.relationships.base_token.data.id.startsWith("eth_");
+    const tokenAddress = item.relationships.base_token.data.id.startsWith(
+      "solana_"
+    )
+      ? item.relationships.base_token.data.id.slice(7)
+      : item.relationships.base_token.data.id.startsWith("eth_")
+      ? item.relationships.base_token.data.id.slice(4)
+      : item.relationships.base_token.data.id;
 
-  const renderTrendingItem = ({ item }: { item: CGToken }) => (
-    <View style={styles.trendingItem}>
-      <Image source={{ uri: "/api/placeholder/40/40" }} style={styles.avatar} />
-      <View style={styles.trendingInfo}>
-        <Text style={styles.trendingName}>{"item.name"}</Text>
-        <Text style={styles.marketCap}>
-          {formatNumber(Number(item.attributes.market_cap_usd))} MKT CAP
-        </Text>
-      </View>
-      <View style={styles.trendingPriceInfo}>
-        <Text style={styles.trendingPrice}>
-          ${formatPrice(Number(item.attributes.base_token_price_usd))}
-        </Text>
-        <Text
-          style={[
-            styles.trendingChange,
-            item.attributes.price_change_percentage.m5.includes("-")
-              ? styles.negative
-              : styles.positive,
-          ]}
-        >
-          {item.attributes.price_change_percentage.m5}%
-        </Text>
-      </View>
-    </View>
-  );
-  if (isPending) return <LoadingIndicator />;
+    const tokenInfo = tokenInfoMap[tokenAddress];
+    return (
+      <TouchableOpacity style={styles.TouchableGainerCard}>
+        {!isTokenInfoLoading ? (
+          <Link
+            href={{
+              pathname: `/tokens/${tokenAddress}`,
+              params: {
+                token: JSON.stringify(item),
+                tokenInfo: JSON.stringify(tokenInfo),
+              },
+            }}
+          >
+            <View style={styles.gainerCard}>
+              <Image
+                source={{
+                  uri: isEth
+                    ? tokenInfo?.tokenLogo
+                    : tokenInfo?.type === "jupiter"
+                    ? tokenInfo?.logoURI
+                    : tokenInfo?.data.logo || "",
+                }}
+                style={styles.avatar}
+              />
+              <View style={styles.gainerContent}>
+                {isTokenInfoLoading ? (
+                  <SkeletonLoader />
+                ) : (
+                  <Text style={styles.gainerText}>
+                    {isEth ? tokenInfo?.tokenName : tokenInfo?.data.name || ""}
+                  </Text>
+                )}
+                <Text
+                  style={[
+                    styles.trendingChange,
+                    item.attributes.price_change_percentage.h24.includes("-")
+                      ? styles.negative
+                      : styles.positive,
+                  ]}
+                >
+                  {item.attributes.price_change_percentage.h24}%
+                </Text>
+              </View>
+            </View>
+          </Link>
+        ) : (
+          <View style={styles.gainerCard}>
+            <Image
+              source={{
+                uri: isEth
+                  ? tokenInfo?.tokenLogo
+                  : tokenInfo?.type === "jupiter"
+                  ? tokenInfo?.logoURI
+                  : tokenInfo?.data.logo || "",
+              }}
+              style={styles.avatar}
+            />
+            <View style={styles.gainerContent}>
+              {isTokenInfoLoading ? (
+                <SkeletonLoader />
+              ) : (
+                <Text style={styles.gainerText}>
+                  {isEth ? tokenInfo?.tokenName : tokenInfo?.data.name || ""}
+                </Text>
+              )}
+              <Text
+                style={[
+                  styles.trendingChange,
+                  item.attributes.price_change_percentage.h24.includes("-")
+                    ? styles.negative
+                    : styles.positive,
+                ]}
+              >
+                {item.attributes.price_change_percentage.h24}%
+              </Text>
+            </View>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
+  const renderTrendingItem = ({ item }: { item: CGToken }) => {
+    const isEth = item.relationships.base_token.data.id.startsWith("eth_");
+    const tokenAddress = item.relationships.base_token.data.id.startsWith(
+      "solana_"
+    )
+      ? item.relationships.base_token.data.id.slice(7)
+      : item.relationships.base_token.data.id.startsWith("eth_")
+      ? item.relationships.base_token.data.id.slice(4)
+      : item.relationships.base_token.data.id;
+
+    const tokenInfo = tokenInfoMap[tokenAddress];
+
+    return (
+      <TouchableOpacity style={styles.touchableTrendingItem}>
+        {!isTokenInfoLoading ? (
+          <Link
+            href={{
+              pathname: `/tokens/${tokenAddress}`,
+              params: {
+                token: JSON.stringify(item),
+                tokenInfo: JSON.stringify(tokenInfo),
+              },
+            }}
+          >
+            <View style={styles.trendingItem}>
+              <Image
+                source={{
+                  uri: isEth
+                    ? tokenInfo?.tokenLogo
+                    : tokenInfo?.type === "jupiter"
+                    ? tokenInfo?.data.logoURI
+                    : tokenInfo?.data.logo || "",
+                }}
+                style={styles.avatar}
+              />
+              <View style={styles.trendingInfo}>
+                {isTokenInfoLoading ? (
+                  <SkeletonLoader />
+                ) : (
+                  <Text style={styles.trendingName}>
+                    {isEth ? tokenInfo?.tokenName : tokenInfo?.data.name || ""}
+                  </Text>
+                )}
+                <Text style={styles.marketCap}>
+                  ${formatNumber(Number(item.attributes.fdv_usd))} MKT CAP
+                </Text>
+              </View>
+              <View style={styles.trendingPriceInfo}>
+                <Text style={styles.trendingPrice}>
+                  ${formatPrice(Number(item.attributes.base_token_price_usd))}
+                </Text>
+                <Text
+                  style={[
+                    styles.trendingChange,
+                    item.attributes.price_change_percentage.h24.includes("-")
+                      ? styles.negative
+                      : styles.positive,
+                  ]}
+                >
+                  {item.attributes.price_change_percentage.h24}%
+                </Text>
+              </View>
+            </View>
+          </Link>
+        ) : (
+          <View style={styles.trendingItem}>
+            <Image
+              source={{
+                uri: isEth
+                  ? tokenInfo?.tokenLogo
+                  : tokenInfo?.type === "jupiter"
+                  ? tokenInfo?.data.logoURI
+                  : tokenInfo?.data.logo || "",
+              }}
+              style={styles.avatar}
+            />
+            <View style={styles.trendingInfo}>
+              {isTokenInfoLoading ? (
+                <SkeletonLoader />
+              ) : (
+                <Text style={styles.trendingName}>
+                  {isEth ? tokenInfo?.tokenName : tokenInfo?.data.name || ""}
+                </Text>
+              )}
+              <Text style={styles.marketCap}>
+                ${formatNumber(Number(item.attributes.fdv_usd))} MKT CAP
+              </Text>
+            </View>
+            <View style={styles.trendingPriceInfo}>
+              <Text style={styles.trendingPrice}>
+                ${formatPrice(Number(item.attributes.base_token_price_usd))}
+              </Text>
+              <Text
+                style={[
+                  styles.trendingChange,
+                  item.attributes.price_change_percentage.h24.includes("-")
+                    ? styles.negative
+                    : styles.positive,
+                ]}
+              >
+                {item.attributes.price_change_percentage.h24}%
+              </Text>
+            </View>
+          </View>
+        )}
+      </TouchableOpacity>
+    );
+  };
+
+  if (isPending || isRefetchingByUser) return <LoadingIndicator />;
 
   return (
     <SafeAreaView style={styles.container}>
@@ -281,10 +419,17 @@ const Explore = () => {
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>Trending</Text>
         <FlatList
-          data={data}
+          data={mergedData}
           renderItem={renderTrendingItem}
           keyExtractor={(item) => item.id}
           showsVerticalScrollIndicator={false}
+          contentContainerStyle={{ paddingBottom: 40 }}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetchingByUser}
+              onRefresh={refetchByUser}
+            />
+          }
         />
       </View>
     </SafeAreaView>
@@ -296,7 +441,7 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#0A0F0D",
     paddingHorizontal: 20,
-    // paddingTop: 20,
+    paddingBottom: 40, // Add padding to the bottom
   },
   header: {
     color: "#E0E0E0",
@@ -340,6 +485,17 @@ const styles = StyleSheet.create({
   },
   gainerCard: {
     backgroundColor: "#1A231E",
+    // borderRadius: 15,
+    // padding: 15,
+    // marginRight: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    // borderWidth: 1,
+    // borderColor: "#2A3F33",
+    minWidth: 160,
+  },
+  TouchableGainerCard: {
+    backgroundColor: "#1A231E",
     borderRadius: 15,
     padding: 15,
     marginRight: 12,
@@ -347,7 +503,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 1,
     borderColor: "#2A3F33",
-    minWidth: 160,
+    minWidth: 180,
   },
   gainerContent: {
     flex: 1,
@@ -371,6 +527,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
   trendingItem: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#1A231E",
+    // borderRadius: 15,
+    // padding: 15,
+    // marginBottom: 12,
+    // borderWidth: 1,
+    // borderColor: "#2A3F33",
+  },
+  touchableTrendingItem: {
     flexDirection: "row",
     alignItems: "center",
     backgroundColor: "#1A231E",

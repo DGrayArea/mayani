@@ -12,8 +12,6 @@ import {
   Platform,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import Constants from "expo-constants";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 const Home = () => {
   const fadeAnim = new Animated.Value(0);

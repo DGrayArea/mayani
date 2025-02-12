@@ -47,6 +47,7 @@ const TabsLayout = () => {
           borderTopWidth: 1,
           minHeight: 70,
         },
+        headerShown: false,
       }}
     >
       <Tabs.Screen

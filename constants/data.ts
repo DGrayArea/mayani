@@ -163,3 +163,84 @@ export const gallery = [
     image: images.japan,
   },
 ];
+export const topGainers = [
+  {
+    id: "1",
+    name: "MIRA",
+    percentage: "317K%",
+    avatar: "/api/placeholder/40/40",
+    type: "other",
+  },
+  {
+    id: "2",
+    name: "RM9000",
+    percentage: "67.4%",
+    avatar: "/api/placeholder/40/40",
+    type: "other",
+  },
+  {
+    id: "3",
+    name: "SOL",
+    percentage: "12.4%",
+    avatar: "/api/placeholder/40/40",
+    type: "sol",
+  },
+  {
+    id: "4",
+    name: "ETH",
+    percentage: "8.2%",
+    avatar: "/api/placeholder/40/40",
+    type: "eth",
+  },
+];
+
+export const trending = [
+  {
+    id: "1",
+    name: "MIRA",
+    price: "$0.0177",
+    marketCap: "$17.7M MKT CAP",
+    change: "317K%",
+    avatar: "/api/placeholder/40/40",
+    type: "other",
+  },
+  {
+    id: "2",
+    name: "PENGU",
+    price: "$0.0378",
+    marketCap: "$3.4B MKT CAP",
+    change: "2.93%",
+    avatar: "/api/placeholder/40/40",
+    type: "other",
+  },
+  {
+    id: "3",
+    name: "SOL",
+    price: "$123.45",
+    marketCap: "$52.8B MKT CAP",
+    change: "5.67%",
+    avatar: "/api/placeholder/40/40",
+    type: "sol",
+  },
+  {
+    id: "4",
+    name: "ETH",
+    price: "$3,245.90",
+    marketCap: "$389.2B MKT CAP",
+    change: "-2.28%",
+    avatar: "/api/placeholder/40/40",
+    type: "eth",
+  },
+  {
+    id: "5",
+    name: "Fartcoin",
+    price: "$0.903",
+    marketCap: "$903M MKT CAP",
+    change: "-24.28%",
+    avatar: "/api/placeholder/40/40",
+    type: "other",
+  },
+];
+
+export const QUESTION_MARK_URI =
+  "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Question_Mark.svg/1200px-Question_Mark.svg.png";

@@ -64,3 +64,12 @@ export const formatPrice = (price: number | string) => {
 
   return formattedIntegerPart + decimalPart;
 };
+
+export const getAcronym = (name: string) => {
+  const words = name.split(" ");
+  let acronym = words.map((word) => word[0]).join("");
+  if (acronym.length > 5) {
+    acronym = acronym.slice(0, 5);
+  }
+  return acronym;
+};

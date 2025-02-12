@@ -179,13 +179,6 @@ export type MoralisToken = {
   type: "moralis" | "jupiter";
   data: typeof moralisToken;
 };
-interface SolscanToken {
-  address: string;
-  decimal: number;
-  name: string;
-  symbol: string;
-}
-type SolscanTrending = SolscanToken[];
 
 function delay(t: number) {
   return new Promise(function (resolve) {
@@ -203,17 +196,15 @@ export const queryClient = new QueryClient({
   },
 });
 
-export async function fetchTrending(): Promise<CGToken[] | null> {
+export async function fetchTrending(): Promise<any | null> {
   try {
     // Latest Boosted
-    const response = await axios.get(
-      `https://api.geckoterminal.com/api/v2/networks/trending_pools?page=10`
-    );
-
-    return response.data.data;
+    const responseEth = await fetchTrendingOnNetwork("eth");
+    const responseSol = await fetchTrendingOnNetwork("solana");
+    return { eth: responseEth, sol: responseSol };
   } catch (error) {
     console.log(error);
-    return [];
+    return { eth: [], sol: [] };
   }
 }
 
@@ -278,39 +269,19 @@ export async function fetchNewPools(): Promise<CGToken[] | null> {
   }
 }
 
-export async function fetchSolScanMetadata(
-  address: string
-): Promise<SolscanTrending | null> {
-  try {
-    // Latest Boosted
-    const response = await axios.get(
-      `https://pro-api.solscan.io/v2.0/token/meta`,
-      { params: { address: `${address}` } }
-    );
-
-    return response.data;
-  } catch (error) {
-    console.log(error);
-    return [];
-  }
-}
-
 export async function fetchTokenInfo(
   tokenAddress: string,
   chain: "solana" | "eth"
 ): Promise<JupiterToken | MoralisToken | undefined> {
-  if (chain === "sol") {
-    const res = await getSolTokenInfo(tokenAddress);
-    return res as any;
-  } else {
-    const res = await getEthTokenInfo(tokenAddress);
-    return res as any;
-  }
+  const res = await getSolTokenInfo(tokenAddress);
+  return res as any;
 }
 
 export async function fetchNewTokens(): Promise<JupiterNewListing | undefined> {
   try {
-    const response = await axios.get(`https://api.jup.ag/tokens/v1/new'`);
+    const response = await axios.get(`https://api.jup.ag/tokens/v1/new'`, {
+      params: { limit: 20 },
+    });
 
     return response.data;
   } catch (error) {
@@ -324,7 +295,8 @@ export async function fetchTaggedTokens(
 ): Promise<JupiterNewListing | undefined> {
   try {
     const response = await axios.get(
-      `https://api.jup.ag/tokens/v1/tagged/${tag}`
+      `https://api.jup.ag/tokens/v1/tagged/${tag}`,
+      { params: { limit: 20 } }
     );
 
     return response.data;
@@ -334,36 +306,46 @@ export async function fetchTaggedTokens(
   }
 }
 
-export const getSolTokenInfo = async (address: string) => {
+export const getSolTokenInfo = async (
+  address: string
+): Promise<JupiterToken | MoralisToken | undefined> => {
   try {
     const response = await axios.get(
-      `https://solana-gateway.moralis.io/token/mainnet/${address}/metadata`,
-      {
-        headers: {
-          accept: "application/json",
-          "X-API-Key": config.moralisKey,
-        },
-      }
+      `https://api.jup.ag/tokens/v1/token/${address}`
     );
-
-    return { type: "moralis" as const, data: response.data };
+    return { type: "jupiter" as const, data: response.data };
   } catch (error) {
+    console.error("Error fetching Sol token info from Jupiter:", error);
     try {
       const response = await axios.get(
-        `https://api.jup.ag/tokens/v1/token/${address}'`
+        `https://solana-gateway.moralis.io/token/mainnet/${address}/metadata`,
+        {
+          headers: {
+            accept: "application/json",
+            "X-API-Key": config.moralisKey,
+          },
+        }
       );
-      return { type: "jupiter" as const, data: response.data };
+
+      return { type: "moralis" as const, data: response.data };
     } catch (error) {
-      console.log(error);
+      console.error("Error fetching Sol token info from Moralis:", error);
       return undefined;
     }
   }
 };
 
-export const getEthTokenInfo = async (address: string) => {
+export const getMultipleEthTokenInfo = async (
+  tokensArray: { tokenAddress: string }[]
+) => {
   try {
-    const response = await axios.get(
-      `https://deep-index.moralis.io/api/v2.2/discovery/token?chain=eth&token_address=${address}`,
+    const data = {
+      tokens: [...tokensArray],
+    };
+
+    const response = await axios.post(
+      `https://deep-index.moralis.io/api/v2.2/erc20/prices?chain=eth&include=percent_change`,
+      data,
       {
         headers: {
           accept: "application/json",
@@ -371,46 +353,22 @@ export const getEthTokenInfo = async (address: string) => {
         },
       }
     );
-
-    return { type: "moralis", data: response.data };
+    return response.data;
   } catch (error) {
     console.log(error);
     return undefined;
-    // try {
-    //   const response = await axios.get(
-    //     `https://api.jup.ag/tokens/v1/token/${address}'`
-    //   );
-
-    //   return { type: "jupiter", data: response.data };
-    // } catch (error) {
-    //   console.log(error);
-    //   return undefined;
-    // }
   }
 };
 
-export const getMultipleEthTokenInfo = async (
-  tokensArray: { token_address: string }[]
-) => {
-  const headers = {
-    accept: "application/json",
-    "X-API-Key": config.moralisKey,
-    "content-type": "application/json",
-  };
+export const fetchPumpShots = async (): Promise<any> => {
+  try {
+    const response = await axios.get(
+      `https://api.jup.ag/tokens/v1/tagged/pump,moonshot?limit=20&offset=20`
+    );
 
-  const data = {
-    tokens: [
-      ...tokensArray,
-      // { token_address: "0xdac17f958d2ee523a2206206994597c13d831ec7" },
-      // { token_address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48" },
-      // { token_address: "0x7d1afa7b718fb893db30a3abc0cfc608aacfebb0" }
-    ],
-  };
-
-  const response = await axios.post(
-    `https://deep-index.moralis.io/api/v2.2/erc20/prices?chain=eth&include=percent_change`,
-    data,
-    { headers }
-  );
-  return response.data;
+    return response.data;
+  } catch (error) {
+    console.log(error);
+    return undefined;
+  }
 };
