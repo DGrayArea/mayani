@@ -1,6 +1,7 @@
 # Changes to make
 - [x] Implement trending fetcher
 - [x] Use trending fether
-- [ ] Create and use function to get token and price data fro each trending item
-- [ ] Create dynamic token page s with price data and chart
+- [X] Create and use function to get token and price data fro each trending item
+- [x] Create dynamic token page s with price data and chart
 - [ ] Make filters work
+- [ ] Find wway to get new pumpfun listings / moonshot
