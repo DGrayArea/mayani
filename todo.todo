@@ -1,8 +1,23 @@
 # Changes to make
 - [x] Implement trending fetcher
 - [x] Use trending fether
-- [X] Create and use function to get token and price data fro each trending item
+- [X] Create and use function to get token and price data fro each 
+
+# Trending item
 - [x] Create dynamic token page s with price data and chart
+- [X] Find wway to get new pumpfun listings / moonshot
+= [X] Add cleck google auth
 - [ ] Make filters work
-- [ ] Find wway to get new pumpfun listings / moonshot
-= [ ] Add cleck google auth
+
+# Token info
+- [ ] Get individual token PNL changes
+- [ ] Get individual token prices
+- [ ] Get individual token mCaps
+- [ ] Get individual token volume
+- [ ] Get individual token holders
+- [ ] Get individual token charts
+- [ ] Get all token info for newly listed pumpfun and moonshot tokens
+- [ ] Get dethronekings info
+
+# Settings
+- [ ] Fix signout and user info
