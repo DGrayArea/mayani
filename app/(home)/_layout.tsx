@@ -22,23 +22,21 @@ export default function AppLayout() {
   return (
     <>
       {Platform.OS === "android" ? (
-        <SafeAreaView style={styles.safeArea} edges={["top"]}>
-          <Stack
-            screenOptions={{
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            animation: "slide_from_right",
+          }}
+        >
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen
+            name="tokens"
+            options={{
               headerShown: false,
-              animation: "slide_from_right",
+              presentation: "card",
             }}
-          >
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen
-              name="tokens"
-              options={{
-                headerShown: false,
-                presentation: "card",
-              }}
-            />
-          </Stack>
-        </SafeAreaView>
+          />
+        </Stack>
       ) : (
         <Stack
           screenOptions={{
@@ -59,13 +57,3 @@ export default function AppLayout() {
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#0A0F0D", // Match your gradient start color
-    marginTop: 0,
-    marginBottom: 0,
-  },
-  // ...rest of your styles
-});

@@ -4,20 +4,20 @@
     "slug": "mayani",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/renner.jpeg",
+    "icon": "./assets/icon.png",
     "scheme": "mayani",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.graysonwi.mayani",
+      "bundleIdentifier": "com.grayson.mayani",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/renner.jpeg",
+        "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
       "package": "com.grayson.mayani"
@@ -25,7 +25,7 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/renner.jpeg"
+      "favicon": "./assets/icon.png"
     },
     "plugins": [
       "expo-router",
