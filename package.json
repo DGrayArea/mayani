@@ -9,7 +9,10 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "test": "jest --watchAll",
-    "lint": "expo lint"
+    "lint": "expo lint",
+    "build:clean": "expo prebuild --clean",
+    "build:check": "expo doctor",
+    "build:preview": "expo preview"
   },
   "jest": {
     "preset": "jest-expo"

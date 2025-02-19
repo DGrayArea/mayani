@@ -101,7 +101,7 @@ const SendModal = ({ visible, onClose }: any) => {
       }
 
       onClose();
-    } catch (error) {
+    } catch (error: any) {
       Alert.alert("Error", error.message);
     }
   };

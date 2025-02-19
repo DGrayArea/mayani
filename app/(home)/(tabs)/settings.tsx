@@ -120,8 +120,8 @@ const Settings = () => {
         {renderSelectItem("Language", language, () =>
           console.log("Language pressed")
         )}
-        {renderSwitchItem("Dark Mode", "darkMode")}
-        {renderSwitchItem("Hide Balance", "hideBalance")}
+        {renderSwitchItem("Dark Mode", "darkMode", "")}
+        {renderSwitchItem("Hide Balance", "hideBalance", "")}
 
         {/* Security */}
         {renderSection("Security")}

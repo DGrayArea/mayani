@@ -1,5 +1,5 @@
 import { ID } from "react-native-appwrite";
-import { databases, config } from "./appwrite";
+import { config } from "./appwrite";
 import {
   agentImages,
   galleryImages,
@@ -70,123 +70,123 @@ function getRandomSubset<T>(
   return arrayCopy.slice(0, subsetSize);
 }
 
-async function seed() {
-  try {
-    // Clear existing data from all collections
-    for (const key in COLLECTIONS) {
-      const collectionId = COLLECTIONS[key as keyof typeof COLLECTIONS];
-      const documents = await databases.listDocuments(
-        config.databaseId!,
-        collectionId!
-      );
-      for (const doc of documents.documents) {
-        await databases.deleteDocument(
-          config.databaseId!,
-          collectionId!,
-          doc.$id
-        );
-      }
-    }
+// async function seed() {
+//   try {
+//     // Clear existing data from all collections
+//     for (const key in COLLECTIONS) {
+//       const collectionId = COLLECTIONS[key as keyof typeof COLLECTIONS];
+//       const documents = await databases.listDocuments(
+//         config.databaseId!,
+//         collectionId!
+//       );
+//       for (const doc of documents.documents) {
+//         await databases.deleteDocument(
+//           config.databaseId!,
+//           collectionId!,
+//           doc.$id
+//         );
+//       }
+//     }
 
-    console.log("Cleared all existing data.");
+//     console.log("Cleared all existing data.");
 
-    // Seed Agents
-    const agents = [];
-    for (let i = 1; i <= 5; i++) {
-      const agent = await databases.createDocument(
-        config.databaseId!,
-        COLLECTIONS.AGENT!,
-        ID.unique(),
-        {
-          name: `Agent ${i}`,
-          email: `agent${i}@example.com`,
-          avatar: agentImages[Math.floor(Math.random() * agentImages.length)],
-        }
-      );
-      agents.push(agent);
-    }
-    console.log(`Seeded ${agents.length} agents.`);
+//     // Seed Agents
+//     const agents = [];
+//     for (let i = 1; i <= 5; i++) {
+//       const agent = await databases.createDocument(
+//         config.databaseId!,
+//         COLLECTIONS.AGENT!,
+//         ID.unique(),
+//         {
+//           name: `Agent ${i}`,
+//           email: `agent${i}@example.com`,
+//           avatar: agentImages[Math.floor(Math.random() * agentImages.length)],
+//         }
+//       );
+//       agents.push(agent);
+//     }
+//     console.log(`Seeded ${agents.length} agents.`);
 
-    // Seed Reviews
-    const reviews = [];
-    for (let i = 1; i <= 20; i++) {
-      const review = await databases.createDocument(
-        config.databaseId!,
-        COLLECTIONS.REVIEWS!,
-        ID.unique(),
-        {
-          name: `Reviewer ${i}`,
-          avatar: reviewImages[Math.floor(Math.random() * reviewImages.length)],
-          review: `This is a review by Reviewer ${i}.`,
-          rating: Math.floor(Math.random() * 5) + 1, // Rating between 1 and 5
-        }
-      );
-      reviews.push(review);
-    }
-    console.log(`Seeded ${reviews.length} reviews.`);
+//     // Seed Reviews
+//     const reviews = [];
+//     for (let i = 1; i <= 20; i++) {
+//       const review = await databases.createDocument(
+//         config.databaseId!,
+//         COLLECTIONS.REVIEWS!,
+//         ID.unique(),
+//         {
+//           name: `Reviewer ${i}`,
+//           avatar: reviewImages[Math.floor(Math.random() * reviewImages.length)],
+//           review: `This is a review by Reviewer ${i}.`,
+//           rating: Math.floor(Math.random() * 5) + 1, // Rating between 1 and 5
+//         }
+//       );
+//       reviews.push(review);
+//     }
+//     console.log(`Seeded ${reviews.length} reviews.`);
 
-    // Seed Galleries
-    const galleries = [];
-    for (const image of galleryImages) {
-      const gallery = await databases.createDocument(
-        config.databaseId!,
-        COLLECTIONS.GALLERY!,
-        ID.unique(),
-        { image }
-      );
-      galleries.push(gallery);
-    }
+//     // Seed Galleries
+//     const galleries = [];
+//     for (const image of galleryImages) {
+//       const gallery = await databases.createDocument(
+//         config.databaseId!,
+//         COLLECTIONS.GALLERY!,
+//         ID.unique(),
+//         { image }
+//       );
+//       galleries.push(gallery);
+//     }
 
-    console.log(`Seeded ${galleries.length} galleries.`);
+//     console.log(`Seeded ${galleries.length} galleries.`);
 
-    // Seed Properties
-    for (let i = 1; i <= 20; i++) {
-      const assignedAgent = agents[Math.floor(Math.random() * agents.length)];
+//     // Seed Properties
+//     for (let i = 1; i <= 20; i++) {
+//       const assignedAgent = agents[Math.floor(Math.random() * agents.length)];
 
-      const assignedReviews = getRandomSubset(reviews, 5, 7); // 5 to 7 reviews
-      const assignedGalleries = getRandomSubset(galleries, 3, 8); // 3 to 8 galleries
+//       const assignedReviews = getRandomSubset(reviews, 5, 7); // 5 to 7 reviews
+//       const assignedGalleries = getRandomSubset(galleries, 3, 8); // 3 to 8 galleries
 
-      const selectedFacilities = facilities
-        .sort(() => 0.5 - Math.random())
-        .slice(0, Math.floor(Math.random() * facilities.length) + 1);
+//       const selectedFacilities = facilities
+//         .sort(() => 0.5 - Math.random())
+//         .slice(0, Math.floor(Math.random() * facilities.length) + 1);
 
-      const image =
-        propertiesImages.length - 1 >= i
-          ? propertiesImages[i]
-          : propertiesImages[
-              Math.floor(Math.random() * propertiesImages.length)
-            ];
+//       const image =
+//         propertiesImages.length - 1 >= i
+//           ? propertiesImages[i]
+//           : propertiesImages[
+//               Math.floor(Math.random() * propertiesImages.length)
+//             ];
 
-      const property = await databases.createDocument(
-        config.databaseId!,
-        COLLECTIONS.PROPERTY!,
-        ID.unique(),
-        {
-          name: `Property ${i}`,
-          type: propertyTypes[Math.floor(Math.random() * propertyTypes.length)],
-          description: `This is the description for Property ${i}.`,
-          address: `123 Property Street, City ${i}`,
-          geolocation: `192.168.1.${i}, 192.168.1.${i}`,
-          price: Math.floor(Math.random() * 9000) + 1000,
-          area: Math.floor(Math.random() * 3000) + 500,
-          bedrooms: Math.floor(Math.random() * 5) + 1,
-          bathrooms: Math.floor(Math.random() * 5) + 1,
-          rating: Math.floor(Math.random() * 5) + 1,
-          facilities: selectedFacilities,
-          image: image,
-          agent: assignedAgent.$id,
-          reviews: assignedReviews.map((review) => review.$id),
-          gallery: assignedGalleries.map((gallery) => gallery.$id),
-        }
-      );
+//       const property = await databases.createDocument(
+//         config.databaseId!,
+//         COLLECTIONS.PROPERTY!,
+//         ID.unique(),
+//         {
+//           name: `Property ${i}`,
+//           type: propertyTypes[Math.floor(Math.random() * propertyTypes.length)],
+//           description: `This is the description for Property ${i}.`,
+//           address: `123 Property Street, City ${i}`,
+//           geolocation: `192.168.1.${i}, 192.168.1.${i}`,
+//           price: Math.floor(Math.random() * 9000) + 1000,
+//           area: Math.floor(Math.random() * 3000) + 500,
+//           bedrooms: Math.floor(Math.random() * 5) + 1,
+//           bathrooms: Math.floor(Math.random() * 5) + 1,
+//           rating: Math.floor(Math.random() * 5) + 1,
+//           facilities: selectedFacilities,
+//           image: image,
+//           agent: assignedAgent.$id,
+//           reviews: assignedReviews.map((review) => review.$id),
+//           gallery: assignedGalleries.map((gallery) => gallery.$id),
+//         }
+//       );
 
-      console.log(`Seeded property: ${property.name}`);
-    }
+//       console.log(`Seeded property: ${property.name}`);
+//     }
 
-    console.log("Data seeding completed.");
-  } catch (error) {
-    console.error("Error seeding data:", error);
-  }
-}
+//     console.log("Data seeding completed.");
+//   } catch (error) {
+//     console.error("Error seeding data:", error);
+//   }
+// }
 
-export default seed;
+// export default seed;

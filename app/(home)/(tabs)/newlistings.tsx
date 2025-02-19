@@ -33,6 +33,8 @@ const NewListings = () => {
   const { isPending, error, data, refetch } = useQuery<{ data: PumpShot[] }>({
     queryKey: ["newListings"],
     queryFn: fetchPumpShots,
+    refetchInterval: 20000,
+    refetchIntervalInBackground: false,
   });
   const { isRefetchingByUser, refetchByUser } = useRefreshByUser(refetch);
   useRefreshOnFocus(refetch);
