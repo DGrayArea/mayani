@@ -54,11 +54,11 @@ const chartData = {
 };
 
 const TokenDetails = () => {
-  const { token, tokenInfo } = useLocalSearchParams();
+  const { token } = useLocalSearchParams();
   //@ts-ignore
   const tokenData = JSON.parse(token);
   //@ts-ignore
-  const tokenInfoData = JSON.parse(tokenInfo);
+  const tokenInfoData = tokenData.tokenInfo;
 
   const isEth = tokenData.relationships.base_token.data.id.startsWith("eth_");
   const name = isEth

@@ -4,14 +4,6 @@ import SkeletonLoader from "@/components/SkeletonLoader";
 import { useRefreshByUser } from "@/hooks/useRefreshByUser";
 import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { formatNumber, formatPrice } from "@/utils/numbers";
-import {
-  CGToken,
-  fetchTrending,
-  getMultipleEthTokenInfo,
-  getSolTokenInfo,
-  JupiterToken,
-  MoralisToken,
-} from "@/utils/query";
 import { useQuery } from "@tanstack/react-query";
 import React, { useEffect, useState } from "react";
 import { useMemo } from "react";
@@ -26,16 +18,14 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link } from "expo-router";
+import { TrendingToken2 } from "@/types";
+import { fetchTrending } from "@/utils/query";
 
 const Explore = () => {
   const [selectedFilter, setSelectedFilter] = useState("all");
-  const [tokenInfoMap, setTokenInfoMap] = useState<
-    Record<string, JupiterToken | MoralisToken | undefined>
-  >({});
-  const [isTokenInfoLoading, setIsTokenInfoLoading] = useState(true);
 
   const { isPending, error, data, refetch } = useQuery<
-    { eth: CGToken[]; sol: CGToken[] } | undefined
+    TrendingToken2[] | undefined
   >({
     queryKey: ["trending"],
     queryFn: fetchTrending,
@@ -43,77 +33,9 @@ const Explore = () => {
   const { isRefetchingByUser, refetchByUser } = useRefreshByUser(refetch);
   useRefreshOnFocus(refetch);
 
-  useEffect(() => {
-    if (data) {
-      const fetchAllTokenInfo = async () => {
-        const newTokenInfoMap: Record<
-          string,
-          JupiterToken | MoralisToken | undefined
-        > = {};
-
-        for (const item of data.sol) {
-          const tokenAddress = item.relationships.base_token.data.id.startsWith(
-            "solana_"
-          )
-            ? item.relationships.base_token.data.id.slice(7)
-            : item.relationships.base_token.data.id;
-          if (tokenAddress && !tokenInfoMap[tokenAddress]) {
-            const tokenInfo = await getSolTokenInfo(tokenAddress);
-            newTokenInfoMap[tokenAddress] = tokenInfo;
-            await new Promise((resolve) => setTimeout(resolve, 100));
-          }
-        }
-        const ethTokenAddresses = data.eth.map((item) =>
-          item.relationships.base_token.data.id.startsWith("eth_")
-            ? item.relationships.base_token.data.id.slice(4)
-            : item.relationships.base_token.data.id
-        );
-
-        if (ethTokenAddresses.length > 0) {
-          const ethTokenInfoArray = await getMultipleEthTokenInfo(
-            ethTokenAddresses.map((tokenAddress) => ({
-              token_address: tokenAddress,
-            }))
-          );
-
-          ethTokenInfoArray.forEach((tokenInfo, index) => {
-            const tokenAddress = ethTokenAddresses[index];
-            newTokenInfoMap[tokenAddress] = tokenInfo;
-          });
-        }
-
-        setTokenInfoMap(newTokenInfoMap);
-        setIsTokenInfoLoading(false);
-      };
-
-      fetchAllTokenInfo();
-    }
-  }, [data]);
-
   const mergedData = useMemo(() => {
     if (data) {
-      const combinedData = [
-        ...(data?.eth.map((item) => ({
-          ...item,
-          tokenInfo:
-            tokenInfoMap[
-              item.relationships.base_token.data.id.startsWith("eth_")
-                ? item.relationships.base_token.data.id.slice(4)
-                : item.relationships.base_token.data.id
-            ],
-        })) || []),
-        ...(data?.sol.map((item) => ({
-          ...item,
-          tokenInfo:
-            tokenInfoMap[
-              item.relationships.base_token.data.id.startsWith("solana_")
-                ? item.relationships.base_token.data.id.slice(7)
-                : item.relationships.base_token.data.id
-            ],
-        })) || []),
-      ];
-
-      const filteredData = combinedData.filter((item) => {
+      const filteredData = data.filter((item) => {
         if (selectedFilter === "all") return true;
         if (
           selectedFilter === "sol" &&
@@ -135,7 +57,7 @@ const Explore = () => {
       );
     }
     return [];
-  }, [data, tokenInfoMap, selectedFilter]);
+  }, [data, selectedFilter]);
 
   const filteredTopGainers = useMemo(() => {
     return mergedData.filter(
@@ -206,69 +128,37 @@ const Explore = () => {
       ? item.relationships.base_token.data.id.slice(4)
       : item.relationships.base_token.data.id;
 
-    const tokenInfo = tokenInfoMap[tokenAddress];
+    // const tokenInfo = tokenInfoMap[tokenAddress];
     return (
       <TouchableOpacity style={styles.TouchableGainerCard}>
-        {!isTokenInfoLoading ? (
-          <Link
-            href={{
-              pathname: `/tokens/${tokenAddress}`,
-              params: {
-                token: JSON.stringify(item),
-                tokenInfo: JSON.stringify(tokenInfo),
-              },
-            }}
-          >
-            <View style={styles.gainerCard}>
-              <Image
-                source={{
-                  uri: isEth
-                    ? tokenInfo?.tokenLogo
-                    : tokenInfo?.type === "jupiter"
-                    ? tokenInfo?.logoURI
-                    : tokenInfo?.data.logo || "",
-                }}
-                style={styles.avatar}
-              />
-              <View style={styles.gainerContent}>
-                {isTokenInfoLoading ? (
-                  <SkeletonLoader />
-                ) : (
-                  <Text style={styles.gainerText}>
-                    {isEth ? tokenInfo?.tokenName : tokenInfo?.data.name || ""}
-                  </Text>
-                )}
-                <Text
-                  style={[
-                    styles.trendingChange,
-                    item.attributes.price_change_percentage.h24.includes("-")
-                      ? styles.negative
-                      : styles.positive,
-                  ]}
-                >
-                  {item.attributes.price_change_percentage.h24}%
-                </Text>
-              </View>
-            </View>
-          </Link>
-        ) : (
+        <Link
+          href={{
+            pathname: `/tokens/${tokenAddress}`,
+            params: {
+              token: JSON.stringify(item),
+              tokenInfo: JSON.stringify(item),
+            },
+          }}
+        >
           <View style={styles.gainerCard}>
             <Image
               source={{
                 uri: isEth
-                  ? tokenInfo?.tokenLogo
-                  : tokenInfo?.type === "jupiter"
-                  ? tokenInfo?.logoURI
-                  : tokenInfo?.data.logo || "",
+                  ? item.tokenInfo?.tokenLogo
+                  : item.tokenInfo?.type === "jupiter"
+                  ? item.tokenInfo?.logoURI
+                  : item.tokenInfo?.data.logo || "",
               }}
               style={styles.avatar}
             />
             <View style={styles.gainerContent}>
-              {isTokenInfoLoading ? (
+              {isPending ? (
                 <SkeletonLoader />
               ) : (
                 <Text style={styles.gainerText}>
-                  {isEth ? tokenInfo?.tokenName : tokenInfo?.data.name || ""}
+                  {isEth
+                    ? item.tokenInfo?.tokenName
+                    : item.tokenInfo?.data.name || ""}
                 </Text>
               )}
               <Text
@@ -283,12 +173,12 @@ const Explore = () => {
               </Text>
             </View>
           </View>
-        )}
+        </Link>
       </TouchableOpacity>
     );
   };
 
-  const renderTrendingItem = ({ item }: { item: CGToken }) => {
+  const renderTrendingItem = ({ item }: { item: TrendingToken2 }) => {
     const isEth = item.relationships.base_token.data.id.startsWith("eth_");
     const tokenAddress = item.relationships.base_token.data.id.startsWith(
       "solana_"
@@ -298,78 +188,38 @@ const Explore = () => {
       ? item.relationships.base_token.data.id.slice(4)
       : item.relationships.base_token.data.id;
 
-    const tokenInfo = tokenInfoMap[tokenAddress];
+    // const tokenInfo = tokenInfoMap[tokenAddress];
 
     return (
       <TouchableOpacity style={styles.touchableTrendingItem}>
-        {!isTokenInfoLoading ? (
-          <Link
-            href={{
-              pathname: `/tokens/${tokenAddress}`,
-              params: {
-                token: JSON.stringify(item),
-                tokenInfo: JSON.stringify(tokenInfo),
-              },
-            }}
-          >
-            <View style={styles.trendingItem}>
-              <Image
-                source={{
-                  uri: isEth
-                    ? tokenInfo?.tokenLogo
-                    : tokenInfo?.type === "jupiter"
-                    ? tokenInfo?.data.logoURI
-                    : tokenInfo?.data.logo || "",
-                }}
-                style={styles.avatar}
-              />
-              <View style={styles.trendingInfo}>
-                {isTokenInfoLoading ? (
-                  <SkeletonLoader />
-                ) : (
-                  <Text style={styles.trendingName}>
-                    {isEth ? tokenInfo?.tokenName : tokenInfo?.data.name || ""}
-                  </Text>
-                )}
-                <Text style={styles.marketCap}>
-                  ${formatNumber(Number(item.attributes.fdv_usd))} MKT CAP
-                </Text>
-              </View>
-              <View style={styles.trendingPriceInfo}>
-                <Text style={styles.trendingPrice}>
-                  ${formatPrice(Number(item.attributes.base_token_price_usd))}
-                </Text>
-                <Text
-                  style={[
-                    styles.trendingChange,
-                    item.attributes.price_change_percentage.h24.includes("-")
-                      ? styles.negative
-                      : styles.positive,
-                  ]}
-                >
-                  {item.attributes.price_change_percentage.h24}%
-                </Text>
-              </View>
-            </View>
-          </Link>
-        ) : (
+        <Link
+          href={{
+            pathname: `/tokens/${tokenAddress}`,
+            params: {
+              token: JSON.stringify(item),
+              tokenInfo: JSON.stringify(item),
+            },
+          }}
+        >
           <View style={styles.trendingItem}>
             <Image
               source={{
                 uri: isEth
-                  ? tokenInfo?.tokenLogo
-                  : tokenInfo?.type === "jupiter"
-                  ? tokenInfo?.data.logoURI
-                  : tokenInfo?.data.logo || "",
+                  ? item.tokenInfo?.tokenLogo
+                  : item.tokenInfo?.type === "jupiter"
+                  ? item.tokenInfo?.data.logoURI
+                  : item.tokenInfo?.data.logo || "",
               }}
               style={styles.avatar}
             />
             <View style={styles.trendingInfo}>
-              {isTokenInfoLoading ? (
+              {isPending ? (
                 <SkeletonLoader />
               ) : (
                 <Text style={styles.trendingName}>
-                  {isEth ? tokenInfo?.tokenName : tokenInfo?.data.name || ""}
+                  {isEth
+                    ? item.tokenInfo?.tokenName
+                    : item.tokenInfo?.data.name || ""}
                 </Text>
               )}
               <Text style={styles.marketCap}>
@@ -392,7 +242,7 @@ const Explore = () => {
               </Text>
             </View>
           </View>
-        )}
+        </Link>
       </TouchableOpacity>
     );
   };
