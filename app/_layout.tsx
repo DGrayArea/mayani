@@ -15,6 +15,7 @@ import { config } from "@/lib/appwrite";
 import { tokenCache } from "@/cache";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
+import ErrorBoundary from "../components/ErrorBoundary";
 
 function onAppStateChange(status: AppStateStatus) {
   // React Query already supports in web browser refetch on window focus by default
@@ -39,45 +40,47 @@ export default function RootLayout() {
   }
 
   return (
-    <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
-      <ClerkLoaded>
-        <QueryClientProvider client={queryClient}>
-          <GlobalProvider>
-            {Platform.OS === "android" ? (
-              <SafeAreaView style={styles.safeArea} edges={["top"]}>
-                <StatusBar
-                  style="light"
-                  backgroundColor="transparent"
-                  translucent
-                />
-                <Stack
-                  screenOptions={{
-                    headerShown: false,
-                  }}
-                >
-                  <Slot />
-                </Stack>
-              </SafeAreaView>
-            ) : (
-              <>
-                <StatusBar
-                  style="light"
-                  backgroundColor="transparent"
-                  translucent
-                />
-                <Stack
-                  screenOptions={{
-                    headerShown: false,
-                  }}
-                >
-                  <Slot />
-                </Stack>
-              </>
-            )}
-          </GlobalProvider>
-        </QueryClientProvider>
-      </ClerkLoaded>
-    </ClerkProvider>
+    <ErrorBoundary>
+      <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
+        <ClerkLoaded>
+          <QueryClientProvider client={queryClient}>
+            <GlobalProvider>
+              {Platform.OS === "android" ? (
+                <SafeAreaView style={styles.safeArea} edges={["top"]}>
+                  <StatusBar
+                    style="light"
+                    backgroundColor="transparent"
+                    translucent
+                  />
+                  <Stack
+                    screenOptions={{
+                      headerShown: false,
+                    }}
+                  >
+                    <Slot />
+                  </Stack>
+                </SafeAreaView>
+              ) : (
+                <>
+                  <StatusBar
+                    style="light"
+                    backgroundColor="transparent"
+                    translucent
+                  />
+                  <Stack
+                    screenOptions={{
+                      headerShown: false,
+                    }}
+                  >
+                    <Slot />
+                  </Stack>
+                </>
+              )}
+            </GlobalProvider>
+          </QueryClientProvider>
+        </ClerkLoaded>
+      </ClerkProvider>
+    </ErrorBoundary>
   );
 }
 

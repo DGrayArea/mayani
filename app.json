@@ -20,7 +20,7 @@
         "foregroundImage": "./assets/renner.jpeg",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.graysonwi.mayani"
+      "package": "com.grayson.mayani"
     },
     "web": {
       "bundler": "metro",
