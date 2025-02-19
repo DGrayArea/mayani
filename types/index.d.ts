@@ -179,3 +179,19 @@ export type MoralisToken = {
   type: "moralis" | "jupiter";
   data: typeof moralisToken;
 };
+
+const newPumpShotToken = {
+  decimals: 9,
+  deployedAt: "2025-02-19T08:02:47.856Z",
+  mintAddress: "Hiz6hVCjiNoGoMFfbvZ8gk7WNdyfvvzAnVP5G1Sbpump",
+  name: "BEATBTC",
+  platform: "pumpfun",
+  symbol: "BBTC",
+  uri: "https://ipfs.io/ipfs/Qme95BJBpw46MsvXfeDdwyqY2uG61rm6WkM7pkpftTg5Mo",
+  price: 0,
+  change: 0,
+  marketCap: 0,
+  holders: 0,
+};
+
+export type PumpShot = typeof newPumpShotToken;

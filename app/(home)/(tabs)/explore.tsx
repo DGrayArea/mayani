@@ -25,17 +25,19 @@ const Explore = () => {
   const [selectedFilter, setSelectedFilter] = useState("all");
 
   const { isPending, error, data, refetch } = useQuery<
-    TrendingToken2[] | undefined
+    { data: TrendingToken2[] } | undefined
   >({
     queryKey: ["trending"],
     queryFn: fetchTrending,
+    refetchInterval: 20000,
+    refetchIntervalInBackground: false,
   });
   const { isRefetchingByUser, refetchByUser } = useRefreshByUser(refetch);
   useRefreshOnFocus(refetch);
 
   const mergedData = useMemo(() => {
     if (data) {
-      const filteredData = data.filter((item) => {
+      const filteredData = data.data.filter((item) => {
         if (selectedFilter === "all") return true;
         if (
           selectedFilter === "sol" &&
@@ -118,7 +120,7 @@ const Explore = () => {
     </View>
   );
 
-  const renderTopGainers = ({ item }) => {
+  const renderTopGainers = ({ item }: any) => {
     const isEth = item.relationships.base_token.data.id.startsWith("eth_");
     const tokenAddress = item.relationships.base_token.data.id.startsWith(
       "solana_"
@@ -128,26 +130,23 @@ const Explore = () => {
       ? item.relationships.base_token.data.id.slice(4)
       : item.relationships.base_token.data.id;
 
-    // const tokenInfo = tokenInfoMap[tokenAddress];
     return (
       <TouchableOpacity style={styles.TouchableGainerCard}>
         <Link
           href={{
-            pathname: `/tokens/${tokenAddress}`,
-            params: {
-              token: JSON.stringify(item),
-              tokenInfo: JSON.stringify(item),
-            },
+            pathname: "/tokens/[id]",
+            params: { id: tokenAddress, token: JSON.stringify(item) },
           }}
         >
           <View style={styles.gainerCard}>
             <Image
               source={{
                 uri: isEth
-                  ? item.tokenInfo?.tokenLogo
+                  ? //@ts-ignore
+                    item.tokenInfo?.tokenLogo
                   : item.tokenInfo?.type === "jupiter"
-                  ? item.tokenInfo?.logoURI
-                  : item.tokenInfo?.data.logo || "",
+                  ? item.tokenInfo?.data?.logoURI
+                  : item.tokenInfo?.data?.logo || "/api/image/24",
               }}
               style={styles.avatar}
             />
@@ -157,8 +156,9 @@ const Explore = () => {
               ) : (
                 <Text style={styles.gainerText}>
                   {isEth
-                    ? item.tokenInfo?.tokenName
-                    : item.tokenInfo?.data.name || ""}
+                    ? //@ts-ignore
+                      item.tokenInfo?.tokenName
+                    : item.tokenInfo?.data?.name || ""}
                 </Text>
               )}
               <Text
@@ -194,21 +194,19 @@ const Explore = () => {
       <TouchableOpacity style={styles.touchableTrendingItem}>
         <Link
           href={{
-            pathname: `/tokens/${tokenAddress}`,
-            params: {
-              token: JSON.stringify(item),
-              tokenInfo: JSON.stringify(item),
-            },
+            pathname: "/tokens/[id]",
+            params: { id: tokenAddress, token: JSON.stringify(item) },
           }}
         >
           <View style={styles.trendingItem}>
             <Image
               source={{
                 uri: isEth
-                  ? item.tokenInfo?.tokenLogo
+                  ? //@ts-ignore
+                    item.tokenInfo?.tokenLogo
                   : item.tokenInfo?.type === "jupiter"
                   ? item.tokenInfo?.data.logoURI
-                  : item.tokenInfo?.data.logo || "",
+                  : item.tokenInfo?.data.logo || "/api/image/24",
               }}
               style={styles.avatar}
             />
@@ -218,7 +216,8 @@ const Explore = () => {
               ) : (
                 <Text style={styles.trendingName}>
                   {isEth
-                    ? item.tokenInfo?.tokenName
+                    ? //@ts-ignore
+                      item.tokenInfo?.tokenName
                     : item.tokenInfo?.data.name || ""}
                 </Text>
               )}

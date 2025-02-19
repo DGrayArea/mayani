@@ -10,8 +10,12 @@ import {
   Animated,
   Dimensions,
   Platform,
+  ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { useUser } from "@clerk/clerk-expo";
+import { SafeAreaView } from "react-native-safe-area-context";
+import { Redirect } from "expo-router";
 
 const Home = () => {
   const fadeAnim = new Animated.Value(0);
@@ -54,6 +58,20 @@ const Home = () => {
       useNativeDriver: true,
     }).start();
   };
+
+  const { user, isLoaded, isSignedIn } = useUser();
+
+  if (!isLoaded) {
+    return (
+      <SafeAreaView className="bg-white h-full flex justify-center items-center">
+        <ActivityIndicator className="text-primary-300" size="large" />
+      </SafeAreaView>
+    );
+  }
+
+  if (user) {
+    return <Redirect href={"/(home)/(tabs)/explore"} />;
+  }
 
   return (
     <View style={styles.safeArea}>
@@ -106,7 +124,7 @@ const Home = () => {
               },
             ]}
           >
-            <Link href="/sign-in" asChild>
+            <Link href="/(auth)/sign-in" asChild>
               <Pressable
                 style={styles.button}
                 onPressIn={handlePressIn}

@@ -73,3 +73,26 @@ export const getAcronym = (name: string) => {
   }
   return acronym;
 };
+
+export const getRelativeTime = (deployedAt: string) => {
+  const now = new Date();
+  const deployed = new Date(deployedAt);
+  const diffInMs = now.getTime() - deployed.getTime();
+  const diffInHours = diffInMs / (1000 * 60 * 60);
+  const diffInDays = diffInHours / 24;
+  const diffInMonths = diffInDays / 30;
+
+  if (diffInHours < 24) {
+    const hours = Math.floor(diffInHours);
+    return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+  } else if (diffInDays < 7) {
+    const days = Math.floor(diffInDays);
+    return `${days} ${days === 1 ? "day" : "days"} ago`;
+  } else if (diffInMonths < 12) {
+    const months = Math.floor(diffInMonths);
+    return `${months} ${months === 1 ? "month" : "months"} ago`;
+  } else {
+    const years = Math.floor(diffInMonths / 12);
+    return `${years} ${years === 1 ? "year" : "years"} ago`;
+  }
+};

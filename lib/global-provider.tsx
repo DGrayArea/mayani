@@ -1,8 +1,7 @@
 import React, { createContext, useContext, ReactNode } from "react";
-
-import { getCurrentUser } from "./appwrite";
-import { useAppwrite } from "./useAppwrite";
-import { Redirect } from "expo-router";
+// import { getCurrentUser } from "./appwrite";
+// import { useAppwrite } from "./useAppwrite";
+// import { Redirect } from "expo-router";
 
 interface GlobalContextType {
   isLogged: boolean;
@@ -18,30 +17,31 @@ interface User {
   avatar: string;
 }
 
-const GlobalContext = createContext<GlobalContextType | undefined>(undefined);
+const GlobalContext = createContext<GlobalContextType | any>(undefined);
 
 interface GlobalProviderProps {
   children: ReactNode;
 }
 
-export const GlobalProvider = ({ children }: GlobalProviderProps) => {
-  const {
-    data: user,
-    loading,
-    refetch,
-  } = useAppwrite({
-    fn: getCurrentUser,
-  });
+export const GlobalProvider = ({ children }: GlobalProviderProps | any) => {
+  // const {
+  //   data: user,
+  //   loading,
+  //   refetch,
+  // } = useAppwrite({
+  //   fn: getCurrentUser,
+  // });
 
-  const isLogged = !!user;
+  // const isLogged = !!user;
+  const isLogged = false;
 
   return (
     <GlobalContext.Provider
       value={{
         isLogged,
-        user,
-        loading,
-        refetch,
+        // user,
+        // loading,
+        // refetch,
       }}
     >
       {children}

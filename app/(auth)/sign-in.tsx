@@ -1,29 +1,41 @@
-import React, { useState, useEffect } from "react";
+import React, { useCallback, useEffect } from "react";
 import {
   Alert,
   Image,
-  ScrollView,
   TouchableOpacity,
   View,
   Text,
-  TextInput,
-  Pressable,
   StyleSheet,
   Animated,
   Dimensions,
   Platform,
 } from "react-native";
-import { login } from "@/lib/appwrite";
-import { useRouter, Redirect } from "expo-router";
-import { LinearGradient } from "expo-linear-gradient";
-import { useGlobalContext } from "@/lib/global-provider";
-import icons from "@/constants/icons";
-import images from "@/constants/images";
+import * as WebBrowser from "expo-web-browser";
+import * as AuthSession from "expo-auth-session";
+import { useSSO } from "@clerk/clerk-expo";
+import { Redirect } from "expo-router";
+import { useUser } from "@clerk/clerk-expo";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { ActivityIndicator } from "react-native-paper";
+import { LinearGradient } from "expo-linear-gradient";
+import icons from "@/constants/icons";
 
-const SignIn = () => {
-  const [email, setEmail] = useState("");
-  const router = useRouter();
+// Keep existing warmup browser logic
+export const useWarmUpBrowser = () => {
+  useEffect(() => {
+    void WebBrowser.warmUpAsync();
+    return () => {
+      void WebBrowser.coolDownAsync();
+    };
+  }, []);
+};
+
+WebBrowser.maybeCompleteAuthSession();
+
+export default function SignIn() {
+  useWarmUpBrowser();
+  const { startSSOFlow } = useSSO();
+  const { user, isLoaded } = useUser();
 
   // Animation values
   const fadeAnim = new Animated.Value(0);
@@ -61,24 +73,32 @@ const SignIn = () => {
     }).start();
   };
 
-  const handleSubmit = () => {
-    // Add email validation here later
-    router.push("/explore");
-  };
+  const onPress = useCallback(async () => {
+    try {
+      const { createdSessionId, setActive } = await startSSOFlow({
+        strategy: "oauth_google",
+        redirectUrl: AuthSession.makeRedirectUri(),
+      });
 
-  const { refetch, loading, isLogged } = useGlobalContext();
+      if (createdSessionId) {
+        setActive!({ session: createdSessionId });
+      }
+    } catch (err) {
+      console.error(JSON.stringify(err, null, 2));
+    }
+  }, []);
 
-  if (!loading && isLogged) return <Redirect href="/" />;
+  if (!isLoaded) {
+    return (
+      <SafeAreaView className="bg-white h-full flex justify-center items-center">
+        <ActivityIndicator className="text-primary-300" size="large" />
+      </SafeAreaView>
+    );
+  }
 
-  const handleLogin = async () => {
-    // const result = await login();
-    // if (result) {
-    //   refetch();
-    // } else {
-    //   Alert.alert("Error", "Failed to login");
-    // }
-    router.push("/explore");
-  };
+  if (user) {
+    return <Redirect href="/(home)/(tabs)/explore" />;
+  }
 
   return (
     <View style={styles.safeArea}>
@@ -116,18 +136,6 @@ const SignIn = () => {
               },
             ]}
           >
-            {/* <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Email Address"
-                placeholderTextColor="rgba(0,0,0,0.5)"
-                keyboardType="email-address"
-                autoCapitalize="none"
-                value={email}
-                onChangeText={setEmail}
-              />
-            </View> */}
-
             <Animated.View
               style={[
                 styles.buttonContainer,
@@ -141,7 +149,9 @@ const SignIn = () => {
               </Text>
 
               <TouchableOpacity
-                onPress={handleLogin}
+                onPress={onPress}
+                onPressIn={handlePressIn}
+                onPressOut={handlePressOut}
                 className="bg-white shadow-md shadow-zinc-300 rounded-full w-full py-4 mt-5"
               >
                 <View className="flex flex-row items-center justify-center">
@@ -155,35 +165,19 @@ const SignIn = () => {
                   </Text>
                 </View>
               </TouchableOpacity>
-              {/* <Pressable
-                onPress={handleSubmit}
-                onPressIn={handlePressIn}
-                onPressOut={handlePressOut}
-                style={styles.button}
-                android_ripple={{ color: "rgba(255,255,255,0.2)" }}
-              >
-                <LinearGradient
-                  colors={["#00897b", "#00796b"]}
-                  style={styles.buttonGradient}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                >
-                  <Text style={styles.buttonText}>Continue</Text>
-                </LinearGradient>
-              </Pressable> */}
             </Animated.View>
           </Animated.View>
         </View>
       </LinearGradient>
     </View>
   );
-};
+}
 
 const { width } = Dimensions.get("window");
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    // paddingTop: Constants.statusBarHeight,
   },
   container: {
     flex: 1,
@@ -213,30 +207,6 @@ const styles = StyleSheet.create({
   form: {
     gap: 20,
   },
-  inputContainer: {
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: {
-          width: 0,
-          height: 4,
-        },
-        shadowOpacity: 0.1,
-        shadowRadius: 4.65,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
-  },
-  input: {
-    backgroundColor: "rgba(255, 255, 255, 0.9)",
-    paddingHorizontal: 20,
-    paddingVertical: 15,
-    borderRadius: 15,
-    fontSize: 16,
-    color: "#333",
-  },
   buttonContainer: {
     ...Platform.select({
       ios: {
@@ -252,21 +222,6 @@ const styles = StyleSheet.create({
         elevation: 8,
       },
     }),
-  },
-  button: {
-    overflow: "hidden",
-    borderRadius: 15,
-  },
-  buttonGradient: {
-    paddingVertical: 16,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  buttonText: {
-    color: "#ffffff",
-    fontSize: 18,
-    fontWeight: "600",
-    letterSpacing: 1,
   },
   bgCircles: {
     ...StyleSheet.absoluteFillObject,
@@ -296,5 +251,3 @@ const styles = StyleSheet.create({
     right: -width * 0.3,
   },
 });
-
-export default SignIn;

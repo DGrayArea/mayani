@@ -1,18 +1,18 @@
 import {
-  Client,
-  Account,
-  ID,
-  Databases,
-  OAuthProvider,
-  Avatars,
+  // Client,
+  // Account,
+  // ID,
+  // Databases,
+  // Avatars,
+  // Storage,
   Query,
-  Storage,
+  OAuthProvider,
 } from "react-native-appwrite";
 import * as Linking from "expo-linking";
 import { openAuthSessionAsync } from "expo-web-browser";
 
 export const config = {
-  platform: "com.jsm.restate",
+  platform: "com.gray.mayani",
   endpoint: process.env.EXPO_PUBLIC_APPWRITE_ENDPOINT,
   projectId: process.env.EXPO_PUBLIC_APPWRITE_PROJECT_ID,
   databaseId: process.env.EXPO_PUBLIC_APPWRITE_DATABASE_ID,
@@ -26,18 +26,19 @@ export const config = {
   infuraId: process.env.EXPO_PUBLIC_INFURA_ID,
   moralisKey: process.env.EXPO_PUBLIC_MORALIS_KEY,
   apiEndpoint: process.env.EXPO_PUBLIC_API_ENDPOINT,
+  publishableKey: process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!,
 };
 
-export const client = new Client();
-client
-  .setEndpoint(config.endpoint!)
-  .setProject(config.projectId!)
-  .setPlatform(config.platform!);
+// export const client = new Client();
+// client
+//   .setEndpoint(config.endpoint!)
+//   .setProject(config.projectId!)
+//   .setPlatform(config.platform!);
 
-export const avatar = new Avatars(client);
-export const account = new Account(client);
-export const databases = new Databases(client);
-export const storage = new Storage(client);
+// export const avatar = new Avatars(client);
+// export const account = new Account(client);
+// export const databases = new Databases(client);
+// export const storage = new Storage(client);
 
 export async function login() {
   try {

@@ -41,7 +41,6 @@ const dummyStats = {
   rank: "#1",
 };
 
-// Update the chartData object
 const chartData = {
   labels: ["5M", "1H", "6H", "1D"],
   datasets: [
@@ -53,29 +52,76 @@ const chartData = {
   ],
 };
 
+// fallback constants
+const FALLBACK_DATA = {
+  name: "Unknown Token",
+  symbol: "???",
+  logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Question_Mark.svg/1200px-Question_Mark.svg.png",
+  price: 0,
+  marketCap: 0,
+  volume: 0,
+  changePercentages: {
+    m5: 0,
+    h1: 0,
+    h6: 0,
+    h24: 0,
+  },
+};
+
 const TokenDetails = () => {
   const { token } = useLocalSearchParams();
-  //@ts-ignore
-  const tokenData = JSON.parse(token);
-  //@ts-ignore
-  const tokenInfoData = tokenData.tokenInfo;
 
-  const isEth = tokenData.relationships.base_token.data.id.startsWith("eth_");
-  const name = isEth
-    ? tokenInfoData?.tokenName
-    : tokenInfoData?.data.name || "";
-  const symbol = isEth
-    ? tokenInfoData?.tokenSymbol
-    : tokenInfoData?.data.symbol || "";
-  const price = tokenData.attributes.base_token_price_usd;
-  const logo = isEth
-    ? tokenInfoData?.tokenLogo
-    : tokenInfoData?.type === "jupiter"
-    ? tokenInfoData?.data.logoURI
-    : tokenInfoData?.data.logo || "";
-  const mCap = tokenData.attributes.fdv_usd;
-  //@ts-ignore
-  const volume = isEth ? 0 : tokenInfo.data.daily_volume;
+  const tokenData = React.useMemo(() => {
+    try {
+      return JSON.parse(token as string);
+    } catch (e) {
+      return null;
+    }
+  }, [token]);
+
+  const tokenInfoData = React.useMemo(() => {
+    return tokenData?.tokenInfo || null;
+  }, [tokenData]);
+
+  const isEth =
+    tokenData?.relationships?.base_token?.data?.id?.startsWith("eth_") || false;
+
+  const name = React.useMemo(() => {
+    if (!tokenInfoData) return FALLBACK_DATA.name;
+    return isEth
+      ? tokenInfoData?.tokenName
+      : tokenInfoData?.data?.name || FALLBACK_DATA.name;
+  }, [tokenInfoData, isEth]);
+
+  const symbol = React.useMemo(() => {
+    if (!tokenInfoData) return FALLBACK_DATA.symbol;
+    return isEth
+      ? tokenInfoData?.tokenSymbol
+      : tokenInfoData?.data?.symbol || FALLBACK_DATA.symbol;
+  }, [tokenInfoData, isEth]);
+
+  const price = React.useMemo(() => {
+    return tokenData?.attributes?.base_token_price_usd || FALLBACK_DATA.price;
+  }, [tokenData]);
+
+  const logo = React.useMemo(() => {
+    if (!tokenInfoData) return FALLBACK_DATA.logo;
+    if (isEth) return tokenInfoData?.tokenLogo || FALLBACK_DATA.logo;
+    return tokenInfoData?.type === "jupiter"
+      ? tokenInfoData?.data?.logoURI
+      : tokenInfoData?.type === "pool"
+      ? tokenInfoData?.data?.logoURI
+      : tokenInfoData?.data?.logo || FALLBACK_DATA.logo;
+  }, [tokenInfoData, isEth]);
+
+  const mCap = React.useMemo(() => {
+    return tokenData?.attributes?.fdv_usd || FALLBACK_DATA.marketCap;
+  }, [tokenData]);
+
+  const volume = React.useMemo(() => {
+    if (isEth) return FALLBACK_DATA.volume;
+    return tokenInfoData?.data?.daily_volume || FALLBACK_DATA.volume;
+  }, [isEth, tokenInfoData]);
 
   const router = useRouter();
   const [selectedInterval, setSelectedInterval] =
@@ -84,15 +130,37 @@ const TokenDetails = () => {
   const intervals = ["5M", "1H", "6H", "1D"];
 
   const change = useMemo(() => {
-    if (selectedInterval === "5M")
-      return tokenData.attributes.price_change_percentage.m5;
-    else if (selectedInterval === "1H")
-      return tokenData.attributes.price_change_percentage.h1;
-    else if (selectedInterval === "6H")
-      return tokenData.attributes.price_change_percentage.h6;
-    else if (selectedInterval === "1D")
-      return tokenData.attributes.price_change_percentage.h24;
-  }, [selectedInterval]);
+    if (!tokenData?.attributes?.price_change_percentage) {
+      return FALLBACK_DATA.changePercentages[
+        selectedInterval.toLowerCase() as keyof typeof FALLBACK_DATA.changePercentages
+      ];
+    }
+
+    switch (selectedInterval) {
+      case "5M":
+        return (
+          tokenData.attributes.price_change_percentage.m5 ||
+          FALLBACK_DATA.changePercentages.m5
+        );
+      case "1H":
+        return (
+          tokenData.attributes.price_change_percentage.h1 ||
+          FALLBACK_DATA.changePercentages.h1
+        );
+      case "6H":
+        return (
+          tokenData.attributes.price_change_percentage.h6 ||
+          FALLBACK_DATA.changePercentages.h6
+        );
+      case "1D":
+        return (
+          tokenData.attributes.price_change_percentage.h24 ||
+          FALLBACK_DATA.changePercentages.h24
+        );
+      default:
+        return FALLBACK_DATA.changePercentages.h24;
+    }
+  }, [selectedInterval, tokenData]);
 
   return (
     <SafeAreaView style={styles.container}>

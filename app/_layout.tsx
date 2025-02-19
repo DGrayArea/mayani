@@ -6,9 +6,15 @@ import { useEffect } from "react";
 import GlobalProvider from "@/lib/global-provider";
 import { QueryClientProvider, focusManager } from "@tanstack/react-query";
 import { queryClient } from "@/utils/query";
-import { AppStateStatus, Platform } from "react-native";
+import { AppStateStatus, Platform, StyleSheet } from "react-native";
 import { useAppState } from "@/hooks/useAppState";
 import { useOnlineManager } from "@/hooks/useOnlineManager";
+import { ClerkProvider, ClerkLoaded } from "@clerk/clerk-expo";
+import { Slot } from "expo-router";
+import { config } from "@/lib/appwrite";
+import { tokenCache } from "@/cache";
+import { StatusBar } from "expo-status-bar";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 function onAppStateChange(status: AppStateStatus) {
   // React Query already supports in web browser refetch on window focus by default
@@ -26,15 +32,59 @@ export default function RootLayout() {
 
   useAppState(onAppStateChange);
 
+  const publishableKey = config.publishableKey;
+
+  if (!publishableKey) {
+    throw new Error("Add EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY to your .env file");
+  }
+
   return (
-    <QueryClientProvider client={queryClient}>
-      <GlobalProvider>
-        <Stack
-          screenOptions={{
-            headerShown: false,
-          }}
-        />
-      </GlobalProvider>
-    </QueryClientProvider>
+    <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
+      <ClerkLoaded>
+        <QueryClientProvider client={queryClient}>
+          <GlobalProvider>
+            {Platform.OS === "android" ? (
+              <SafeAreaView style={styles.safeArea} edges={["top"]}>
+                <StatusBar
+                  style="light"
+                  backgroundColor="transparent"
+                  translucent
+                />
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                  }}
+                >
+                  <Slot />
+                </Stack>
+              </SafeAreaView>
+            ) : (
+              <>
+                <StatusBar
+                  style="light"
+                  backgroundColor="transparent"
+                  translucent
+                />
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                  }}
+                >
+                  <Slot />
+                </Stack>
+              </>
+            )}
+          </GlobalProvider>
+        </QueryClientProvider>
+      </ClerkLoaded>
+    </ClerkProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#005d4d", // Match your gradient start color
+  },
+  // ...rest of your styles
+});

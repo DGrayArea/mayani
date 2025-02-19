@@ -1,5 +1,5 @@
 import FilterModal from "@/components/FilterModal";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -16,21 +16,27 @@ import SkeletonLoader from "@/components/SkeletonLoader";
 import { useRefreshByUser } from "@/hooks/useRefreshByUser";
 import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { useQuery } from "@tanstack/react-query";
-import { fetchPumpShots, JupiterToken } from "@/utils/query";
+import { fetchPumpShots } from "@/utils/query";
+import { JupiterToken, PumpShot } from "@/types";
+import { getRelativeTime } from "@/utils/numbers";
+import axios from "axios";
 
 const NewListings = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
   const [isTokenInfoLoading, setIsTokenInfoLoading] = useState(true);
+  const [tokenMetadata, setTokenMetadata] = useState<Record<string, string>>(
+    {}
+  );
+  const [metadataLoading, setMetadataLoading] = useState(false);
 
-  const { isPending, error, data, refetch } = useQuery<JupiterToken[]>({
+  const { isPending, error, data, refetch } = useQuery<{ data: PumpShot[] }>({
     queryKey: ["newListings"],
     queryFn: fetchPumpShots,
   });
   const { isRefetchingByUser, refetchByUser } = useRefreshByUser(refetch);
   useRefreshOnFocus(refetch);
-  console.log(data);
-  // Sample data for new listings
+
   const tokens = [
     {
       id: "1",
@@ -58,7 +64,6 @@ const NewListings = () => {
     },
   ];
 
-  // Sample data for dethrone tokens
   const dethroneTokens = [
     {
       id: "1",
@@ -88,18 +93,79 @@ const NewListings = () => {
     },
   ];
 
+  const FALLBACK_IMAGE = "https://via.placeholder.com/40";
+
   const filterTokens = () => {
     if (selectedCategory === "all") return tokens;
     return tokens.filter((token) => token.category === selectedCategory);
   };
 
-  const renderTokenCard = ({ item }) => (
+  const fetchMetadata = async (uri: string) => {
+    try {
+      const response = await axios.get(uri);
+      return response.data.image;
+    } catch (error) {
+      // console.error("Error fetching metadata:", error);
+      return FALLBACK_IMAGE;
+    }
+  };
+
+  useEffect(() => {
+    const fetchAllMetadata = async () => {
+      if (data?.data) {
+        setMetadataLoading(true);
+        const metadata: Record<string, string> = {};
+
+        try {
+          await Promise.all(
+            data.data.slice(0, 30).map(async (token) => {
+              if (token.uri) {
+                const imageUrl = await fetchMetadata(token.uri);
+                metadata[token.mintAddress] = imageUrl;
+              }
+            })
+          );
+
+          setTokenMetadata(metadata);
+        } catch (error) {
+          // console.error("Error fetching metadata:", error);
+        } finally {
+          setMetadataLoading(false);
+        }
+      }
+    };
+
+    fetchAllMetadata();
+  }, [data]);
+
+  const getFilteredTokens = () => {
+    if (!data?.data) return [];
+
+    switch (selectedCategory) {
+      case "pumpfun":
+        return data.data.filter((token) => token.platform === "pumpfun");
+      case "moonshot":
+        return data.data.filter((token) => token.platform === "moonshot");
+      default:
+        return data.data;
+    }
+  };
+
+  const renderTokenCard = ({ item }: { item: PumpShot }) => (
     <View style={styles.tokenCard}>
       <View style={styles.tokenHeader}>
         <View style={styles.tokenIdentity}>
           <Image
-            source={{ uri: "/api/placeholder/40/40" }}
+            source={{
+              uri: tokenMetadata[item.mintAddress] || FALLBACK_IMAGE,
+            }}
             style={styles.tokenIcon}
+            onError={() => {
+              setTokenMetadata((prev) => ({
+                ...prev,
+                [item.mintAddress]: FALLBACK_IMAGE,
+              }));
+            }}
           />
           <View>
             <Text style={styles.tokenName}>{item.name}</Text>
@@ -108,7 +174,7 @@ const NewListings = () => {
         </View>
         <View style={styles.categoryTag}>
           <Text style={styles.categoryText}>
-            {item.category === "pumpfun" ? "🚀 PumpFun" : "🌙 Moonshot"}
+            {item.platform === "pumpfun" ? "🚀 PumpFun" : "🌙 Moonshot"}
           </Text>
         </View>
       </View>
@@ -116,22 +182,28 @@ const NewListings = () => {
       <View style={styles.tokenMetrics}>
         <View style={styles.metricItem}>
           <Text style={styles.metricLabel}>Price</Text>
-          <Text style={styles.metricValue}>{item.price}</Text>
+          <Text style={styles.metricValue}>
+            ${item.price ? item.price : 0.04}
+          </Text>
         </View>
         <View style={styles.metricItem}>
           <Text style={styles.metricLabel}>Change</Text>
           <Text style={[styles.metricValue, styles.changePositive]}>
-            {item.change}
+            {item.change ? item.change : "+425%"}
           </Text>
         </View>
         <View style={styles.metricItem}>
           <Text style={styles.metricLabel}>MCap</Text>
-          <Text style={styles.metricValue}>{item.marketCap}</Text>
+          <Text style={styles.metricValue}>
+            ${item.marketCap ? item.marketCap : "1.2M"}
+          </Text>
         </View>
       </View>
 
       <View style={styles.tokenFooter}>
-        <Text style={styles.launchTime}>Listed {item.launchTime}</Text>
+        <Text style={styles.launchTime}>
+          Listed {getRelativeTime(item.deployedAt)}
+        </Text>
         <Text style={styles.holders}>{item.holders} holders</Text>
       </View>
 
@@ -141,12 +213,14 @@ const NewListings = () => {
     </View>
   );
 
-  const renderDethroneCard = ({ item }) => (
+  const renderDethroneCard = ({ item }: { item: PumpShot | any }) => (
     <View style={styles.dethroneCard}>
       <View style={styles.dethroneHeader}>
         <View style={styles.tokenIdentity}>
           <Image
-            source={{ uri: "/api/placeholder/40/40" }}
+            source={{
+              uri: item.uri ? item.uri : FALLBACK_IMAGE,
+            }}
             style={styles.dethroneIcon}
           />
           <View>
@@ -161,12 +235,6 @@ const NewListings = () => {
         </View>
       </View>
 
-      {/* <View style={styles.dethroneMetrics}>
-        <Text style={styles.dethronePrice}>{item.price}</Text>
-        <Text style={[styles.dethroneChange, styles.changePositive]}>
-          {item.change}
-        </Text>
-      </View> */}
       <View style={styles.tokenMetrics}>
         <View style={styles.metricItem}>
           <Text style={styles.metricLabel}>Price</Text>
@@ -193,6 +261,70 @@ const NewListings = () => {
       </TouchableOpacity>
     </View>
   );
+
+  const renderMoonshotCard = ({ item }: { item: PumpShot }) => (
+    <View style={styles.dethroneCard}>
+      <View style={styles.dethroneHeader}>
+        <View style={styles.tokenIdentity}>
+          <Image
+            source={{
+              uri: tokenMetadata[item.mintAddress] || FALLBACK_IMAGE,
+            }}
+            style={styles.dethroneIcon}
+            onError={() => {
+              setTokenMetadata((prev) => ({
+                ...prev,
+                [item.mintAddress]: FALLBACK_IMAGE,
+              }));
+            }}
+          />
+          <View>
+            <Text style={styles.dethroneName}>{item.name}</Text>
+            <Text style={styles.dethroneAchievement}>{item.symbol}</Text>
+          </View>
+        </View>
+        <View style={styles.dethroneCategoryTag}>
+          <Text style={styles.dethroneCategoryText}>🌙 Moonshot</Text>
+        </View>
+      </View>
+
+      <View style={styles.tokenMetrics}>
+        <View style={styles.metricItem}>
+          <Text style={styles.metricLabel}>Price</Text>
+          <Text style={styles.metricValue}>
+            ${item.price ? item.price : 0.04}
+          </Text>
+        </View>
+        <View style={styles.metricItem}>
+          <Text style={styles.metricLabel}>Change</Text>
+          <Text style={[styles.metricValue, styles.changePositive]}>
+            {item.change ? item.change : "+425%"}
+          </Text>
+        </View>
+        <View style={styles.metricItem}>
+          <Text style={styles.metricLabel}>MCap</Text>
+          <Text style={styles.metricValue}>
+            ${item.marketCap ? item.marketCap : "1.2M"}
+          </Text>
+        </View>
+      </View>
+
+      <View style={styles.tokenFooter}>
+        <Text style={styles.launchTime}>
+          Listed {getRelativeTime(item.deployedAt)}
+        </Text>
+        <Text style={styles.holders}>{item.holders} holders</Text>
+      </View>
+
+      <TouchableOpacity style={styles.dethroneButton}>
+        <Text style={styles.dethroneButtonText}>Trade Now</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  if (isPending || metadataLoading) {
+    return <LoadingIndicator />;
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -273,10 +405,25 @@ const NewListings = () => {
         <FilterModal />
         <Text style={styles.sectionTitle}>New Listings</Text>
         <FlatList
-          data={filterTokens()}
-          renderItem={renderTokenCard}
-          keyExtractor={(item) => item.id}
+          data={getFilteredTokens().slice(0, 30)}
+          renderItem={({ item }) =>
+            item.platform === "moonshot"
+              ? renderMoonshotCard({ item })
+              : renderTokenCard({ item })
+          }
+          keyExtractor={(item) => item.mintAddress}
           scrollEnabled={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetchingByUser}
+              onRefresh={refetchByUser}
+            />
+          }
+          ListEmptyComponent={() => (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No tokens found</Text>
+            </View>
+          )}
         />
 
         <Text style={styles.sectionTitle}>Dethrone Kings 👑</Text>
@@ -520,6 +667,14 @@ const styles = StyleSheet.create({
   dethroneButtonText: {
     color: "#000",
     fontWeight: "600",
+  },
+  emptyContainer: {
+    padding: 20,
+    alignItems: "center",
+  },
+  emptyText: {
+    color: "#8FA396",
+    fontSize: 16,
   },
 });
 
