@@ -8,20 +8,20 @@
     "scheme": "mayani",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "developmentClient": false,
     "runtimeVersion": {
-      "policy": "nativeVersion"
+      "policy": "sdkVersion"
     },
     "updates": {
       "url": "https://u.expo.dev/de40bbd7-766a-47ce-994c-d2031400d774",
       "enabled": true,
-      "policy": "nativeVersion"
+      "fallbackToCacheTimeout": 0
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.grayson.mayani",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSFaceIDUsageDescription": "This app uses Face ID to secure your login"
       }
     },
     "android": {
@@ -47,7 +47,8 @@
           "enableFullScreenImage_legacy": true
         }
       ],
-      "expo-font"
+      "expo-font",
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true

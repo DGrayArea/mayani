@@ -13,7 +13,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
-import { LineChart } from "react-native-chart-kit";
+import { LineChart, LineChartProvider } from "react-native-wagmi-charts";
 import { formatNumber, formatPrice } from "@/utils/numbers";
 
 export const unstable_settings = {
@@ -42,17 +42,6 @@ const dummyStats = {
   circulatingSupply: "19.5M",
   totalSupply: "21M",
   rank: "#1",
-};
-
-const chartData = {
-  labels: ["5M", "1H", "6H", "1D"],
-  datasets: [
-    {
-      data: dummyPriceData.chartData["5M"],
-      color: (opacity = 1) => `rgba(76, 175, 80, ${opacity})`,
-      strokeWidth: 2,
-    },
-  ],
 };
 
 // fallback constants
@@ -136,6 +125,18 @@ const TokenDetails = () => {
     useState<keyof typeof dummyPriceData.chartData>("5M");
 
   const intervals = ["5M", "1H", "6H", "1D"];
+
+  const chartData = useMemo(
+    () =>
+      dummyPriceData.chartData[selectedInterval].map((value, index) => ({
+        timestamp:
+          Date.now() -
+          (dummyPriceData.chartData[selectedInterval].length - 1 - index) *
+            60000,
+        value,
+      })),
+    [selectedInterval]
+  );
 
   const change = useMemo(() => {
     if (!tokenData?.attributes?.price_change_percentage) {
@@ -358,40 +359,20 @@ const TokenDetails = () => {
       </View>
 
       <View style={styles.chartContainer}>
-        <LineChart
-          data={{
-            ...chartData,
-            datasets: [
-              {
-                ...chartData.datasets[0],
-                data: dummyPriceData.chartData[selectedInterval],
-              },
-            ],
-          }}
-          width={width - 40}
-          height={220}
-          chartConfig={{
-            backgroundColor: "#1A231E",
-            backgroundGradientFrom: "#1A231E",
-            backgroundGradientTo: "#1A231E",
-            decimalPlaces: 0,
-            color: (opacity = 1) => `rgba(229, 229, 229, ${opacity})`,
-            labelColor: (opacity = 1) => `rgba(229, 229, 229, ${opacity})`,
-            style: {
-              borderRadius: 16,
-            },
-            propsForDots: {
-              r: "4",
-              strokeWidth: "2",
-              stroke: "#4CAF50",
-            },
-          }}
-          bezier
-          style={{
-            marginVertical: 8,
-            borderRadius: 16,
-          }}
-        />
+        <LineChartProvider data={chartData}>
+          <LineChart
+            width={width - 60}
+            height={220}
+            style={{
+              backgroundColor: "#1A231E",
+            }}
+          >
+            <LineChart.Path color="#4CAF50" width={2}>
+              <LineChart.Gradient />
+            </LineChart.Path>
+            <LineChart.CursorCrosshair color="#4CAF50" />
+          </LineChart>
+        </LineChartProvider>
 
         <View style={styles.intervalContainer}>
           {intervals.map((interval) => (
@@ -537,6 +518,11 @@ const styles = StyleSheet.create({
   },
   chartContainer: {
     marginVertical: 20,
+    backgroundColor: "#1A231E",
+    borderRadius: 16,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: "#2A3F33",
   },
   intervalContainer: {
     flexDirection: "row",
