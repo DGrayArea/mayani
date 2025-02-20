@@ -1,5 +1,5 @@
 import "../crypto-polyfill";
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import { Link } from "expo-router";
 import {
   Text,
@@ -11,50 +11,70 @@ import {
   Dimensions,
   Platform,
   ActivityIndicator,
+  StatusBar,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useUser } from "@clerk/clerk-expo";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Redirect } from "expo-router";
 
+const ANIMATION_DURATION = 1200;
+
 const Home = () => {
-  const fadeAnim = new Animated.Value(0);
-  const scaleAnim = new Animated.Value(0.9);
-  const slideAnim = new Animated.Value(-50);
-  const buttonScaleAnim = new Animated.Value(1);
+  // Initialize animated values with useRef to prevent recreation
+  const animations = useRef({
+    fade: new Animated.Value(0),
+    scale: new Animated.Value(0.9),
+    slide: new Animated.Value(-50),
+    logoRotate: new Animated.Value(0),
+    buttonScale: new Animated.Value(1),
+  }).current;
 
   useEffect(() => {
+    // Enhanced entrance animations
     Animated.parallel([
-      Animated.timing(fadeAnim, {
+      Animated.timing(animations.fade, {
         toValue: 1,
-        duration: 1000,
+        duration: ANIMATION_DURATION,
         useNativeDriver: true,
       }),
-      Animated.spring(scaleAnim, {
+      Animated.spring(animations.scale, {
         toValue: 1,
         friction: 8,
         tension: 40,
         useNativeDriver: true,
       }),
-      Animated.timing(slideAnim, {
+      Animated.timing(animations.slide, {
         toValue: 0,
-        duration: 800,
+        duration: ANIMATION_DURATION * 0.8,
         useNativeDriver: true,
       }),
+      Animated.sequence([
+        Animated.delay(ANIMATION_DURATION * 0.5),
+        Animated.spring(animations.logoRotate, {
+          toValue: 1,
+          friction: 8,
+          tension: 40,
+          useNativeDriver: true,
+        }),
+      ]),
     ]).start();
   }, []);
 
   const handlePressIn = () => {
-    Animated.spring(buttonScaleAnim, {
+    Animated.spring(animations.buttonScale, {
       toValue: 0.95,
+      friction: 5,
+      tension: 40,
       useNativeDriver: true,
     }).start();
   };
 
   const handlePressOut = () => {
-    Animated.spring(buttonScaleAnim, {
+    Animated.spring(animations.buttonScale, {
       toValue: 1,
       friction: 3,
+      tension: 40,
       useNativeDriver: true,
     }).start();
   };
@@ -63,18 +83,25 @@ const Home = () => {
 
   if (!isLoaded) {
     return (
-      <SafeAreaView className="bg-white h-full flex justify-center items-center">
-        <ActivityIndicator className="text-primary-300" size="large" />
+      <SafeAreaView style={styles.loadingContainer}>
+        <StatusBar barStyle="light-content" />
+        <ActivityIndicator size="large" color="#00897b" />
       </SafeAreaView>
     );
   }
 
   if (user) {
-    return <Redirect href={"/(home)/(tabs)/explore"} />;
+    return <Redirect href="/(home)/(tabs)/explore" />;
   }
 
+  const spin = animations.logoRotate.interpolate({
+    inputRange: [0, 1],
+    outputRange: ['0deg', '360deg'],
+  });
+
   return (
-    <View style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="light-content" />
       <LinearGradient
         colors={["#004d40", "#00796b", "#009688"]}
         style={styles.container}
@@ -86,17 +113,21 @@ const Home = () => {
             style={[
               styles.logoContainer,
               {
-                opacity: fadeAnim,
-                transform: [{ scale: scaleAnim }],
+                opacity: animations.fade,
+                transform: [
+                  { scale: animations.scale },
+                  { rotate: spin }
+                ],
               },
             ]}
           >
             <Image
               source={require("../assets/renner.jpeg")}
               style={styles.logo}
+              resizeMode="cover"
             />
             <LinearGradient
-              colors={["rgba(0,77,64,0.2)", "rgba(0,121,107,0.2)"]}
+              colors={["rgba(0,77,64,0.3)", "rgba(0,121,107,0.3)"]}
               style={styles.logoOverlay}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 1 }}
@@ -107,20 +138,32 @@ const Home = () => {
             style={[
               styles.title,
               {
-                opacity: fadeAnim,
-                transform: [{ translateX: slideAnim }],
+                opacity: animations.fade,
+                transform: [{ translateX: animations.slide }],
               },
             ]}
           >
             Welcome to Mayani
+          </Animated.Text>
+          
+          <Animated.Text
+            style={[
+              styles.subtitle,
+              {
+                opacity: animations.fade,
+                transform: [{ translateX: Animated.multiply(animations.slide, -1) }],
+              },
+            ]}
+          >
+            Your Gateway to  Safer degen 
           </Animated.Text>
 
           <Animated.View
             style={[
               styles.buttonContainer,
               {
-                opacity: fadeAnim,
-                transform: [{ scale: buttonScaleAnim }],
+                opacity: animations.fade,
+                transform: [{ scale: animations.buttonScale }],
               },
             ]}
           >
@@ -137,7 +180,7 @@ const Home = () => {
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
                 >
-                  <Text style={styles.buttonText}>Sign In</Text>
+                  <Text style={styles.buttonText}>Get Started</Text>
                 </LinearGradient>
               </Pressable>
             </Link>
@@ -145,20 +188,26 @@ const Home = () => {
         </View>
 
         <View style={styles.bgCircles}>
-          <View style={[styles.bgCircle, styles.bgCircle1]} />
-          <View style={[styles.bgCircle, styles.bgCircle2]} />
-          <View style={[styles.bgCircle, styles.bgCircle3]} />
+          {[styles.bgCircle1, styles.bgCircle2, styles.bgCircle3].map((style, index) => (
+            <View key={index} style={[styles.bgCircle, style]} />
+          ))}
         </View>
       </LinearGradient>
-    </View>
+    </SafeAreaView>
   );
 };
 
-const { width } = Dimensions.get("window");
+const { width, height } = Dimensions.get("window");
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    backgroundColor: "#004d40",
+    justifyContent: "center",
+    alignItems: "center",
+  },
   safeArea: {
     flex: 1,
-    // paddingTop: Constants.statusBarHeight,
+    backgroundColor: "#004d40",
   },
   container: {
     flex: 1,
@@ -168,18 +217,17 @@ const styles = StyleSheet.create({
   content: {
     alignItems: "center",
     width: "100%",
-    paddingHorizontal: 20,
+    paddingHorizontal: 24,
     zIndex: 1,
   },
   logoContainer: {
-    marginBottom: 30,
+    marginBottom: 32,
+    borderRadius: 75,
+    overflow: "hidden",
     ...Platform.select({
       ios: {
         shadowColor: "#000",
-        shadowOffset: {
-          width: 0,
-          height: 8,
-        },
+        shadowOffset: { width: 0, height: 8 },
         shadowOpacity: 0.44,
         shadowRadius: 10.32,
       },
@@ -189,9 +237,9 @@ const styles = StyleSheet.create({
     }),
   },
   logo: {
-    width: 140,
-    height: 140,
-    borderRadius: 70,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
   },
   logoOverlay: {
     position: "absolute",
@@ -199,14 +247,15 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     bottom: 0,
-    borderRadius: 70,
+    borderRadius: 75,
   },
   title: {
-    fontSize: 36,
+    fontSize: 42,
     fontWeight: "bold",
     color: "#ffffff",
-    marginBottom: 40,
+    marginBottom: 12,
     textAlign: "center",
+    fontFamily: Platform.select({ ios: "System", android: "sans-serif-medium" }),
     ...Platform.select({
       ios: {
         textShadowColor: "rgba(0, 0, 0, 0.3)",
@@ -218,16 +267,20 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  subtitle: {
+    fontSize: 18,
+    color: "rgba(255, 255, 255, 0.8)",
+    marginBottom: 48,
+    textAlign: "center",
+    fontFamily: Platform.select({ ios: "System", android: "sans-serif-light" }),
+  },
   buttonContainer: {
-    width: "80%",
-    maxWidth: 300,
+    width: "85%",
+    maxWidth: 320,
     ...Platform.select({
       ios: {
         shadowColor: "#000",
-        shadowOffset: {
-          width: 0,
-          height: 4,
-        },
+        shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.3,
         shadowRadius: 4.65,
       },
@@ -242,15 +295,16 @@ const styles = StyleSheet.create({
     borderRadius: 30,
   },
   buttonGradient: {
-    paddingVertical: 16,
+    paddingVertical: 18,
     alignItems: "center",
     justifyContent: "center",
   },
   buttonText: {
     color: "#ffffff",
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: "600",
     letterSpacing: 1,
+    fontFamily: Platform.select({ ios: "System", android: "sans-serif-medium" }),
   },
   bgCircles: {
     ...StyleSheet.absoluteFillObject,
@@ -259,25 +313,25 @@ const styles = StyleSheet.create({
   bgCircle: {
     position: "absolute",
     backgroundColor: "rgba(255, 255, 255, 0.05)",
-    borderRadius: width,
+    borderRadius: width * 2,
   },
   bgCircle1: {
-    width: width * 1.4,
-    height: width * 1.4,
-    top: -width * 0.8,
+    width: width * 1.8,
+    height: width * 1.8,
+    top: -width,
     right: -width * 0.5,
   },
   bgCircle2: {
-    width: width * 1.2,
-    height: width * 1.2,
+    width: width * 1.4,
+    height: width * 1.4,
     bottom: -width * 0.6,
     left: -width * 0.3,
   },
   bgCircle3: {
-    width: width,
-    height: width,
-    top: width * 0.2,
-    right: -width * 0.3,
+    width: width * 1.2,
+    height: width * 1.2,
+    top: height * 0.2,
+    right: -width * 0.4,
   },
 });
 
