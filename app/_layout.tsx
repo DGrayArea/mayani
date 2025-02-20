@@ -40,6 +40,19 @@ export default function RootLayout() {
     throw new Error("Add EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY to your .env file");
   }
 
+  const renderContent = () => (
+    <>
+      <StatusBar style="light" backgroundColor="transparent" translucent />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+        }}
+      >
+        <Slot />
+      </Stack>
+    </>
+  );
+
   return (
     <GestureHandlerRootView style={styles.container}>
       <ErrorBoundary>
@@ -49,34 +62,10 @@ export default function RootLayout() {
               <GlobalProvider>
                 {Platform.OS === "android" ? (
                   <SafeAreaView style={styles.safeArea} edges={["top"]}>
-                    <StatusBar
-                      style="light"
-                      backgroundColor="transparent"
-                      translucent
-                    />
-                    <Stack
-                      screenOptions={{
-                        headerShown: false,
-                      }}
-                    >
-                      <Slot />
-                    </Stack>
+                    {renderContent()}
                   </SafeAreaView>
                 ) : (
-                  <>
-                    <StatusBar
-                      style="light"
-                      backgroundColor="transparent"
-                      translucent
-                    />
-                    <Stack
-                      screenOptions={{
-                        headerShown: false,
-                      }}
-                    >
-                      <Slot />
-                    </Stack>
-                  </>
+                  renderContent()
                 )}
               </GlobalProvider>
             </QueryClientProvider>

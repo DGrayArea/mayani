@@ -199,6 +199,66 @@ const Home = () => {
 };
 
 const { width, height } = Dimensions.get("window");
+
+// First, create platform-specific style constants
+const platformStyles = {
+  fonts: {
+    title: Platform.select({
+      ios: "System",
+      android: "sans-serif-medium",
+      default: "System",
+    }),
+    subtitle: Platform.select({
+      ios: "System",
+      android: "sans-serif-light",
+      default: "System",
+    }),
+    button: Platform.select({
+      ios: "System",
+      android: "sans-serif-medium",
+      default: "System",
+    }),
+  },
+  shadows: {
+    logo: Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 8 },
+        shadowOpacity: 0.44,
+        shadowRadius: 10.32,
+      },
+      android: {
+        elevation: 16,
+      },
+      default: {},
+    }),
+    text: Platform.select({
+      ios: {
+        textShadowColor: "rgba(0, 0, 0, 0.3)",
+        textShadowOffset: { width: 0, height: 2 },
+        textShadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+      default: {},
+    }),
+    button: Platform.select({
+      ios: {
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.3,
+        shadowRadius: 4.65,
+      },
+      android: {
+        elevation: 8,
+      },
+      default: {},
+    }),
+  },
+};
+
+// Update your StyleSheet to use the platform-specific styles
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
@@ -225,17 +285,7 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     borderRadius: 75,
     overflow: "hidden",
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.44,
-        shadowRadius: 10.32,
-      },
-      android: {
-        elevation: 16,
-      },
-    }),
+    ...platformStyles.shadows.logo,
   },
   logo: {
     width: 150,
@@ -256,42 +306,20 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     marginBottom: 12,
     textAlign: "center",
-    fontFamily: Platform.select({
-      ios: "System",
-      android: "sans-serif-medium",
-    }),
-    ...Platform.select({
-      ios: {
-        textShadowColor: "rgba(0, 0, 0, 0.3)",
-        textShadowOffset: { width: 0, height: 2 },
-        textShadowRadius: 4,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
+    fontFamily: platformStyles.fonts.title,
+    ...platformStyles.shadows.text,
   },
   subtitle: {
     fontSize: 18,
     color: "rgba(255, 255, 255, 0.8)",
     marginBottom: 48,
     textAlign: "center",
-    fontFamily: Platform.select({ ios: "System", android: "sans-serif-light" }),
+    fontFamily: platformStyles.fonts.subtitle,
   },
   buttonContainer: {
     width: "85%",
     maxWidth: 320,
-    ...Platform.select({
-      ios: {
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 4.65,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
+    ...platformStyles.shadows.button,
   },
   button: {
     width: "100%",
@@ -308,10 +336,7 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "600",
     letterSpacing: 1,
-    fontFamily: Platform.select({
-      ios: "System",
-      android: "sans-serif-medium",
-    }),
+    fontFamily: platformStyles.fonts.button,
   },
   bgCircles: {
     ...StyleSheet.absoluteFillObject,
