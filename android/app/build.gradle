@@ -1,0 +1,4 @@
+dependencies {
+    // ...existing dependencies...
+    implementation "expo.modules.core:core:${rootProject.ext.expoModulesVersion}"
+}

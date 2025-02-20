@@ -7,15 +7,17 @@ buildscript {
         ndkVersion = "25.1.8937393"
         kotlinVersion = "1.8.0"
         
-        // Add these recommended versions
+        // Update Expo and AndroidX versions
         androidXCoreVersion = "1.8.0"
         androidXAppCompatVersion = "1.4.1"
         androidXSwipeRefreshLayoutVersion = "1.1.0"
+        expoModulesVersion = "1.0.0" // Add this line
     }
 
     repositories {
         google()
         mavenCentral()
+        maven { url 'https://maven.expo.dev' } // Add Expo repository
     }
 
     dependencies {
@@ -29,6 +31,7 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        maven { url 'https://maven.expo.dev' } // Add Expo repository
         maven {
             url "$rootDir/../node_modules/react-native/android"
         }
