@@ -2,12 +2,15 @@
 
 # dependencies
 node_modules/
-
+.zshrc
+./.zshrc
 # Expo
 .expo/
 dist/
 web-build/
 expo-env.d.ts
+android
+./android
 ios
 ./ios
 # Native

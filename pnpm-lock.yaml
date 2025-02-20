@@ -116,9 +116,6 @@ importers:
       jest-expo:
         specifier: ~52.0.4
         version: 52.0.4(l6v2xzazbbkxk3j6zb7wiqqhke)
-      metro:
-        specifier: ^0.81.0
-        version: 0.81.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       metro-resolver:
         specifier: ^0.81.0
         version: 0.81.1
@@ -207,9 +204,15 @@ importers:
       jest:
         specifier: ^29.2.1
         version: 29.7.0(@types/node@22.13.4)(babel-plugin-macros@3.1.0)
+      metro:
+        specifier: ^0.81.1
+        version: 0.81.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
       metro-config:
         specifier: ^0.81.0
         version: 0.81.1(bufferutil@4.0.9)(utf-8-validate@5.0.10)
+      metro-core:
+        specifier: ^0.81.1
+        version: 0.81.1
       react-test-renderer:
         specifier: 18.3.1
         version: 18.3.1(react@18.3.1)

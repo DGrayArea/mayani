@@ -8,20 +8,11 @@
     "scheme": "mayani",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
-    "runtimeVersion": {
-      "policy": "sdkVersion"
-    },
-    "updates": {
-      "url": "https://u.expo.dev/de40bbd7-766a-47ce-994c-d2031400d774",
-      "enabled": true,
-      "fallbackToCacheTimeout": 0
-    },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.grayson.mayani",
+      "bundleIdentifier": "com.dgrayarea.mayani",
       "infoPlist": {
-        "ITSAppUsesNonExemptEncryption": false,
-        "NSFaceIDUsageDescription": "This app uses Face ID to secure your login"
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -29,7 +20,7 @@
         "foregroundImage": "./assets/icon.png",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.grayson.mayani"
+      "package": "com.dgrayarea.mayani"
     },
     "web": {
       "bundler": "metro",
@@ -58,9 +49,14 @@
         "origin": false
       },
       "eas": {
-        "projectId": "de40bbd7-766a-47ce-994c-d2031400d774"
+        "projectId": "ebecbc1d-5a51-4511-9300-1112130f7b9b"
       }
     },
-    "owner": "dgrayarea"
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/ebecbc1d-5a51-4511-9300-1112130f7b9b"
+    }
   }
 }
