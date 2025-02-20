@@ -1,19 +1,20 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  TextInput, 
-  ScrollView, 
-  Modal, 
+// @ts-nocheck
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  TextInput,
+  ScrollView,
+  Modal,
   SafeAreaView,
   StyleSheet,
   Dimensions,
   Platform,
-  StatusBar
-} from 'react-native';
+  StatusBar,
+} from "react-native";
 
-const SCREEN_WIDTH = Dimensions.get('window').width;
+const SCREEN_WIDTH = Dimensions.get("window").width;
 
 const P2P = () => {
   const [activeTab, setActiveTab] = useState("browse");
@@ -21,7 +22,7 @@ const P2P = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [selectedCrypto, setSelectedCrypto] = useState("All");
   const [selectedPayment, setSelectedPayment] = useState("All");
-  
+
   const [newAd, setNewAd] = useState({
     type: "buy",
     crypto: "",
@@ -60,15 +61,23 @@ const P2P = () => {
   ]);
 
   const cryptoOptions = ["All", "BTC", "ETH", "SOL", "USDT"];
-  const paymentOptions = ["All", "Bank Transfer", "PayPal", "Credit Card", "Cash"];
+  const paymentOptions = [
+    "All",
+    "Bank Transfer",
+    "PayPal",
+    "Credit Card",
+    "Cash",
+  ];
 
-  const filteredOrders = p2pOrders.filter(order => {
-    if (selectedCrypto !== "All" && order.crypto !== selectedCrypto) return false;
-    if (selectedPayment !== "All" && order.payment !== selectedPayment) return false;
+  const filteredOrders = p2pOrders.filter((order) => {
+    if (selectedCrypto !== "All" && order.crypto !== selectedCrypto)
+      return false;
+    if (selectedPayment !== "All" && order.payment !== selectedPayment)
+      return false;
     return true;
   });
 
-  const myAds = p2pOrders.filter(order => order.isAd);
+  const myAds = p2pOrders.filter((order) => order.isAd);
 
   const handlePostAd = () => {
     if (!newAd.crypto || !newAd.price || !newAd.amount || !newAd.payment) {
@@ -102,16 +111,15 @@ const P2P = () => {
 
   const FilterButton = ({ title, isSelected, onPress }) => (
     <TouchableOpacity
-      style={[
-        styles.filterButton,
-        isSelected && styles.filterButtonSelected
-      ]}
+      style={[styles.filterButton, isSelected && styles.filterButtonSelected]}
       onPress={onPress}
     >
-      <Text style={[
-        styles.filterButtonText,
-        isSelected && styles.filterButtonTextSelected
-      ]}>
+      <Text
+        style={[
+          styles.filterButtonText,
+          isSelected && styles.filterButtonTextSelected,
+        ]}
+      >
         {title}
       </Text>
     </TouchableOpacity>
@@ -120,20 +128,34 @@ const P2P = () => {
   const P2POrder = ({ item }) => (
     <View style={[styles.orderCard, item.isAd && styles.adCard]}>
       <View style={styles.orderHeader}>
-        <View style={[
-          styles.orderTypeBadge,
-          { backgroundColor: item.type === "buy" ? styles.colors.buyLight : styles.colors.sellLight }
-        ]}>
-          <Text style={[
-            styles.orderTypeText,
-            { color: item.type === "buy" ? styles.colors.buyDark : styles.colors.sellDark }
-          ]}>
+        <View
+          style={[
+            styles.orderTypeBadge,
+            {
+              backgroundColor:
+                item.type === "buy"
+                  ? styles.colors.buyLight
+                  : styles.colors.sellLight,
+            },
+          ]}
+        >
+          <Text
+            style={[
+              styles.orderTypeText,
+              {
+                color:
+                  item.type === "buy"
+                    ? styles.colors.buyDark
+                    : styles.colors.sellDark,
+              },
+            ]}
+          >
             {item.type.toUpperCase()}
           </Text>
         </View>
-        
+
         <Text style={styles.cryptoText}>{item.crypto}</Text>
-        
+
         {item.isAd && (
           <View style={styles.adBadge}>
             <Text style={styles.adBadgeText}>AD</Text>
@@ -148,7 +170,9 @@ const P2P = () => {
         </View>
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Amount:</Text>
-          <Text style={styles.detailValue}>{item.amount} {item.crypto}</Text>
+          <Text style={styles.detailValue}>
+            {item.amount} {item.crypto}
+          </Text>
         </View>
         <View style={styles.detailRow}>
           <Text style={styles.detailLabel}>Payment:</Text>
@@ -178,11 +202,7 @@ const P2P = () => {
   );
 
   const PostAdModal = () => (
-    <Modal
-      visible={showPostModal}
-      animationType="slide"
-      transparent={true}
-    >
+    <Modal visible={showPostModal} animationType="slide" transparent={true}>
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <Text style={styles.modalTitle}>Post New Ad</Text>
@@ -191,29 +211,33 @@ const P2P = () => {
             <TouchableOpacity
               style={[
                 styles.typeButton,
-                newAd.type === "buy" && styles.typeButtonSelected
+                newAd.type === "buy" && styles.typeButtonSelected,
               ]}
               onPress={() => setNewAd({ ...newAd, type: "buy" })}
             >
-              <Text style={[
-                styles.typeButtonText,
-                newAd.type === "buy" && styles.typeButtonTextSelected
-              ]}>
+              <Text
+                style={[
+                  styles.typeButtonText,
+                  newAd.type === "buy" && styles.typeButtonTextSelected,
+                ]}
+              >
                 BUY
               </Text>
             </TouchableOpacity>
-            
+
             <TouchableOpacity
               style={[
                 styles.typeButton,
-                newAd.type === "sell" && styles.typeButtonSelected
+                newAd.type === "sell" && styles.typeButtonSelected,
               ]}
               onPress={() => setNewAd({ ...newAd, type: "sell" })}
             >
-              <Text style={[
-                styles.typeButtonText,
-                newAd.type === "sell" && styles.typeButtonTextSelected
-              ]}>
+              <Text
+                style={[
+                  styles.typeButtonText,
+                  newAd.type === "sell" && styles.typeButtonTextSelected,
+                ]}
+              >
                 SELL
               </Text>
             </TouchableOpacity>
@@ -256,11 +280,8 @@ const P2P = () => {
             >
               <Text style={styles.cancelButtonText}>Cancel</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity
-              style={styles.postButton}
-              onPress={handlePostAd}
-            >
+
+            <TouchableOpacity style={styles.postButton} onPress={handlePostAd}>
               <Text style={styles.postButtonText}>Post Ad</Text>
             </TouchableOpacity>
           </View>
@@ -289,16 +310,26 @@ const P2P = () => {
             style={[styles.tab, activeTab === "browse" && styles.activeTab]}
             onPress={() => setActiveTab("browse")}
           >
-            <Text style={[styles.tabText, activeTab === "browse" && styles.activeTabText]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "browse" && styles.activeTabText,
+              ]}
+            >
               Browse
             </Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={[styles.tab, activeTab === "myAds" && styles.activeTab]}
             onPress={() => setActiveTab("myAds")}
           >
-            <Text style={[styles.tabText, activeTab === "myAds" && styles.activeTabText]}>
+            <Text
+              style={[
+                styles.tabText,
+                activeTab === "myAds" && styles.activeTabText,
+              ]}
+            >
               My Ads
             </Text>
           </TouchableOpacity>
@@ -308,7 +339,7 @@ const P2P = () => {
           <Text style={styles.title}>
             {activeTab === "browse" ? "Available Orders" : "My Posted Ads"}
           </Text>
-          
+
           {activeTab === "browse" && (
             <TouchableOpacity
               style={styles.filterToggle}
@@ -335,7 +366,7 @@ const P2P = () => {
                   />
                 ))}
               </View>
-              
+
               <View style={styles.filterGroup}>
                 <Text style={styles.filterLabel}>Payment:</Text>
                 {paymentOptions.map((payment) => (
@@ -382,14 +413,14 @@ const styles = StyleSheet.create({
     buyDark: "#4CAF50",
     sellLight: "#FFEBEE",
     sellDark: "#F44336",
-    placeholderText: "#666666"
+    placeholderText: "#666666",
   },
-  
+
   container: {
     flex: 1,
     backgroundColor: "#0A0F0D",
   },
-  
+
   content: {
     flex: 1,
     maxWidth: 600,
@@ -404,24 +435,24 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: "#2A3F33",
   },
-  
+
   tab: {
     flex: 1,
     paddingVertical: 12,
     alignItems: "center",
   },
-  
+
   activeTab: {
     borderBottomWidth: 2,
     borderBottomColor: "#4CAF50",
   },
-  
+
   tabText: {
     color: "#8FA396",
     fontSize: 16,
     fontWeight: "500",
   },
-  
+
   activeTabText: {
     fontWeight: "700",
   },
@@ -432,7 +463,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginBottom: 16,
   },
-  
+
   title: {
     fontSize: 20,
     fontWeight: "bold",
@@ -442,7 +473,7 @@ const styles = StyleSheet.create({
   filterToggle: {
     padding: 8,
   },
-  
+
   filterToggleText: {
     color: "#4CAF50",
     fontWeight: "600",
@@ -451,18 +482,18 @@ const styles = StyleSheet.create({
   filters: {
     marginBottom: 16,
   },
-  
+
   filterGroup: {
     flexDirection: "row",
     alignItems: "center",
     marginRight: 16,
   },
-  
+
   filterLabel: {
     color: "#8FA396",
     marginRight: 8,
   },
-  
+
   filterButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -470,16 +501,16 @@ const styles = StyleSheet.create({
     backgroundColor: "#1A231E",
     marginRight: 8,
   },
-  
+
   filterButtonSelected: {
     backgroundColor: "#4CAF50",
   },
-  
+
   filterButtonText: {
     color: "#8FA396",
     fontSize: 14,
   },
-  
+
   filterButtonTextSelected: {
     color: "white",
   },
@@ -496,7 +527,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#2A3F33",
   },
-  
+
   adCard: {
     borderWidth: 2,
     borderColor: "#3A5F43",

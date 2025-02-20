@@ -96,7 +96,7 @@ const Home = () => {
 
   const spin = animations.logoRotate.interpolate({
     inputRange: [0, 1],
-    outputRange: ['0deg', '360deg'],
+    outputRange: ["0deg", "360deg"],
   });
 
   return (
@@ -114,10 +114,7 @@ const Home = () => {
               styles.logoContainer,
               {
                 opacity: animations.fade,
-                transform: [
-                  { scale: animations.scale },
-                  { rotate: spin }
-                ],
+                transform: [{ scale: animations.scale }, { rotate: spin }],
               },
             ]}
           >
@@ -145,17 +142,19 @@ const Home = () => {
           >
             Welcome to Mayani
           </Animated.Text>
-          
+
           <Animated.Text
             style={[
               styles.subtitle,
               {
                 opacity: animations.fade,
-                transform: [{ translateX: Animated.multiply(animations.slide, -1) }],
+                transform: [
+                  { translateX: Animated.multiply(animations.slide, -1) },
+                ],
               },
             ]}
           >
-            Your Gateway to  Safer degen 
+            Your Gateway to Safer degen
           </Animated.Text>
 
           <Animated.View
@@ -188,9 +187,11 @@ const Home = () => {
         </View>
 
         <View style={styles.bgCircles}>
-          {[styles.bgCircle1, styles.bgCircle2, styles.bgCircle3].map((style, index) => (
-            <View key={index} style={[styles.bgCircle, style]} />
-          ))}
+          {[styles.bgCircle1, styles.bgCircle2, styles.bgCircle3].map(
+            (style, index) => (
+              <View key={index} style={[styles.bgCircle, style]} />
+            )
+          )}
         </View>
       </LinearGradient>
     </SafeAreaView>
@@ -255,7 +256,10 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     marginBottom: 12,
     textAlign: "center",
-    fontFamily: Platform.select({ ios: "System", android: "sans-serif-medium" }),
+    fontFamily: Platform.select({
+      ios: "System",
+      android: "sans-serif-medium",
+    }),
     ...Platform.select({
       ios: {
         textShadowColor: "rgba(0, 0, 0, 0.3)",
@@ -304,7 +308,10 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "600",
     letterSpacing: 1,
-    fontFamily: Platform.select({ ios: "System", android: "sans-serif-medium" }),
+    fontFamily: Platform.select({
+      ios: "System",
+      android: "sans-serif-medium",
+    }),
   },
   bgCircles: {
     ...StyleSheet.absoluteFillObject,

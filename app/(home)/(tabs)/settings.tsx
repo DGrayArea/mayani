@@ -90,8 +90,8 @@ const Settings = () => {
   );
 
   const renderSelectItem = (title, value, onPress) => (
-    <TouchableOpacity 
-      style={styles.settingItem} 
+    <TouchableOpacity
+      style={styles.settingItem}
       onPress={onPress}
       activeOpacity={0.7}
     >
@@ -104,8 +104,8 @@ const Settings = () => {
   );
 
   const renderActionItem = (title, onPress, textStyle = {}) => (
-    <TouchableOpacity 
-      style={styles.settingItem} 
+    <TouchableOpacity
+      style={styles.settingItem}
       onPress={onPress}
       activeOpacity={0.7}
     >
@@ -136,18 +136,18 @@ const Settings = () => {
 
         <View style={styles.settingsContainer}>
           {/* General Settings */}
-          {renderSectionHeader("General")}
+          {renderSectionHeader("General", "")}
           {renderSelectItem("Currency", currency, () =>
             console.log("Currency pressed")
           )}
           {renderSelectItem("Language", language, () =>
             console.log("Language pressed")
           )}
-          {renderSwitchItem("Dark Mode", "darkMode")}
-          {renderSwitchItem("Hide Balance", "hideBalance")}
+          {renderSwitchItem("Dark Mode", "darkMode", "")}
+          {renderSwitchItem("Hide Balance", "hideBalance", "")}
 
           {/* Security */}
-          {renderSectionHeader("Security")}
+          {renderSectionHeader("Security", "")}
           {renderSwitchItem(
             "Biometric Login",
             "biometricLogin",
@@ -158,11 +158,15 @@ const Settings = () => {
             "tradingConfirmation",
             "Require confirmation for all trades"
           )}
-          {renderActionItem("Change Password", () => console.log("Change password"))}
-          {renderActionItem("Two-Factor Authentication", () => console.log("2FA"))}
+          {renderActionItem("Change Password", () =>
+            console.log("Change password")
+          )}
+          {renderActionItem("Two-Factor Authentication", () =>
+            console.log("2FA")
+          )}
 
           {/* Notifications */}
-          {renderSectionHeader("Notifications")}
+          {renderSectionHeader("Notifications", "")}
           {renderSwitchItem(
             "Push Notifications",
             "notifications",
@@ -173,17 +177,21 @@ const Settings = () => {
             "priceAlerts",
             "Get notified about significant price changes"
           )}
-          {renderActionItem("Notification Preferences", () => console.log("Notification prefs"))}
+          {renderActionItem("Notification Preferences", () =>
+            console.log("Notification prefs")
+          )}
 
           {/* Support */}
-          {renderSectionHeader("Support")}
+          {renderSectionHeader("Support", "")}
           {renderActionItem("Help Center", () => console.log("Help center"))}
-          {renderActionItem("Contact Support", () => console.log("Contact support"))}
+          {renderActionItem("Contact Support", () =>
+            console.log("Contact support")
+          )}
           {renderActionItem("Privacy Policy", () => console.log("Privacy"))}
           {renderActionItem("Terms of Service", () => console.log("Terms"))}
 
           {/* Account Actions */}
-          {renderSectionHeader("Account")}
+          {renderSectionHeader("Account", "")}
           <TouchableOpacity
             style={[styles.actionButton, styles.logoutButton]}
             onPress={handleLogout}
@@ -191,7 +199,7 @@ const Settings = () => {
           >
             <Text style={styles.logoutText}>Logout</Text>
           </TouchableOpacity>
-          
+
           <TouchableOpacity
             style={[styles.actionButton, styles.deleteButton]}
             onPress={handleDeleteAccount}
@@ -226,7 +234,7 @@ const styles = StyleSheet.create({
     borderBottomColor: "#2A3F33",
   },
   profileImageContainer: {
-    position: 'relative',
+    position: "relative",
   },
   profileImage: {
     width: 80,
@@ -237,10 +245,10 @@ const styles = StyleSheet.create({
     borderColor: "#2A3F33",
   },
   statusIndicator: {
-    position: 'absolute',
+    position: "absolute",
     width: 14,
     height: 14,
-    backgroundColor: '#4CAF50',
+    backgroundColor: "#4CAF50",
     borderRadius: 7,
     bottom: 5,
     right: 5,
@@ -277,8 +285,8 @@ const styles = StyleSheet.create({
     fontWeight: "500",
   },
   sectionHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: 24,
     marginBottom: 12,
   },
