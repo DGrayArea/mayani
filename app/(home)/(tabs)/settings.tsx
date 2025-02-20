@@ -1,4 +1,7 @@
-import React, { useState } from "react";
+//@ts-nocheck
+import { useAuth, useClerk, useUser } from "@clerk/clerk-expo";
+import { router } from "expo-router";
+import React, { useCallback, useState } from "react";
 import {
   View,
   Text,
@@ -12,6 +15,9 @@ import {
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const Settings = () => {
+  const { user } = useUser();
+  const { signOut } = useClerk();
+  const { isLoaded } = useAuth();
   const [settings, setSettings] = useState({
     notifications: true,
     priceAlerts: true,
@@ -20,6 +26,19 @@ const Settings = () => {
     hideBalance: false,
     tradingConfirmation: true,
   });
+
+  const handleSignOut = useCallback(async () => {
+    try {
+      if (!isLoaded) {
+        return;
+      }
+
+      await signOut();
+      router.push("/(auth)/sign-in");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  }, [isLoaded, signOut, router]);
 
   const [currency, setCurrency] = useState("USD");
   const [language, setLanguage] = useState("English");
@@ -40,7 +59,7 @@ const Settings = () => {
       {
         text: "Logout",
         style: "destructive",
-        onPress: () => console.log("Logout pressed"),
+        onPress: () => handleSignOut(),
       },
     ]);
   };
@@ -120,14 +139,16 @@ const Settings = () => {
         <View style={styles.profileSection}>
           <View style={styles.profileImageContainer}>
             <Image
-              source={{ uri: "/api/placeholder/80/80" }}
+              source={{ uri: user?.imageUrl ?? "/api/placeholder/80/80" }}
               style={styles.profileImage}
             />
             <View style={styles.statusIndicator} />
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>John Doe</Text>
-            <Text style={styles.profileEmail}>john.doe@example.com</Text>
+            <Text style={styles.profileName}>{user?.fullName}</Text>
+            <Text style={styles.profileEmail}>
+              {user?.emailAddresses[0].emailAddress}
+            </Text>
           </View>
           <TouchableOpacity style={styles.editButton} activeOpacity={0.7}>
             <Text style={styles.editButtonText}>Edit</Text>
@@ -158,13 +179,12 @@ const Settings = () => {
             "tradingConfirmation",
             "Require confirmation for all trades"
           )}
-          {renderActionItem("Change Password", () =>
+          {/* {renderActionItem("Change Password", () =>
             console.log("Change password")
           )}
           {renderActionItem("Two-Factor Authentication", () =>
             console.log("2FA")
-          )}
-
+          )} */}
           {/* Notifications */}
           {renderSectionHeader("Notifications", "")}
           {renderSwitchItem(
