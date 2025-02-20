@@ -8,6 +8,15 @@
     "scheme": "mayani",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
+    "developmentClient": false,
+    "runtimeVersion": {
+      "policy": "nativeVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/de40bbd7-766a-47ce-994c-d2031400d774",
+      "enabled": true,
+      "policy": "nativeVersion"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.grayson.mayani",

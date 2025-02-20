@@ -36,6 +36,20 @@ export default function AppLayout() {
               presentation: "card",
             }}
           />
+          <Stack.Screen
+            name="promote"
+            options={{
+              headerShown: false,
+              presentation: "card",
+            }}
+          />
+          <Stack.Screen
+            name="search"
+            options={{
+              headerShown: false,
+              presentation: "card",
+            }}
+          />
         </Stack>
       ) : (
         <Stack

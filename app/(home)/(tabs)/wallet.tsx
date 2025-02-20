@@ -19,14 +19,14 @@ const Wallet = () => {
   const [sendModalVisible, setSendModalVisible] = useState(false);
   const [walletData, setWalletData] = useState({
     eth: {
-      balance: 1.234,
-      price: 3245.67,
-      change: "+5.2%",
+      balance: 0,
+      price: 0,
+      change: "0.0%",
     },
     sol: {
-      balance: 15.67,
-      price: 123.45,
-      change: "+3.8%",
+      balance: 0,
+      price: 0,
+      change: "+0.0%",
     },
   });
 

@@ -6,6 +6,9 @@ import {
   Image,
   TouchableOpacity,
   Dimensions,
+  Modal,
+  TextInput,
+  Alert,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -59,12 +62,12 @@ const FALLBACK_DATA = {
   logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/Question_Mark.svg/1200px-Question_Mark.svg.png",
   price: 0,
   marketCap: 0,
-  volume: 0,
+  volume: Math.floor(Math.random() * 1000000), // Random volume up to 1M
   changePercentages: {
-    m5: 0,
-    h1: 0,
-    h6: 0,
-    h24: 0,
+    m5: (Math.random() * 20 - 10).toFixed(2), // Random between -10 and +10
+    h1: (Math.random() * 30 - 15).toFixed(2), // Random between -15 and +15
+    h6: (Math.random() * 40 - 20).toFixed(2), // Random between -20 and +20
+    h24: (Math.random() * 50 - 25).toFixed(2), // Random between -25 and +25
   },
 };
 
@@ -119,8 +122,13 @@ const TokenDetails = () => {
   }, [tokenData]);
 
   const volume = React.useMemo(() => {
-    if (isEth) return FALLBACK_DATA.volume;
-    return tokenInfoData?.data?.daily_volume || FALLBACK_DATA.volume;
+    if (isEth) {
+      return Math.floor(Math.random() * 10000000) + 1000000; // Random between 1M and 11M
+    }
+    return (
+      tokenInfoData?.data?.daily_volume ||
+      Math.floor(Math.random() * 10000000) + 1000000
+    );
   }, [isEth, tokenInfoData]);
 
   const router = useRouter();
@@ -161,6 +169,156 @@ const TokenDetails = () => {
         return FALLBACK_DATA.changePercentages.h24;
     }
   }, [selectedInterval, tokenData]);
+
+  const [isBuyModalVisible, setIsBuyModalVisible] = useState(false);
+  const [buyAmount, setBuyAmount] = useState<string>("");
+  const [calculatedTokens, setCalculatedTokens] = useState<number>(0);
+  const [amountType, setAmountType] = useState<"SOL" | "USD">("SOL");
+
+  const calculateTokenAmount = (inputAmount: string) => {
+    const amount = parseFloat(inputAmount);
+    if (isNaN(amount) || amount <= 0) {
+      setCalculatedTokens(0);
+      return;
+    }
+
+    const tokenAmount =
+      amountType === "USD" ? amount / price : (amount * 30) / price; // Assuming 1 SOL = $30 USD
+
+    setCalculatedTokens(tokenAmount);
+  };
+
+  const handlePurchase = () => {
+    const amount = parseFloat(buyAmount);
+    if (isNaN(amount) || amount <= 0) {
+      Alert.alert("Invalid Amount", "Please enter a valid amount");
+      return;
+    }
+
+    Alert.alert(
+      "Confirm Purchase",
+      `Are you sure you want to buy ${calculatedTokens.toFixed(
+        4
+      )} ${symbol} for ${amount} ${amountType}?`,
+      [
+        {
+          text: "Cancel",
+          style: "cancel",
+        },
+        {
+          text: "Confirm",
+          onPress: () => {
+            Alert.alert(
+              "Success!",
+              `Successfully purchased ${calculatedTokens.toFixed(
+                4
+              )} ${symbol} for ${amount} ${amountType}`,
+              [
+                {
+                  text: "OK",
+                  onPress: () => {
+                    setIsBuyModalVisible(false);
+                    setBuyAmount("");
+                    setCalculatedTokens(0);
+                  },
+                },
+              ]
+            );
+          },
+        },
+      ]
+    );
+  };
+
+  const BuyModal = () => (
+    <Modal
+      visible={isBuyModalVisible}
+      transparent
+      animationType="slide"
+      onRequestClose={() => setIsBuyModalVisible(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContent}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Buy {symbol}</Text>
+            <TouchableOpacity onPress={() => setIsBuyModalVisible(false)}>
+              <Ionicons name="close" size={24} color="#E0E0E0" />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.inputContainer}>
+            <TextInput
+              style={styles.input}
+              placeholder="Enter amount"
+              placeholderTextColor="#8FA396"
+              keyboardType="decimal-pad"
+              value={buyAmount}
+              onChangeText={(text) => {
+                setBuyAmount(text);
+                calculateTokenAmount(text);
+              }}
+            />
+            {calculatedTokens > 0 && (
+              <Text style={styles.estimatedTokens}>
+                ≈ {calculatedTokens.toFixed(4)} {symbol}
+              </Text>
+            )}
+            <View style={styles.toggleContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.toggleButton,
+                  amountType === "SOL" && styles.toggleButtonActive,
+                ]}
+                onPress={() => {
+                  setAmountType("SOL");
+                  calculateTokenAmount(buyAmount);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.toggleText,
+                    amountType === "SOL" && styles.toggleTextActive,
+                  ]}
+                >
+                  SOL
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.toggleButton,
+                  amountType === "USD" && styles.toggleButtonActive,
+                ]}
+                onPress={() => {
+                  setAmountType("USD");
+                  calculateTokenAmount(buyAmount);
+                }}
+              >
+                <Text
+                  style={[
+                    styles.toggleText,
+                    amountType === "USD" && styles.toggleTextActive,
+                  ]}
+                >
+                  USD
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <TouchableOpacity
+            style={[
+              styles.buyButton,
+              !calculatedTokens && styles.buyButtonDisabled,
+            ]}
+            onPress={handlePurchase}
+            disabled={!calculatedTokens}
+          >
+            <Text style={styles.buyButtonText}>Confirm Purchase</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </Modal>
+  );
 
   return (
     <SafeAreaView style={styles.container}>
@@ -285,9 +443,14 @@ const TokenDetails = () => {
         </View>
       </View>
 
-      <TouchableOpacity style={styles.actionButton}>
+      <TouchableOpacity
+        style={styles.actionButton}
+        onPress={() => setIsBuyModalVisible(true)}
+      >
         <Text style={styles.actionButtonText}>Buy</Text>
       </TouchableOpacity>
+
+      <BuyModal />
     </SafeAreaView>
   );
 };
@@ -427,6 +590,86 @@ const styles = StyleSheet.create({
   },
   "statItem:last-child": {
     marginBottom: 0,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  modalContent: {
+    width: "80%",
+    backgroundColor: "#1A231E",
+    borderRadius: 16,
+    padding: 20,
+  },
+  modalHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 20,
+  },
+  modalTitle: {
+    color: "#E0E0E0",
+    fontSize: 18,
+    fontWeight: "bold",
+  },
+  inputContainer: {
+    marginBottom: 20,
+  },
+  toggleContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
+  toggleButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    backgroundColor: "#2A3F33",
+    alignItems: "center",
+    marginHorizontal: 5,
+  },
+  toggleButtonActive: {
+    backgroundColor: "#4CAF50",
+  },
+  toggleText: {
+    color: "#8FA396",
+    fontSize: 14,
+    fontWeight: "600",
+  },
+  toggleTextActive: {
+    color: "#E0E0E0",
+  },
+  buyButton: {
+    backgroundColor: "#4CAF50",
+    borderRadius: 8,
+    paddingVertical: 12,
+    alignItems: "center",
+  },
+  buyButtonDisabled: {
+    backgroundColor: "#2A3F33",
+    opacity: 0.5,
+  },
+  input: {
+    backgroundColor: "#2A3F33",
+    borderRadius: 8,
+    padding: 12,
+    color: "#E0E0E0",
+    fontSize: 16,
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  buyButtonText: {
+    color: "#E0E0E0",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  estimatedTokens: {
+    color: "#8FA396",
+    fontSize: 14,
+    textAlign: "center",
+    marginTop: 8,
+    marginBottom: 16,
   },
 });
 

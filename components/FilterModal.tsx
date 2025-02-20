@@ -202,8 +202,8 @@ const styles = StyleSheet.create({
     flex: 0,
     justifyContent: "flex-start",
     alignItems: "flex-start",
-    marginTop: 10,
-    marginBottom: 10,
+    marginTop: 0,
+    marginBottom: 5,
   },
   filterButton: {
     backgroundColor: "#1A231E",

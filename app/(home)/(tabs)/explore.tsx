@@ -5,7 +5,7 @@ import { useRefreshByUser } from "@/hooks/useRefreshByUser";
 import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { formatNumber, formatPrice } from "@/utils/numbers";
 import { useQuery } from "@tanstack/react-query";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useMemo } from "react";
 import {
   View,
@@ -17,9 +17,128 @@ import {
   RefreshControl,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Link } from "expo-router";
+import { Link, router } from "expo-router";
 import { TrendingToken2 } from "@/types";
 import { fetchTrending } from "@/utils/query";
+import { useSharedValue } from "react-native-reanimated";
+import { Ionicons } from "@expo/vector-icons"; // Add this import
+
+const AutoScrollingTrendingBar = ({ data }: { data: TrendingToken2[] }) => {
+  const scrollX = useSharedValue(0);
+  const [contentWidth, setContentWidth] = useState(0);
+  const flatListRef = useRef<FlatList>(null);
+
+  useEffect(() => {
+    let scrollTimer: NodeJS.Timeout;
+
+    if (contentWidth > 0) {
+      const scroll = () => {
+        if (flatListRef.current) {
+          scrollX.value += 1;
+
+          // Reset scroll position when reaching the end
+          if (scrollX.value >= contentWidth / 3) {
+            scrollX.value = 0;
+            flatListRef.current.scrollToOffset({ offset: 0, animated: false });
+          } else {
+            flatListRef.current.scrollToOffset({
+              offset: scrollX.value,
+              animated: false,
+            });
+          }
+        }
+      };
+
+      scrollTimer = setInterval(scroll, 50);
+    }
+
+    return () => {
+      if (scrollTimer) {
+        clearInterval(scrollTimer);
+      }
+    };
+  }, [contentWidth]);
+
+  const renderTrendingItem = ({
+    item,
+    index,
+  }: {
+    item: TrendingToken2;
+    index: number;
+  }) => {
+    const isEth = item.relationships.base_token.data.id.startsWith("eth_");
+    const tokenAddress = item.relationships.base_token.data.id.startsWith(
+      "solana_"
+    )
+      ? item.relationships.base_token.data.id.slice(7)
+      : item.relationships.base_token.data.id.startsWith("eth_")
+      ? item.relationships.base_token.data.id.slice(4)
+      : item.relationships.base_token.data.id;
+
+    return (
+      <TouchableOpacity>
+        <Link
+          href={{
+            pathname: "/tokens/[id]",
+            params: { id: tokenAddress, token: JSON.stringify(item) },
+          }}
+          asChild
+        >
+          <View style={styles.trendingBarItem}>
+            <View style={styles.trendingBarLeftContent}>
+              <Text style={styles.trendingBarIndex}>#{index + 1}</Text>
+              <Image
+                source={{
+                  uri:
+                    item.tokenInfo?.type === "jupiter"
+                      ? item.tokenInfo?.data?.logoURI
+                      : item.tokenInfo?.data?.logo || "/api/image/24",
+                }}
+                style={styles.trendingBarAvatar}
+              />
+              <View style={styles.trendingBarInfo}>
+                <Text style={styles.trendingBarSymbol}>
+                  {isEth
+                    ? //@ts-ignore
+                      item.tokenInfo?.tokenName
+                    : item.tokenInfo?.data?.name || ""}
+                </Text>
+                <Text
+                  style={[
+                    styles.trendingBarChange,
+                    item.attributes.price_change_percentage.h24.includes("-")
+                      ? styles.negative
+                      : styles.positive,
+                  ]}
+                >
+                  {item.attributes.price_change_percentage.h24}%
+                </Text>
+              </View>
+            </View>
+          </View>
+        </Link>
+      </TouchableOpacity>
+    );
+  };
+
+  // Triple the data for smooth infinite scroll
+  //const duplicatedData = [...data, ...data, ...data];
+
+  return (
+    <FlatList
+      ref={flatListRef}
+      data={data}
+      renderItem={renderTrendingItem}
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      scrollEnabled={false}
+      style={styles.trendingBarContainer}
+      contentContainerStyle={styles.trendingBarContent}
+      onContentSizeChange={(width) => setContentWidth(width)}
+      keyExtractor={(item, index) => `${item.id}-${index}`}
+    />
+  );
+};
 
 const Explore = () => {
   const [selectedFilter, setSelectedFilter] = useState("all");
@@ -249,58 +368,96 @@ const Explore = () => {
   if (isPending || isRefetchingByUser) return <LoadingIndicator />;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Text style={styles.header}>Explore</Text>
+    <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.header}>Explore</Text>
+          <TouchableOpacity onPress={() => router.push("/(home)/search")}>
+            <Ionicons name="search-outline" size={28} color="#E0E0E0" />
+          </TouchableOpacity>
+        </View>
 
-      {renderFilterButtons()}
-      <FilterModal />
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Top Gainers</Text>
-        <FlatList
-          data={filteredTopGainers}
-          renderItem={renderTopGainers}
-          keyExtractor={(item) => item.id}
-          horizontal
-          showsHorizontalScrollIndicator={false}
-        />
-      </View>
+        {renderFilterButtons()}
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Trending</Text>
-        <FlatList
-          data={mergedData}
-          renderItem={renderTrendingItem}
-          keyExtractor={(item) => item.id}
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 40 }}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefetchingByUser}
-              onRefresh={refetchByUser}
-            />
-          }
-        />
+        <View style={styles.section}>
+          <View style={styles.trendingHeader}>
+            <Text style={styles.sectionTitle}>Trending</Text>
+            <TouchableOpacity
+              style={styles.promoteButton}
+              onPress={() => router.push("/(home)/promote")}
+            >
+              <Text style={styles.promoteButtonText}>🚀 Promote</Text>
+            </TouchableOpacity>
+          </View>
+
+          <AutoScrollingTrendingBar
+            data={mergedData.sort(() => Math.random() - 0.5).slice(0, 10)}
+          />
+          <FilterModal />
+          <FlatList
+            data={mergedData}
+            renderItem={renderTrendingItem}
+            keyExtractor={(item) => item.id}
+            showsVerticalScrollIndicator={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefetchingByUser}
+                onRefresh={refetchByUser}
+              />
+            }
+            ListHeaderComponent={() => (
+              <View>
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Top Gainers</Text>
+                  <FlatList
+                    data={filteredTopGainers}
+                    renderItem={renderTopGainers}
+                    keyExtractor={(item) => item.id}
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                  />
+                </View>
+                <View style={styles.section}>
+                  <Text style={styles.sectionTitle}>Top Tokens</Text>
+                </View>
+              </View>
+            )}
+            contentContainerStyle={styles.scrollContent}
+          />
+        </View>
       </View>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: "#0A0F0D",
+  },
+  scrollContent: {
+    paddingBottom: 20,
+  },
   container: {
     flex: 1,
     backgroundColor: "#0A0F0D",
     paddingHorizontal: 20,
-    paddingBottom: 40, // Add padding to the bottom
+    paddingBottom: 40,
+  },
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 15,
   },
   header: {
     color: "#E0E0E0",
     fontSize: 28,
     fontWeight: "bold",
-    marginBottom: 20,
+    marginTop: 10, // Remove marginBottom since it's handled by headerContainer
   },
   filterContainer: {
     flexDirection: "row",
-    marginBottom: 20,
   },
   filterButton: {
     paddingHorizontal: 20,
@@ -329,8 +486,9 @@ const styles = StyleSheet.create({
   sectionTitle: {
     color: "#B8C3BC",
     fontSize: 20,
-    marginBottom: 15,
     fontWeight: "600",
+    marginTop: 8,
+    marginBottom: 8, // Remove bottom margin since it's handled by trendingHeader
   },
   gainerCard: {
     backgroundColor: "#1A231E",
@@ -395,6 +553,14 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#2A3F33",
   },
+  trendingBarInfo: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginLeft: 4,
+    paddingLeft: 0,
+  },
   trendingInfo: {
     flex: 1,
     marginLeft: 12,
@@ -427,6 +593,80 @@ const styles = StyleSheet.create({
   },
   negative: {
     color: "#FF5252",
+  },
+  trendingBarContainer: {
+    height: 32,
+    // backgroundColor: "#1A231E",
+    marginBottom: 16,
+    borderRadius: 8,
+    overflow: "hidden",
+    width: "100%",
+  },
+  trendingBarContent: {
+    display: "flex",
+    paddingHorizontal: 6,
+    alignItems: "center",
+    height: "100%",
+  },
+  trendingBarLeftContent: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  trendingBarIndex: {
+    color: "#8FA396",
+    fontSize: 12,
+    fontWeight: "700",
+    marginRight: 6,
+  },
+  trendingBarItem: {
+    display: "flex",
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 6,
+    paddingVertical: 4,
+    marginHorizontal: 3,
+    backgroundColor: "#2A3F33",
+    borderRadius: 6,
+    height: 24,
+    color: "white",
+    justifyContent: "space-between",
+  },
+  trendingBarAvatar: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    marginRight: 4,
+    backgroundColor: "#1A2A22",
+  },
+  trendingBarSymbol: {
+    color: "#E0E0E0",
+    fontSize: 12,
+    fontWeight: "600",
+    marginRight: 5,
+  },
+  trendingBarChange: {
+    fontSize: 11,
+    fontWeight: "500",
+  },
+  trendingHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 7,
+    paddingRight: 4, // Add padding for better spacing
+  },
+  promoteButton: {
+    color: "#8FA396",
+    backgroundColor: "#2A3F33",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "#3A5F43",
+    alignSelf: "center", // Add this to ensure vertical alignment
+  },
+  promoteButtonText: {
+    color: "#E0E0E0",
   },
 });
 
