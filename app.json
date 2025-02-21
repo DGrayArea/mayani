@@ -39,8 +39,7 @@
         }
       ],
       "expo-font",
-      "expo-asset",
-      "expo-modules-core"
+      "expo-asset"
     ],
     "experiments": {
       "typedRoutes": true
