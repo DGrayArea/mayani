@@ -8,9 +8,7 @@
       "developmentClient": true,
       "distribution": "internal",
       "android": {
-        "gradleCommand": ":app:assembleDebug",
-        "buildType": "apk",
-        "ndk": "25.1.8937393"
+        "buildType": "apk"
       }
     },
     "development-simulator": {
@@ -23,8 +21,7 @@
     "preview": {
       "distribution": "internal",
       "android": {
-        "buildType": "apk",
-        "ndk": "25.1.8937393"
+        "buildType": "apk"
       }
     },
     "production": {
