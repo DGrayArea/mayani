@@ -90,9 +90,9 @@ const Home = () => {
     );
   }
 
-  if (user) {
-    return <Redirect href="/(home)/(tabs)/explore" />;
-  }
+  // if (user) {
+  //   return <Redirect href="/(home)/(tabs)/explore" />;
+  // }
 
   const spin = animations.logoRotate.interpolate({
     inputRange: [0, 1],
@@ -166,7 +166,8 @@ const Home = () => {
               },
             ]}
           >
-            <Link href="/(auth)/sign-in" asChild>
+            {/* <Link href="/(auth)/sign-in" asChild> */}
+            <Link href="/(home)/(tabs)/explore" asChild>
               <Pressable
                 style={styles.button}
                 onPressIn={handlePressIn}

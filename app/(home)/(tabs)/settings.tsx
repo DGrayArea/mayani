@@ -145,9 +145,11 @@ const Settings = () => {
             <View style={styles.statusIndicator} />
           </View>
           <View style={styles.profileInfo}>
-            <Text style={styles.profileName}>{user?.fullName}</Text>
+            <Text style={styles.profileName}>
+              {user?.fullName ?? "User Crypto"}
+            </Text>
             <Text style={styles.profileEmail}>
-              {user?.emailAddresses[0].emailAddress}
+              {user?.emailAddresses[0].emailAddress ?? "example@gmail.com"}
             </Text>
           </View>
           <TouchableOpacity style={styles.editButton} activeOpacity={0.7}>
@@ -214,7 +216,7 @@ const Settings = () => {
           {renderSectionHeader("Account", "")}
           <TouchableOpacity
             style={[styles.actionButton, styles.logoutButton]}
-            onPress={handleLogout}
+            // onPress={handleLogout}
             activeOpacity={0.7}
           >
             <Text style={styles.logoutText}>Logout</Text>

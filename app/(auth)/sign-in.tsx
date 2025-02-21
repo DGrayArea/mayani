@@ -96,9 +96,9 @@ export default function SignIn() {
     );
   }
 
-  if (user) {
-    return <Redirect href="/(home)/(tabs)/explore" />;
-  }
+  // if (user) {
+  //   return <Redirect href="/(home)/(tabs)/explore" />;
+  // }
 
   return (
     <View style={styles.safeArea}>
