@@ -2,12 +2,6 @@ import { QueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { config } from "@/lib/appwrite";
 
-function delay(t: number) {
-  return new Promise(function (resolve) {
-    setTimeout(resolve, t);
-  });
-}
-
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
