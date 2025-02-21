@@ -3,7 +3,6 @@ import { Stack } from "expo-router";
 import "./global.css";
 import * as SplashScreen from "expo-splash-screen";
 import { useEffect } from "react";
-import GlobalProvider from "@/lib/global-provider";
 import { QueryClientProvider, focusManager } from "@tanstack/react-query";
 import { queryClient } from "@/utils/query";
 import { AppStateStatus, Platform, StyleSheet } from "react-native";
@@ -59,15 +58,13 @@ export default function RootLayout() {
         <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
           <ClerkLoaded>
             <QueryClientProvider client={queryClient}>
-              <GlobalProvider>
-                {Platform.OS === "android" ? (
-                  <SafeAreaView style={styles.safeArea} edges={["top"]}>
-                    {renderContent()}
-                  </SafeAreaView>
-                ) : (
-                  renderContent()
-                )}
-              </GlobalProvider>
+              {Platform.OS === "android" ? (
+                <SafeAreaView style={styles.safeArea} edges={["top"]}>
+                  {renderContent()}
+                </SafeAreaView>
+              ) : (
+                renderContent()
+              )}
             </QueryClientProvider>
           </ClerkLoaded>
         </ClerkProvider>

@@ -2,8 +2,7 @@
 
 # dependencies
 node_modules/
-.zshrc
-./.zshrc
+
 # Expo
 .expo/
 dist/
@@ -13,6 +12,8 @@ android
 ./android
 ios
 ./ios
+.env
+./env
 # Native
 *.orig.*
 *.jks
@@ -20,8 +21,7 @@ ios
 *.p12
 *.key
 *.mobileprovision
-.env
-./env
+
 # Metro
 .metro-health-check*
 
