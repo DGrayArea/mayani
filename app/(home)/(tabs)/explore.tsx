@@ -15,6 +15,7 @@ import {
   Image,
   TouchableOpacity,
   RefreshControl,
+  ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, router } from "expo-router";
@@ -72,8 +73,8 @@ const AutoScrollingTrendingBar = ({ data }: { data: TrendingToken2[] }) => {
     )
       ? item.relationships.base_token.data.id.slice(7)
       : item.relationships.base_token.data.id.startsWith("eth_")
-      ? item.relationships.base_token.data.id.slice(4)
-      : item.relationships.base_token.data.id;
+        ? item.relationships.base_token.data.id.slice(4)
+        : item.relationships.base_token.data.id;
 
     return (
       <TouchableOpacity>
@@ -246,8 +247,8 @@ const Explore = () => {
     )
       ? item.relationships.base_token.data.id.slice(7)
       : item.relationships.base_token.data.id.startsWith("eth_")
-      ? item.relationships.base_token.data.id.slice(4)
-      : item.relationships.base_token.data.id;
+        ? item.relationships.base_token.data.id.slice(4)
+        : item.relationships.base_token.data.id;
 
     return (
       <TouchableOpacity style={styles.TouchableGainerCard}>
@@ -264,8 +265,8 @@ const Explore = () => {
                   ? //@ts-ignore
                     item.tokenInfo?.tokenLogo
                   : item.tokenInfo?.type === "jupiter"
-                  ? item.tokenInfo?.data?.logoURI
-                  : item.tokenInfo?.data?.logo || "/api/image/24",
+                    ? item.tokenInfo?.data?.logoURI
+                    : item.tokenInfo?.data?.logo || "/api/image/24",
               }}
               style={styles.avatar}
             />
@@ -304,8 +305,8 @@ const Explore = () => {
     )
       ? item.relationships.base_token.data.id.slice(7)
       : item.relationships.base_token.data.id.startsWith("eth_")
-      ? item.relationships.base_token.data.id.slice(4)
-      : item.relationships.base_token.data.id;
+        ? item.relationships.base_token.data.id.slice(4)
+        : item.relationships.base_token.data.id;
 
     // const tokenInfo = tokenInfoMap[tokenAddress];
 
@@ -324,8 +325,8 @@ const Explore = () => {
                   ? //@ts-ignore
                     item.tokenInfo?.tokenLogo
                   : item.tokenInfo?.type === "jupiter"
-                  ? item.tokenInfo?.data.logoURI
-                  : item.tokenInfo?.data.logo || "/api/image/24",
+                    ? item.tokenInfo?.data.logoURI
+                    : item.tokenInfo?.data.logo || "/api/image/24",
               }}
               style={styles.avatar}
             />
@@ -369,63 +370,66 @@ const Explore = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <View style={styles.headerContainer}>
-          <Text style={styles.header}>Explore</Text>
-          <TouchableOpacity onPress={() => router.push("/(home)/search")}>
-            <Ionicons name="search-outline" size={28} color="#E0E0E0" />
-          </TouchableOpacity>
-        </View>
-
-        {renderFilterButtons()}
-
-        <View style={styles.section}>
-          <View style={styles.trendingHeader}>
-            <Text style={styles.sectionTitle}>Trending</Text>
-            <TouchableOpacity
-              style={styles.promoteButton}
-              onPress={() => router.push("/(home)/promote")}
-            >
-              <Text style={styles.promoteButtonText}>🚀 Promote</Text>
+      <ScrollView>
+        <View style={styles.container}>
+          <View style={styles.headerContainer}>
+            <Text style={styles.header}>Explore</Text>
+            <TouchableOpacity onPress={() => router.push("/(home)/search")}>
+              <Ionicons name="search-outline" size={28} color="#E0E0E0" />
             </TouchableOpacity>
           </View>
 
-          <AutoScrollingTrendingBar
-            data={mergedData.sort(() => Math.random() - 0.5).slice(0, 10)}
-          />
-          <FilterModal />
-          <FlatList
-            data={mergedData}
-            renderItem={renderTrendingItem}
-            keyExtractor={(item) => item.id}
-            showsVerticalScrollIndicator={false}
-            refreshControl={
-              <RefreshControl
-                refreshing={isRefetchingByUser}
-                onRefresh={refetchByUser}
-              />
-            }
-            ListHeaderComponent={() => (
-              <View>
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Top Gainers</Text>
-                  <FlatList
-                    data={filteredTopGainers}
-                    renderItem={renderTopGainers}
-                    keyExtractor={(item) => item.id}
-                    horizontal
-                    showsHorizontalScrollIndicator={false}
-                  />
+          {renderFilterButtons()}
+
+          <View style={styles.section}>
+            <View style={styles.trendingHeader}>
+              <Text style={styles.sectionTitle}>Trending</Text>
+              <TouchableOpacity
+                style={styles.promoteButton}
+                onPress={() => router.push("/(home)/promote")}
+              >
+                <Text style={styles.promoteButtonText}>🚀 Promote</Text>
+              </TouchableOpacity>
+            </View>
+
+            <AutoScrollingTrendingBar
+              data={mergedData.sort(() => Math.random() - 0.5).slice(0, 10)}
+            />
+            <FilterModal />
+            <FlatList
+              style={{ flex: 1, paddingBottom: 20 }}
+              data={mergedData}
+              renderItem={renderTrendingItem}
+              keyExtractor={(item) => item.id}
+              showsVerticalScrollIndicator={false}
+              refreshControl={
+                <RefreshControl
+                  refreshing={isRefetchingByUser}
+                  onRefresh={refetchByUser}
+                />
+              }
+              ListHeaderComponent={() => (
+                <View>
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Top Gainers</Text>
+                    <FlatList
+                      data={filteredTopGainers}
+                      renderItem={renderTopGainers}
+                      keyExtractor={(item) => item.id}
+                      horizontal
+                      showsHorizontalScrollIndicator={false}
+                    />
+                  </View>
+                  <View style={styles.section}>
+                    <Text style={styles.sectionTitle}>Top Tokens</Text>
+                  </View>
                 </View>
-                <View style={styles.section}>
-                  <Text style={styles.sectionTitle}>Top Tokens</Text>
-                </View>
-              </View>
-            )}
-            contentContainerStyle={styles.scrollContent}
-          />
+              )}
+              contentContainerStyle={styles.scrollContent}
+            />
+          </View>
         </View>
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 };

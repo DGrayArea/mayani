@@ -9,12 +9,14 @@ import {
   Modal,
   TextInput,
   Alert,
+  ScrollView,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Ionicons } from "@expo/vector-icons";
 import { LineChart, LineChartProvider } from "react-native-wagmi-charts";
 import { formatNumber, formatPrice } from "@/utils/numbers";
+import BuyModal from "@/components/dialog/BuyModal";
 
 export const unstable_settings = {
   headerShown: false,
@@ -62,6 +64,7 @@ const FALLBACK_DATA = {
 
 const TokenDetails = () => {
   const { token } = useLocalSearchParams();
+  const [buyModalVisible, setBuyModalVisible] = useState(false);
 
   const tokenData = React.useMemo(() => {
     try {
@@ -102,8 +105,8 @@ const TokenDetails = () => {
     return tokenInfoData?.type === "jupiter"
       ? tokenInfoData?.data?.logoURI
       : tokenInfoData?.type === "pool"
-      ? tokenInfoData?.data?.logoURI
-      : tokenInfoData?.data?.logo || FALLBACK_DATA.logo;
+        ? tokenInfoData?.data?.logoURI
+        : tokenInfoData?.data?.logo || FALLBACK_DATA.logo;
   }, [tokenInfoData, isEth]);
 
   const mCap = React.useMemo(() => {
@@ -171,7 +174,6 @@ const TokenDetails = () => {
     }
   }, [selectedInterval, tokenData]);
 
-  const [isBuyModalVisible, setIsBuyModalVisible] = useState(false);
   const [buyAmount, setBuyAmount] = useState<string>("");
   const [calculatedTokens, setCalculatedTokens] = useState<number>(0);
   const [amountType, setAmountType] = useState<"SOL" | "USD">("SOL");
@@ -218,7 +220,7 @@ const TokenDetails = () => {
                 {
                   text: "OK",
                   onPress: () => {
-                    setIsBuyModalVisible(false);
+                    setBuyModalVisible(false);
                     setBuyAmount("");
                     setCalculatedTokens(0);
                   },
@@ -231,7 +233,7 @@ const TokenDetails = () => {
     );
   };
 
-  const BuyModal = () => (
+  const BuuyModal = () => (
     <Modal
       visible={isBuyModalVisible}
       transparent
@@ -322,116 +324,113 @@ const TokenDetails = () => {
   );
 
   return (
-    <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
-          <Ionicons name="arrow-back" size={28} color="#E0E0E0" />
-        </TouchableOpacity>
+    <SafeAreaView style={[styles.container, { paddingTop: 0 }]}>
+      <ScrollView
+        contentContainerStyle={[styles.scrollContent, { paddingTop: 0 }]}
+      >
+        <View style={styles.header}>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={styles.backButton}
+          >
+            <Ionicons name="arrow-back" size={28} color="#E0E0E0" />
+          </TouchableOpacity>
 
-        <View style={styles.tokenInfo}>
-          <Image
-            source={{
-              uri: logo,
-            }}
-            style={styles.avatar}
-          />
-          <View style={styles.tokenTextInfo}>
-            <Text style={styles.tokenName}>{name}</Text>
-            <Text style={styles.tokenSymbol}>{symbol}</Text>
+          <View style={styles.tokenInfo}>
+            <Image
+              source={{
+                uri: logo,
+              }}
+              style={styles.avatar}
+            />
+            <View style={styles.tokenTextInfo}>
+              <Text style={styles.tokenName}>{name}</Text>
+              <Text style={styles.tokenSymbol}>{symbol}</Text>
+            </View>
           </View>
         </View>
-      </View>
 
-      <View style={styles.priceSection}>
-        <Text style={styles.currentPrice}>${formatPrice(price)}</Text>
-        <Text
-          style={[
-            styles.priceChange,
-            change < 0 ? styles.negative : styles.positive,
-          ]}
-        >
-          {change > 0 ? "+" : ""}
-          {change}%
-        </Text>
-      </View>
-
-      <View style={styles.chartContainer}>
-        <LineChartProvider data={chartData}>
-          <LineChart
-            width={width - 60}
-            height={220}
-            style={{
-              backgroundColor: "#1A231E",
-            }}
+        <View style={styles.priceSection}>
+          <Text style={styles.currentPrice}>${formatPrice(price)}</Text>
+          <Text
+            style={[
+              styles.priceChange,
+              change < 0 ? styles.negative : styles.positive,
+            ]}
           >
-            <LineChart.Path color="#4CAF50" width={2}>
-              <LineChart.Gradient />
-            </LineChart.Path>
-            <LineChart.CursorCrosshair color="#4CAF50" />
-          </LineChart>
-        </LineChartProvider>
+            {change > 0 ? "+" : ""}
+            {change}%
+          </Text>
+        </View>
 
-        <View style={styles.intervalContainer}>
-          {intervals.map((interval) => (
-            <TouchableOpacity
-              key={interval}
-              style={[
-                styles.intervalButton,
-                selectedInterval === interval && styles.intervalButtonActive,
-              ]}
-              onPress={() =>
-                setSelectedInterval(
-                  interval as keyof typeof dummyPriceData.chartData
-                )
-              }
+        <View style={styles.chartContainer}>
+          <LineChartProvider data={chartData}>
+            <LineChart
+              width={width - 60}
+              height={220}
+              style={{
+                backgroundColor: "#1A231E",
+              }}
             >
-              <Text
+              <LineChart.Path color="#4CAF50" width={2}>
+                <LineChart.Gradient />
+              </LineChart.Path>
+              <LineChart.CursorCrosshair color="#4CAF50" />
+            </LineChart>
+          </LineChartProvider>
+
+          <View style={styles.intervalContainer}>
+            {intervals.map((interval) => (
+              <TouchableOpacity
+                key={interval}
                 style={[
-                  styles.intervalText,
-                  selectedInterval === interval && styles.intervalTextActive,
+                  styles.intervalButton,
+                  selectedInterval === interval && styles.intervalButtonActive,
                 ]}
+                onPress={() =>
+                  setSelectedInterval(
+                    interval as keyof typeof dummyPriceData.chartData
+                  )
+                }
               >
-                {interval}
-              </Text>
-            </TouchableOpacity>
-          ))}
+                <Text
+                  style={[
+                    styles.intervalText,
+                    selectedInterval === interval && styles.intervalTextActive,
+                  ]}
+                >
+                  {interval}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
         </View>
-      </View>
 
-      <View style={styles.statsContainer}>
-        <View style={styles.statItem}>
-          <Text style={styles.statLabel}>Market Cap</Text>
-          <Text style={styles.statValue}>${formatNumber(mCap)}</Text>
+        <View style={styles.statsContainer}>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Market Cap</Text>
+            <Text style={styles.statValue}>${formatNumber(mCap)}</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>24h Volume</Text>
+            <Text style={styles.statValue}>${formatNumber(volume)}</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Circulating Supply</Text>
+            <Text style={styles.statValue}>{dummyStats.circulatingSupply}</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Total Supply</Text>
+            <Text style={styles.statValue}>{dummyStats.totalSupply}</Text>
+          </View>
+          <View style={styles.statItem}>
+            <Text style={styles.statLabel}>Rank</Text>
+            <Text style={styles.statValue}>{dummyStats.rank}</Text>
+          </View>
         </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statLabel}>24h Volume</Text>
-          <Text style={styles.statValue}>${formatNumber(volume)}</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statLabel}>Circulating Supply</Text>
-          <Text style={styles.statValue}>{dummyStats.circulatingSupply}</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statLabel}>Total Supply</Text>
-          <Text style={styles.statValue}>{dummyStats.totalSupply}</Text>
-        </View>
-        <View style={styles.statItem}>
-          <Text style={styles.statLabel}>Rank</Text>
-          <Text style={styles.statValue}>{dummyStats.rank}</Text>
-        </View>
-      </View>
 
-      <TouchableOpacity
-        style={styles.actionButton}
-        onPress={() => setIsBuyModalVisible(true)}
-      >
-        <Text style={styles.actionButtonText}>Buy</Text>
-      </TouchableOpacity>
-
-      <BuyModal />
+        <BuyModal symbol={symbol} price={price} />
+      </ScrollView>
     </SafeAreaView>
   );
 };
@@ -457,6 +456,9 @@ const styles = StyleSheet.create({
     backgroundColor: "#0A0F0D",
     paddingHorizontal: 20,
   },
+  scrollContent: {
+    paddingBottom: 20,
+  },
   content: {
     flex: 1,
     paddingHorizontal: 20,
@@ -464,7 +466,7 @@ const styles = StyleSheet.create({
   backButton: {
     position: "absolute",
     top: 0,
-    left: -34,
+    left: 0,
     marginTop: 8,
     marginBottom: 8,
   },
@@ -473,11 +475,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 8,
     marginBottom: 17,
-    marginLeft: 20,
   },
   tokenInfo: {
     flexDirection: "row",
     alignItems: "center",
+    marginLeft: 40, // Adjusted to ensure the back button is not cropped
   },
   avatar: {
     width: 45,

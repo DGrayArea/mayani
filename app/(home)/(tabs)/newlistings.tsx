@@ -330,7 +330,7 @@ const NewListings = () => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView>
+      <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 70 }}>
         <View style={styles.filterContainer}>
           <TouchableOpacity
             style={[
