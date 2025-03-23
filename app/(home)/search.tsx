@@ -47,8 +47,8 @@ export default function Search() {
     )
       ? item.relationships.base_token.data.id.slice(7)
       : item.relationships.base_token.data.id.startsWith("eth_")
-      ? item.relationships.base_token.data.id.slice(4)
-      : item.relationships.base_token.data.id;
+        ? item.relationships.base_token.data.id.slice(4)
+        : item.relationships.base_token.data.id;
 
     return (
       <TouchableOpacity
@@ -66,8 +66,8 @@ export default function Search() {
               ? //@ts-ignore
                 item.tokenInfo?.tokenLogo
               : item.tokenInfo?.type === "jupiter"
-              ? item.tokenInfo?.data?.logoURI
-              : item.tokenInfo?.data?.logo || "/api/image/24",
+                ? item.tokenInfo?.data?.logoURI
+                : item.tokenInfo?.data?.logo || "/api/image/24",
           }}
           style={styles.tokenLogo}
         />
@@ -75,11 +75,20 @@ export default function Search() {
           <Text style={styles.tokenName}>
             {isEth
               ? //@ts-ignore
-                item.tokenInfo?.tokenName
-              : item.tokenInfo?.data?.name || ""}
+                String(item.tokenInfo?.tokenName).length > 26
+                ? //@ts-ignore
+                  String(item.tokenInfo?.tokenName).slice(0, 26) + "..."
+                : //@ts-ignore
+                  item.tokenInfo?.tokenName
+              : String(item.tokenInfo?.data?.name).length > 26
+                ? String(item.tokenInfo?.data?.name).slice(0, 26) + "..."
+                : item.tokenInfo?.data?.name || "N/A"}
           </Text>
           <Text style={styles.tokenSymbol}>
-            {item.tokenInfo?.data?.symbol || ""}
+            {isEth
+              ? //@ts-ignore
+                item.tokenInfo?.tokenName
+              : item.tokenInfo?.data?.name || "N/A"}
           </Text>
         </View>
         <View style={styles.tokenMetrics}>
@@ -115,13 +124,13 @@ export default function Search() {
             <Ionicons
               name="search-outline"
               size={20}
-              color="#8FA396"
+              color="#9B86B3"
               style={styles.searchIcon}
             />
             <TextInput
               style={styles.searchInput}
               placeholder="Search by name, symbol, or address"
-              placeholderTextColor="#8FA396"
+              placeholderTextColor="#9B86B3"
               value={searchQuery}
               onChangeText={setSearchQuery}
               autoFocus
@@ -152,18 +161,19 @@ export default function Search() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#0A0F0D",
+    backgroundColor: "#1A0E26",
   },
   container: {
     flex: 1,
-    backgroundColor: "#0A0F0D",
+    backgroundColor: "#1A0E26",
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#1A231E",
+    borderWidth: 0.7,
+    borderBottomColor: "#8C5BE6",
+    borderTopColor: "#1A0E26",
   },
   backButton: {
     marginRight: 12,
@@ -172,7 +182,7 @@ const styles = StyleSheet.create({
     flex: 1,
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1A231E",
+    backgroundColor: "#5A2DA0",
     borderRadius: 12,
     paddingHorizontal: 12,
   },
@@ -193,16 +203,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     padding: 12,
     borderRadius: 12,
-    backgroundColor: "#1A231E",
+    backgroundColor: "#2E1A40",
     marginBottom: 8,
-    borderWidth: 1,
-    borderColor: "#2A3F33",
+    borderWidth: 0.7,
+    borderColor: "#8C5BE6",
   },
   tokenLogo: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#2A3F33",
+    backgroundColor: "#1A0E26",
   },
   tokenInfo: {
     flex: 1,
@@ -214,7 +224,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   tokenSymbol: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 14,
     marginTop: 2,
   },
@@ -241,7 +251,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   emptyText: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 16,
   },
 });

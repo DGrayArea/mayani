@@ -35,8 +35,8 @@ const ReceiveModal = ({ visible, onClose }: any) => {
               <QRCode
                 value={currentAddress}
                 size={250}
-                backgroundColor="#1A231E"
-                color="#8FA396"
+                backgroundColor="#2E1A40"
+                color="#9B86B3"
               />
               <View style={styles.addressContainer}>
                 <Text style={styles.addressText} numberOfLines={1}>
@@ -74,7 +74,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.5)",
   },
   modalContent: {
-    backgroundColor: "#1A231E",
+    backgroundColor: "#2E1A40",
     borderRadius: 20,
     padding: 20,
     width: "85%",
@@ -90,17 +90,17 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     marginTop: 15,
-    backgroundColor: "#2A3F33",
+    backgroundColor: "#5A2DA0",
     borderRadius: 10,
     padding: 10,
   },
   addressText: {
-    color: "#8FA396",
+    color: "#9B86B3",
     flex: 1,
     marginRight: 10,
   },
   copyButton: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#8C5BE6",
     padding: 5,
     borderRadius: 5,
   },
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
   },
   closeButton: {
     marginTop: 20,
-    backgroundColor: "#2A3F33",
+    backgroundColor: "#5A2DA0",
     padding: 10,
     borderRadius: 10,
     width: "100%",

@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.5)",
   },
   modalContent: {
-    backgroundColor: "#1A231E",
+    backgroundColor: "#2E1A40",
     borderRadius: 20,
     padding: 20,
     width: "85%",
@@ -173,8 +173,8 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
   input: {
-    backgroundColor: "#2A3F33",
-    color: "#8FA396",
+    backgroundColor: "#5A2DA0",
+    color: "#9B86B3",
     borderRadius: 10,
     padding: 15,
     marginBottom: 15,
@@ -184,14 +184,14 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   cancelButton: {
-    backgroundColor: "#2A3F33",
+    backgroundColor: "#5A2DA0",
     padding: 15,
     borderRadius: 10,
     flex: 0.45,
     alignItems: "center",
   },
   sendButton: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#7B51E0",
     padding: 15,
     borderRadius: 10,
     flex: 0.45,

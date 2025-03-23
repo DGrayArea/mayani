@@ -12,7 +12,6 @@ import ReceiveModal from "@/components/dialog/ReceiveModal";
 import SendModal from "@/components/dialog/SendModal";
 import useWalletStore from "@/hooks/walletStore";
 import images from "@/constants/images";
-import ChainSelector from "@/components/ChainSelector";
 
 const Wallet = () => {
   const [receiveModalVisible, setReceiveModalVisible] = useState(false);
@@ -173,15 +172,16 @@ const Wallet = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0A0F0D", //f5f5f5
-    padding: 16,
+    backgroundColor: "#1A0E26", //f5f5f5
+    paddingVertical: 16,
+    paddingHorizontal: 12,
   },
   totalAssetsCard: {
     // backgroundColor: "#21F36A", //2196F3
-    backgroundColor: "#1A231E",
+    backgroundColor: "#2E1A40",
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#2A3F33",
+    borderWidth: 0.7,
+    borderColor: "#8C5BE6",
     padding: 20,
     marginBottom: 16,
   },
@@ -199,10 +199,10 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   cryptoCard: {
-    backgroundColor: "#1A231E",
+    backgroundColor: "#2E1A40",
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#2A3F33",
+    borderWidth: 0.7,
+    borderColor: "#8C5BE6",
     padding: 16,
     marginBottom: 12,
     elevation: 2,
@@ -221,12 +221,12 @@ const styles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     marginRight: 8,
-    backgroundColor: "#2A3F33",
+    backgroundColor: "#1A0E26",
   },
   cryptoName: {
     fontSize: 18,
     fontWeight: "bold",
-    color: "#8FA396",
+    color: "#9B86B3",
   },
   balanceContainer: {
     marginBottom: 12,
@@ -234,7 +234,7 @@ const styles = StyleSheet.create({
   balanceAmount: {
     fontSize: 24,
     fontWeight: "bold",
-    color: "#8FA396",
+    color: "#9B86B3",
   },
   balanceUsd: {
     fontSize: 16,
@@ -248,7 +248,7 @@ const styles = StyleSheet.create({
   },
   priceText: {
     fontSize: 16,
-    color: "#8FA396",
+    color: "#9B86B3",
   },
   changeText: {
     fontSize: 16,
@@ -263,7 +263,7 @@ const styles = StyleSheet.create({
   userName: {
     fontSize: 14,
     fontWeight: "600",
-    color: "#8FA396",
+    color: "#9B86B3",
   },
   userRating: {
     fontSize: 14,
@@ -278,16 +278,16 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   actionButton: {
-    backgroundColor: "#1A231E",
+    backgroundColor: "#2E1A40",
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#2A3F33",
+    borderWidth: 0.7,
+    borderColor: "#8C5BE6",
     padding: 16,
     flex: 0.48,
     alignItems: "center",
   },
   actionButtonText: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 16,
     fontWeight: "bold",
   },
@@ -301,13 +301,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 8,
+    borderRadius: 9,
     marginHorizontal: 8,
-    backgroundColor: "#1A231E",
+    backgroundColor: "#2E1A40",
   },
   activeChainButton: {
-    borderWidth: 2,
-    borderColor: "#2A3F33",
+    borderWidth: 1,
+    borderColor: "#8C5BE6",
   },
   chainLogo: {
     width: 28,
@@ -315,7 +315,7 @@ const styles = StyleSheet.create({
     marginRight: 8,
   },
   chainText: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontWeight: "bold",
     fontSize: 16,
   },

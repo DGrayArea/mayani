@@ -407,7 +407,7 @@ const styles = StyleSheet.create({
     surface: "#1A231E",
     border: "#2A3F33",
     accent: "#4CAF50",
-    text: "#8FA396",
+    text: "#9B86B3",
     subtext: "#666666",
     buyLight: "#E8F5E9",
     buyDark: "#4CAF50",
@@ -418,7 +418,7 @@ const styles = StyleSheet.create({
 
   container: {
     flex: 1,
-    backgroundColor: "#0A0F0D",
+    backgroundColor: "#1A0E26",
   },
 
   content: {
@@ -426,14 +426,14 @@ const styles = StyleSheet.create({
     maxWidth: 600,
     alignSelf: "center",
     width: "100%",
-    padding: 16,
+    paddingHorizontal: 12,
   },
 
   tabs: {
     flexDirection: "row",
     marginBottom: 16,
     borderBottomWidth: 1,
-    borderBottomColor: "#2A3F33",
+    borderBottomColor: "#2E1A40",
   },
 
   tab: {
@@ -444,11 +444,11 @@ const styles = StyleSheet.create({
 
   activeTab: {
     borderBottomWidth: 2,
-    borderBottomColor: "#4CAF50",
+    borderBottomColor: "#8C5BE6",
   },
 
   tabText: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 16,
     fontWeight: "500",
   },
@@ -467,7 +467,7 @@ const styles = StyleSheet.create({
   title: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#8FA396",
+    color: "#9B86B3",
   },
 
   filterToggle: {
@@ -475,7 +475,7 @@ const styles = StyleSheet.create({
   },
 
   filterToggleText: {
-    color: "#4CAF50",
+    color: "#8C5BE6",
     fontWeight: "600",
   },
 
@@ -490,7 +490,7 @@ const styles = StyleSheet.create({
   },
 
   filterLabel: {
-    color: "#8FA396",
+    color: "#9B86B3",
     marginRight: 8,
   },
 
@@ -498,16 +498,16 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: "#1A231E",
+    backgroundColor: "#2E1A40",
     marginRight: 8,
   },
 
   filterButtonSelected: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#5A2DA0",
   },
 
   filterButtonText: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 14,
   },
 
@@ -520,17 +520,17 @@ const styles = StyleSheet.create({
   },
 
   orderCard: {
-    backgroundColor: "#1A231E",
+    backgroundColor: "#2E1A40",
     borderRadius: 12,
     padding: 16,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: "#2A3F33",
+    borderWidth: 0.7,
+    borderColor: "#8C5BE6",
   },
 
   adCard: {
-    borderWidth: 2,
-    borderColor: "#3A5F43",
+    borderWidth: 1,
+    borderColor: "#8C5BE6",
   },
 
   orderHeader: {
@@ -552,13 +552,13 @@ const styles = StyleSheet.create({
   },
 
   cryptoText: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontWeight: "600",
   },
 
   adBadge: {
     marginLeft: "auto",
-    backgroundColor: "#3A5F43",
+    backgroundColor: "#5A2DA0",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
@@ -581,11 +581,11 @@ const styles = StyleSheet.create({
   },
 
   detailLabel: {
-    color: "#666666",
+    color: "#FFFFFF",
   },
 
   detailValue: {
-    color: "#8FA396",
+    color: "#FFFFFF",
   },
 
   userInfo: {
@@ -594,16 +594,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#2A3F33",
+    borderTopColor: "#5A2DA0",
   },
 
   username: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontWeight: "600",
   },
 
   trades: {
-    color: "#666666",
+    color: "#FFFFFF",
     fontSize: 12,
     marginTop: 2,
   },
@@ -617,12 +617,12 @@ const styles = StyleSheet.create({
     marginTop: 12,
     paddingTop: 12,
     borderTopWidth: 1,
-    borderTopColor: "#2A3F33",
+    borderTopColor: "#5A2DA0",
   },
 
   editButton: {
     flex: 1,
-    backgroundColor: "#2196F3",
+    backgroundColor: "#7B51E0",
     padding: 8,
     borderRadius: 4,
     alignItems: "center",
@@ -631,7 +631,7 @@ const styles = StyleSheet.create({
 
   deleteButton: {
     flex: 1,
-    backgroundColor: "#F44336",
+    backgroundColor: "#5A2DA0",
     padding: 8,
     borderRadius: 4,
     alignItems: "center",
@@ -645,12 +645,12 @@ const styles = StyleSheet.create({
 
   fab: {
     position: "absolute",
-    bottom: 24,
-    right: 24,
+    bottom: 62,
+    right: 10,
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#8C5BE6",
     justifyContent: "center",
     alignItems: "center",
     elevation: 5,
@@ -677,17 +677,17 @@ const styles = StyleSheet.create({
   modalContent: {
     width: "100%",
     maxWidth: 400,
-    backgroundColor: "#1A231E",
+    backgroundColor: "#2E1A40",
     borderRadius: 16,
     padding: 24,
-    borderWidth: 1,
-    borderColor: "#2A3F33",
+    borderWidth: 0.7,
+    borderColor: "#8C5BE6",
   },
 
   modalTitle: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#8FA396",
+    color: "#9B86B3",
     marginBottom: 24,
     textAlign: "center",
   },
@@ -701,16 +701,16 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingVertical: 12,
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#2A3F33",
+    borderWidth: 0.7,
+    borderColor: "#8C5BE6",
   },
 
   typeButtonSelected: {
-    backgroundColor: "#2A3F33",
+    backgroundColor: "#5A2DA0",
   },
 
   typeButtonText: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontWeight: "bold",
   },
 
@@ -723,17 +723,17 @@ const styles = StyleSheet.create({
   },
 
   inputLabel: {
-    color: "#8FA396",
+    color: "#8C5BE6",
     marginBottom: 8,
   },
 
   input: {
-    backgroundColor: "#0A0F0D",
-    borderWidth: 1,
-    borderColor: "#2A3F33",
+    backgroundColor: "#1A0E26",
+    borderWidth: 0.7,
+    borderColor: "#8C5BE6",
     borderRadius: 8,
     padding: 12,
-    color: "#8FA396",
+    color: "#9B86B3",
   },
 
   modalButtons: {
@@ -744,21 +744,21 @@ const styles = StyleSheet.create({
   cancelButton: {
     flex: 1,
     padding: 12,
-    borderWidth: 1,
-    borderColor: "#2A3F33",
+    borderWidth: 0.7,
+    borderColor: "#5A2DA0",
     borderRadius: 8,
     alignItems: "center",
     marginRight: 8,
   },
 
   cancelButtonText: {
-    color: "#8FA396",
+    color: "#9B86B3",
   },
 
   postButton: {
     flex: 1,
     padding: 12,
-    backgroundColor: "#4CAF50",
+    backgroundColor: "#7B51E0",
     borderRadius: 8,
     alignItems: "center",
     marginLeft: 8,

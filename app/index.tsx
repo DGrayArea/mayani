@@ -103,7 +103,7 @@ const Home = () => {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="light-content" />
       <LinearGradient
-        colors={["#004d40", "#00796b", "#009688"]}
+        colors={["#1A0E26", "#2E1A40", "#1A0E26"]} // Updated gradient to match purple theme
         style={styles.container}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -119,15 +119,9 @@ const Home = () => {
             ]}
           >
             <Image
-              source={require("../assets/renner.jpeg")}
+              source={require("../assets/icon.jpg")}
               style={styles.logo}
               resizeMode="cover"
-            />
-            <LinearGradient
-              colors={["rgba(0,77,64,0.3)", "rgba(0,121,107,0.3)"]}
-              style={styles.logoOverlay}
-              start={{ x: 0, y: 0 }}
-              end={{ x: 1, y: 1 }}
             />
           </Animated.View>
 
@@ -140,7 +134,7 @@ const Home = () => {
               },
             ]}
           >
-            Welcome to Mayani
+            Welcome to Ape It
           </Animated.Text>
 
           <Animated.Text
@@ -166,7 +160,6 @@ const Home = () => {
               },
             ]}
           >
-            {/* <Link href="/(auth)/sign-in" asChild> */}
             <Link href="/(home)/(tabs)/explore" asChild>
               <Pressable
                 style={styles.button}
@@ -175,7 +168,7 @@ const Home = () => {
                 android_ripple={{ color: "rgba(255,255,255,0.2)" }}
               >
                 <LinearGradient
-                  colors={["#00897b", "#00796b"]}
+                  colors={["#2E1A40", "#2E1A40"]} // Updated button background
                   style={styles.buttonGradient}
                   start={{ x: 0, y: 0 }}
                   end={{ x: 1, y: 1 }}
@@ -263,13 +256,13 @@ const platformStyles = {
 const styles = StyleSheet.create({
   loadingContainer: {
     flex: 1,
-    backgroundColor: "#004d40",
+    backgroundColor: "#1A0E26",
     justifyContent: "center",
     alignItems: "center",
   },
   safeArea: {
     flex: 1,
-    backgroundColor: "#004d40",
+    backgroundColor: "#1A0E26",
   },
   container: {
     flex: 1,
@@ -300,6 +293,7 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     borderRadius: 75,
+    backgroundColor: "rgba(122, 81, 224, 0.3)",
   },
   title: {
     fontSize: 42,
@@ -326,14 +320,17 @@ const styles = StyleSheet.create({
     width: "100%",
     overflow: "hidden",
     borderRadius: 30,
+    borderWidth: 2, // Added border
+    borderColor: "#8C5BE6", // Button Border and Text Glow
   },
   buttonGradient: {
     paddingVertical: 18,
     alignItems: "center",
     justifyContent: "center",
+    backgroundColor: "#2E1A40", // Button Background
   },
   buttonText: {
-    color: "#ffffff",
+    color: "#FFFFFF", // White text
     fontSize: 20,
     fontWeight: "600",
     letterSpacing: 1,
@@ -345,7 +342,6 @@ const styles = StyleSheet.create({
   },
   bgCircle: {
     position: "absolute",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderRadius: width * 2,
   },
   bgCircle1: {
@@ -353,18 +349,21 @@ const styles = StyleSheet.create({
     height: width * 1.8,
     top: -width,
     right: -width * 0.5,
+    backgroundColor: "#7B51E0", // Gradient Light Purple
   },
   bgCircle2: {
     width: width * 1.4,
     height: width * 1.4,
     bottom: -width * 0.6,
     left: -width * 0.3,
+    backgroundColor: "#5A2DA0", // Gradient Dark Purple
   },
   bgCircle3: {
     width: width * 1.2,
     height: width * 1.2,
     top: height * 0.2,
     right: -width * 0.4,
+    backgroundColor: "#8C5BE6", // Button Border and Text Glow
   },
 });
 

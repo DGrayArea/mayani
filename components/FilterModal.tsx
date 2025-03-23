@@ -71,8 +71,8 @@ const FilterModal = () => {
                         onValueChange={(value) =>
                           handleFilterChange("mintAuth", value)
                         }
-                        trackColor={{ false: "#2A3F33", true: "#2A3F33" }}
-                        thumbColor={filters.mintAuth ? "#8FA396" : "#666"}
+                        trackColor={{ false: "#1A0E26", true: "#5A2DA0" }}
+                        thumbColor={filters.mintAuth ? "#8C6BAA" : "#767577"}
                       />
                     </View>
                     <View style={styles.filterOption}>
@@ -82,8 +82,8 @@ const FilterModal = () => {
                         onValueChange={(value) =>
                           handleFilterChange("freezeAuth", value)
                         }
-                        trackColor={{ false: "#2A3F33", true: "#2A3F33" }}
-                        thumbColor={filters.freezeAuth ? "#8FA396" : "#666"}
+                        trackColor={{ false: "#1A0E26", true: "#5A2DA0" }}
+                        thumbColor={filters.freezeAuth ? "#8C6BAA" : "#767577"}
                       />
                     </View>
                     <View style={styles.filterOption}>
@@ -93,8 +93,8 @@ const FilterModal = () => {
                         onValueChange={(value) =>
                           handleFilterChange("lpBurned", value)
                         }
-                        trackColor={{ false: "#2A3F33", true: "#2A3F33" }}
-                        thumbColor={filters.lpBurned ? "#8FA396" : "#666"}
+                        trackColor={{ false: "#1A0E26", true: "#5A2DA0" }}
+                        thumbColor={filters.lpBurned ? "#8C6BAA" : "#767577"}
                       />
                     </View>
                     <View style={styles.filterOption}>
@@ -106,8 +106,10 @@ const FilterModal = () => {
                         onValueChange={(value) =>
                           handleFilterChange("top10Holders", value)
                         }
-                        trackColor={{ false: "#2A3F33", true: "#2A3F33" }}
-                        thumbColor={filters.top10Holders ? "#8FA396" : "#666"}
+                        trackColor={{ false: "#1A0E26", true: "#5A2DA0" }}
+                        thumbColor={
+                          filters.top10Holders ? "#8C6BAA" : "#767577"
+                        }
                       />
                     </View>
                     <View style={styles.filterOption}>
@@ -119,8 +121,9 @@ const FilterModal = () => {
                         onValueChange={(value) =>
                           handleFilterChange("withSocial", value)
                         }
-                        trackColor={{ false: "#2A3F33", true: "#2A3F33" }}
-                        thumbColor={filters.withSocial ? "#8FA396" : "#666"}
+                        trackColor={{ false: "#1A0E26", true: "#5A2DA0" }}
+                        thumbColor={filters.withSocial ? "#8C6BAA" : "#767577"}
+                        ios_backgroundColor="#1A0E26"
                       />
                     </View>
                   </View>
@@ -206,15 +209,15 @@ const styles = StyleSheet.create({
     marginBottom: 5,
   },
   filterButton: {
-    backgroundColor: "#1A231E",
+    backgroundColor: "#2E1A40",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#2A3F33",
+    borderColor: "#8C5BE6",
     paddingVertical: 12,
     paddingHorizontal: 16,
   },
   filterButtonText: {
-    color: "#8FA396",
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "bold",
   },
@@ -224,7 +227,7 @@ const styles = StyleSheet.create({
     justifyContent: "flex-end",
   },
   modalContent: {
-    backgroundColor: "#0A0F0D",
+    backgroundColor: "#1A0E26",
     padding: 16,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
@@ -237,11 +240,11 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     fontSize: 18,
-    color: "#8FA396",
+    color: "#8C6BAA",
     fontWeight: "bold",
   },
   resetText: {
-    color: "#8FA396",
+    color: "#8C6BAA",
     fontSize: 16,
     fontWeight: "bold",
   },
@@ -257,11 +260,11 @@ const styles = StyleSheet.create({
     borderBottomColor: "#2A3F33",
   },
   filterOptionText: {
-    color: "#8FA396",
+    color: "#8C6BAA",
     fontSize: 16,
   },
   sectionTitle: {
-    color: "#8FA396",
+    color: "#8C6BAA",
     marginVertical: 12,
     fontSize: 16,
     fontWeight: "bold",
@@ -273,11 +276,11 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
-    backgroundColor: "#1A231E",
+    backgroundColor: "#2E1A40",
     borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#2A3F33",
-    color: "#8FA396",
+    borderWidth: 0.7,
+    borderColor: "#8C5BE6",
+    color: "#8C6BAA",
     padding: 12,
     marginHorizontal: 4,
     fontSize: 16,
@@ -288,16 +291,16 @@ const styles = StyleSheet.create({
     marginTop: 16,
   },
   actionButton: {
-    backgroundColor: "#1A231E",
+    backgroundColor: "#2E1A40",
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#2A3F33",
+    borderWidth: 0.7,
+    borderColor: "#8C5BE6",
     paddingVertical: 16,
     paddingHorizontal: 24,
     alignItems: "center",
   },
   actionButtonText: {
-    color: "#8FA396",
+    color: "#8C6BAA",
     fontSize: 16,
     fontWeight: "bold",
   },

@@ -281,7 +281,11 @@ const NewListings = () => {
             }}
           />
           <View>
-            <Text style={styles.dethroneName}>{item.name}</Text>
+            <Text style={styles.dethroneName}>
+              {String(item.name).length > 8
+                ? item.name.slice(0, 8) + "..."
+                : item.name}
+            </Text>
             <Text style={styles.dethroneAchievement}>{item.symbol}</Text>
           </View>
         </View>
@@ -443,9 +447,9 @@ const NewListings = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0A0F0D", //f5f5f5
+    backgroundColor: "#1A0E26", //f5f5f5
     padding: 16,
-    paddingHorizontal: 20,
+    paddingHorizontal: 12,
   },
   filterContainer: {
     flexDirection: "row",
@@ -456,16 +460,16 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginRight: 10,
     borderRadius: 20,
-    backgroundColor: "#1A231E",
-    borderWidth: 1,
-    borderColor: "#2A3F33",
+    backgroundColor: "#2E1A40",
+    borderWidth: 0.7,
+    borderColor: "#8C5BE6",
   },
   filterActive: {
-    backgroundColor: "#2A3F33",
-    borderColor: "#3A5F43",
+    backgroundColor: "#8C5BE6",
+    borderColor: "#8C5BE6",
   },
   filterText: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 14,
     fontWeight: "600",
   },
@@ -478,21 +482,21 @@ const styles = StyleSheet.create({
     marginBottom: 18,
   },
   sortLabel: {
-    color: "#B8C3BC",
+    color: "#E0E0E0",
     marginRight: 8,
   },
   sortButton: {
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
-    backgroundColor: "#1A231E",
+    backgroundColor: "#2E1A40",
     marginRight: 8,
   },
   sortActive: {
-    backgroundColor: "#2A3F33",
+    backgroundColor: "#8C5BE6",
   },
   sortText: {
-    color: "#8FA396",
+    color: "#FFFFFF",
     fontSize: 12,
   },
   sectionTitle: {
@@ -503,10 +507,10 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   tokenCard: {
-    backgroundColor: "#1A231E",
+    backgroundColor: "#2E1A40",
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: "#2A3F33",
+    borderColor: "#8C5BE6",
     padding: 16,
     marginBottom: 12,
     elevation: 2,
@@ -514,6 +518,26 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
+  },
+  buyButton: {
+    backgroundColor: "#8C5BE6", //#3BAF74
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
+  },
+  dethroneCard: {
+    backgroundColor: "#2E1A40",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: "#8C5BE6",
+  },
+  dethroneButton: {
+    backgroundColor: "#8C5BE6",
+    padding: 12,
+    borderRadius: 8,
+    alignItems: "center",
   },
   tokenHeader: {
     flexDirection: "row",
@@ -530,14 +554,14 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     marginRight: 8,
-    backgroundColor: "#2A3F33",
+    backgroundColor: "#1A0E26",
   },
   dethroneIcon: {
     width: 40,
     height: 40,
     borderRadius: 20,
     marginRight: 8,
-    backgroundColor: "#3F372A",
+    backgroundColor: "#1A0E26",
   },
   tokenName: {
     fontSize: 18,
@@ -545,7 +569,7 @@ const styles = StyleSheet.create({
     color: "#E0E0E0",
   },
   tokenSymbol: {
-    color: "#8FA396",
+    color: "#9B86B3",
   },
   categoryTag: {
     backgroundColor: "#1A231E",
@@ -583,7 +607,7 @@ const styles = StyleSheet.create({
     alignItems: "flex-start",
   },
   metricLabel: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 12,
     marginBottom: 4,
   },
@@ -601,30 +625,16 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   launchTime: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 12,
   },
   holders: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 12,
   },
-  buyButton: {
-    backgroundColor: "#3BAF74", //#3BAF74
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-  },
   buyButtonText: {
-    color: "#E0E0E0",
+    color: "#FFFFFF",
     fontWeight: "600",
-  },
-  dethroneCard: {
-    backgroundColor: "#2E281A",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#3F372A",
   },
   dethroneHeader: {
     flexDirection: "row",
@@ -642,7 +652,7 @@ const styles = StyleSheet.create({
     color: "#E0E0E0",
   },
   dethroneAchievement: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 12,
   },
   dethroneMetrics: {
@@ -660,14 +670,8 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: "600",
   },
-  dethroneButton: {
-    backgroundColor: "#FFD700",
-    padding: 12,
-    borderRadius: 8,
-    alignItems: "center",
-  },
   dethroneButtonText: {
-    color: "#000",
+    color: "#FFFFFF",
     fontWeight: "600",
   },
   emptyContainer: {
@@ -675,7 +679,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   emptyText: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 16,
   },
 });

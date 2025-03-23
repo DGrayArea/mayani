@@ -253,7 +253,7 @@ const TokenDetails = () => {
             <TextInput
               style={styles.input}
               placeholder="Enter amount"
-              placeholderTextColor="#8FA396"
+              placeholderTextColor="#9B86B3"
               keyboardType="decimal-pad"
               value={buyAmount}
               onChangeText={(text) => {
@@ -447,7 +447,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   actionButtonText: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 16,
     fontWeight: "bold",
   },
@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   tokenSymbol: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 14,
   },
   priceSection: {
@@ -541,7 +541,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#2A3F33",
   },
   intervalText: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 14,
     fontWeight: "600",
   },
@@ -562,7 +562,7 @@ const styles = StyleSheet.create({
     marginBottom: 15,
   },
   statLabel: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 14,
   },
   statValue: {
@@ -621,7 +621,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#4CAF50",
   },
   toggleText: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 14,
     fontWeight: "600",
   },
@@ -653,7 +653,7 @@ const styles = StyleSheet.create({
     fontWeight: "bold",
   },
   estimatedTokens: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 14,
     textAlign: "center",
     marginTop: 8,

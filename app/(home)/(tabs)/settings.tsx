@@ -100,9 +100,9 @@ const Settings = () => {
       <Switch
         value={settings[key]}
         onValueChange={() => toggleSetting(key)}
-        trackColor={{ false: "#181F1C", true: "#2A5A38" }}
-        thumbColor={settings[key] ? "#4CAF50" : "#767577"}
-        ios_backgroundColor="#181F1C"
+        thumbColor={settings[key] ? "#8C6BAA" : "#767577"}
+        trackColor={{ false: "#1A0E26", true: "#5A2DA0" }}
+        ios_backgroundColor="#1A0E26"
         style={styles.switch}
       />
     </View>
@@ -240,20 +240,20 @@ const Settings = () => {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#0A0F0D",
+    backgroundColor: "#1A0E26",
   },
   settingsContainer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: 12,
     paddingBottom: 30,
   },
   profileSection: {
-    backgroundColor: "#14201B",
+    backgroundColor: "#2E1A40",
     padding: 24,
     flexDirection: "row",
     alignItems: "center",
     marginBottom: 24,
     borderBottomWidth: 1,
-    borderBottomColor: "#2A3F33",
+    borderBottomColor: "#8C5BE6",
   },
   profileImageContainer: {
     position: "relative",
@@ -262,9 +262,9 @@ const styles = StyleSheet.create({
     width: 80,
     height: 80,
     borderRadius: 40,
-    backgroundColor: "#121A17",
-    borderWidth: 2,
-    borderColor: "#2A3F33",
+    backgroundColor: "#1A0E26",
+    borderWidth: 1,
+    borderColor: "#8C5BE6",
   },
   statusIndicator: {
     position: "absolute",
@@ -274,7 +274,7 @@ const styles = StyleSheet.create({
     borderRadius: 7,
     bottom: 5,
     right: 5,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: "#14201B",
   },
   profileInfo: {
@@ -284,12 +284,12 @@ const styles = StyleSheet.create({
   profileName: {
     fontSize: 20,
     fontWeight: "bold",
-    color: "#8FA396",
+    color: "#9B86B3",
     letterSpacing: 0.3,
   },
   profileEmail: {
     fontSize: 14,
-    color: "#8FA396",
+    color: "#9B86B3",
     marginTop: 4,
     opacity: 0.7,
   },
@@ -297,12 +297,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 8,
     borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#3D5A48",
-    backgroundColor: "#1A231E",
+    borderWidth: 0.7,
+    borderColor: "#8C5BE6",
+    backgroundColor: "#2E1A40",
   },
   editButtonText: {
-    color: "#4CAF50",
+    color: "#8C5BE6",
     fontSize: 14,
     fontWeight: "500",
   },
@@ -315,36 +315,36 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 17,
     fontWeight: "600",
-    color: "#8FA396",
+    color: "#9B86B3",
     marginRight: 12,
   },
   sectionDivider: {
     flex: 1,
     height: 1,
-    backgroundColor: "#2A3F33",
+    backgroundColor: "#2E1A40",
   },
   settingItem: {
-    backgroundColor: "#14201B",
+    backgroundColor: "#2E1A40",
     flexDirection: "row",
     alignItems: "center",
     padding: 16,
     borderRadius: 12,
     marginBottom: 8,
     justifyContent: "space-between",
-    borderWidth: 1,
-    borderColor: "#1C2925",
+    borderWidth: 0.7,
+    borderColor: "#8C5BE6",
   },
   settingInfo: {
     flex: 1,
   },
   settingTitle: {
     fontSize: 16,
-    color: "#8FA396",
+    color: "#9B86B3",
     fontWeight: "500",
   },
   settingDescription: {
     fontSize: 12,
-    color: "#8FA396",
+    color: "#9B86B3",
     marginTop: 4,
     opacity: 0.7,
   },
@@ -358,27 +358,27 @@ const styles = StyleSheet.create({
   },
   valueText: {
     fontSize: 14,
-    color: "#8FA396",
+    color: "#9B86B3",
     marginRight: 8,
   },
   chevron: {
     fontSize: 18,
-    color: "#4CAF50",
+    color: "#8C5BE6",
     fontWeight: "600",
   },
   switch: {
     transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }],
   },
   actionButton: {
-    backgroundColor: "#14201B",
+    backgroundColor: "#2E1A40",
     padding: 16,
     borderRadius: 12,
     marginTop: 8,
     alignItems: "center",
-    borderWidth: 1,
+    borderWidth: 0.7,
   },
   logoutButton: {
-    borderColor: "rgba(33, 150, 243, 0.3)",
+    borderColor: "#8C5BE6",
     marginTop: 16,
   },
   logoutText: {
@@ -387,7 +387,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   deleteButton: {
-    borderColor: "rgba(244, 67, 54, 0.3)",
+    borderColor: "#8C5BE6",
     marginTop: 12,
   },
   deleteText: {
@@ -397,7 +397,7 @@ const styles = StyleSheet.create({
   },
   version: {
     textAlign: "center",
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 14,
     marginTop: 30,
     opacity: 0.6,

@@ -1,50 +1,59 @@
-# Welcome to your Expo app 👋
+# Welcome to your Ape It app 👋
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+- Theme (Colors)
+  • Gradient Light Purple (Ape Logo): #7B51E0
+  • Gradient Dark Purple (Ape Logo): #5A2DA0
+  • Background (Dark Purple): #1A0E26
+  • Button Border and Text Glow: #8C5BE6
+  • Button Background: #2E1A40
 
-## Get started
+  filterButton: {
+  paddingHorizontal: 20,
+  paddingVertical: 10,
+  marginRight: 10,
+  borderRadius: 20,
+  backgroundColor: "#2E1A40",
+  borderWidth: 2,
+  borderColor: "#8C5BE6",
+  },
+  filterButtonActive: {
+  backgroundColor: "#8C5BE6",
+  borderColor: "#8C5BE6",
+  },
 
-1. Install dependencies
+  avatar: {
+  width: 40,
+  height: 40,
+  borderRadius: 20,
+  backgroundColor: "#8C5BE6",
+  },
 
-   ```bash
-   npm install
-   ```
+  trendingBarItem: {
+  display: "flex",
+  flexDirection: "row",
+  alignItems: "center",
+  paddingHorizontal: 6,
+  paddingVertical: 4,
+  marginHorizontal: 3,
+  backgroundColor: "#2E1A40",
+  borderRadius: 6,
+  height: 24,
+  justifyContent: "space-between",
+  },
+  trendingBarAvatar: {
+  width: 16,
+  height: 16,
+  borderRadius: 8,
+  marginRight: 4,
+  backgroundColor: "#8C5BE6",
+  },
 
-2. Start the app
-
-   ```bash
-    npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+  promoteButton: {
+  backgroundColor: "#2E1A40",
+  paddingHorizontal: 12,
+  paddingVertical: 6,
+  borderRadius: 16,
+  borderWidth: 2,
+  borderColor: "#8C5BE6",
+  alignSelf: "center",
+  },

@@ -76,7 +76,7 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#005d4d", // Match your gradient start color
+    backgroundColor: "#1A0E26", // Match your gradient start color
   },
   container: {
     flex: 1,

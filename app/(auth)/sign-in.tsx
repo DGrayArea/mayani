@@ -103,7 +103,7 @@ export default function SignIn() {
   return (
     <View style={styles.safeArea}>
       <LinearGradient
-        colors={["#004d40", "#00796b", "#009688"]}
+        colors={["#1A0E26", "#1A0E26", "#1A0E26"]}
         style={styles.container}
         start={{ x: 0, y: 0 }}
         end={{ x: 1, y: 1 }}
@@ -144,25 +144,21 @@ export default function SignIn() {
                 },
               ]}
             >
-              <Text className="text-xl font-semibold font-rubik text-white text-center mt-16 mb-5">
-                Login to Mayani with Google
-              </Text>
+              <Text style={styles.loginText}>Login to Mayani with Google</Text>
 
               <TouchableOpacity
                 onPress={onPress}
                 onPressIn={handlePressIn}
                 onPressOut={handlePressOut}
-                className="bg-white shadow-md shadow-zinc-300 rounded-full w-full py-4 mt-5"
+                style={styles.button}
               >
-                <View className="flex flex-row items-center justify-center">
+                <View style={styles.buttonContent}>
                   <Image
                     source={icons.google}
-                    className="w-5 h-5"
+                    style={styles.googleIcon}
                     resizeMode="contain"
                   />
-                  <Text className="text-lg font-rubik-medium text-black-300 ml-2">
-                    Continue with Google
-                  </Text>
+                  <Text style={styles.buttonText}>Continue with Google</Text>
                 </View>
               </TouchableOpacity>
             </Animated.View>
@@ -223,13 +219,44 @@ const styles = StyleSheet.create({
       },
     }),
   },
+  button: {
+    backgroundColor: "#2E1A40",
+    borderRadius: 30,
+    borderWidth: 2,
+    borderColor: "#8C5BE6",
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  buttonContent: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  googleIcon: {
+    width: 20,
+    height: 20,
+  },
+  buttonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "600",
+    marginLeft: 10,
+  },
+  loginText: {
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    textAlign: "center",
+    marginBottom: 10,
+  },
   bgCircles: {
     ...StyleSheet.absoluteFillObject,
     overflow: "hidden",
   },
   bgCircle: {
     position: "absolute",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
     borderRadius: width,
   },
   bgCircle1: {
@@ -237,17 +264,20 @@ const styles = StyleSheet.create({
     height: width * 1.4,
     top: -width * 0.8,
     right: -width * 0.5,
+    backgroundColor: "#7B51E0",
   },
   bgCircle2: {
     width: width * 1.2,
     height: width * 1.2,
     bottom: -width * 0.6,
     left: -width * 0.3,
+    backgroundColor: "#5A2DA0",
   },
   bgCircle3: {
     width: width,
     height: width,
     top: width * 0.2,
     right: -width * 0.3,
+    backgroundColor: "#8C5BE6",
   },
 });

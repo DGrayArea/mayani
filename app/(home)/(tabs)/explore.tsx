@@ -194,7 +194,8 @@ const Explore = () => {
           styles.filterButton,
           selectedFilter === "all" && styles.filterButtonActive,
         ]}
-        onPress={() => setSelectedFilter("all")}
+        // onPress={() => setSelectedFilter("all")}
+        onPress={() => console.log("Stubborn")}
       >
         <Text
           style={[
@@ -370,83 +371,83 @@ const Explore = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView>
-        <View style={styles.container}>
-          <View style={styles.headerContainer}>
-            <Text style={styles.header}>Explore</Text>
-            <TouchableOpacity onPress={() => router.push("/(home)/search")}>
-              <Ionicons name="search-outline" size={28} color="#E0E0E0" />
-            </TouchableOpacity>
-          </View>
+      <FlatList
+        data={mergedData}
+        renderItem={renderTrendingItem}
+        keyExtractor={(item) => item.id}
+        initialNumToRender={10}
+        maxToRenderPerBatch={10}
+        windowSize={5}
+        showsVerticalScrollIndicator={false}
+        refreshControl={
+          <RefreshControl
+            refreshing={isRefetchingByUser}
+            onRefresh={refetchByUser}
+          />
+        }
+        ListHeaderComponent={() => (
+          <View>
+            <View style={styles.container}>
+              <View style={styles.headerContainer}>
+                <Text style={styles.header}>Explore</Text>
+                <TouchableOpacity onPress={() => router.push("/(home)/search")}>
+                  <Ionicons name="search-outline" size={28} color="#E0E0E0" />
+                </TouchableOpacity>
+              </View>
 
-          {renderFilterButtons()}
+              {renderFilterButtons()}
 
-          <View style={styles.section}>
-            <View style={styles.trendingHeader}>
-              <Text style={styles.sectionTitle}>Trending</Text>
-              <TouchableOpacity
-                style={styles.promoteButton}
-                onPress={() => router.push("/(home)/promote")}
-              >
-                <Text style={styles.promoteButtonText}>🚀 Promote</Text>
-              </TouchableOpacity>
-            </View>
-
-            <AutoScrollingTrendingBar
-              data={mergedData.sort(() => Math.random() - 0.5).slice(0, 10)}
-            />
-            <FilterModal />
-            <FlatList
-              style={{ flex: 1, paddingBottom: 20 }}
-              data={mergedData}
-              renderItem={renderTrendingItem}
-              keyExtractor={(item) => item.id}
-              showsVerticalScrollIndicator={false}
-              refreshControl={
-                <RefreshControl
-                  refreshing={isRefetchingByUser}
-                  onRefresh={refetchByUser}
-                />
-              }
-              ListHeaderComponent={() => (
-                <View>
-                  <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Top Gainers</Text>
-                    <FlatList
-                      data={filteredTopGainers}
-                      renderItem={renderTopGainers}
-                      keyExtractor={(item) => item.id}
-                      horizontal
-                      showsHorizontalScrollIndicator={false}
-                    />
-                  </View>
-                  <View style={styles.section}>
-                    <Text style={styles.sectionTitle}>Top Tokens</Text>
-                  </View>
+              <View style={styles.section}>
+                <View style={styles.trendingHeader}>
+                  <Text style={styles.sectionTitle}>Trending</Text>
+                  <TouchableOpacity
+                    style={styles.promoteButton}
+                    onPress={() => router.push("/(home)/promote")}
+                  >
+                    <Text style={styles.promoteButtonText}>🚀 Promote</Text>
+                  </TouchableOpacity>
                 </View>
-              )}
-              contentContainerStyle={styles.scrollContent}
-            />
+
+                <AutoScrollingTrendingBar
+                  data={mergedData.sort(() => Math.random() - 0.5).slice(0, 10)}
+                />
+                <FilterModal />
+              </View>
+
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Top Gainers</Text>
+                <FlatList
+                  data={filteredTopGainers}
+                  renderItem={renderTopGainers}
+                  keyExtractor={(item) => item.id}
+                  horizontal={true}
+                  showsHorizontalScrollIndicator={false}
+                />
+              </View>
+
+              <View style={styles.section}>
+                <Text style={styles.sectionTitle}>Top Tokens</Text>
+              </View>
+            </View>
           </View>
-        </View>
-      </ScrollView>
+        )}
+        contentContainerStyle={styles.scrollContent}
+      />
     </SafeAreaView>
   );
 };
-
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#0A0F0D",
+    backgroundColor: "#1A0E26",
   },
   scrollContent: {
     paddingBottom: 20,
   },
   container: {
     flex: 1,
-    backgroundColor: "#0A0F0D",
-    paddingHorizontal: 20,
-    paddingBottom: 40,
+    backgroundColor: "#1A0E26",
+    paddingHorizontal: 12,
   },
   headerContainer: {
     flexDirection: "row",
@@ -458,7 +459,7 @@ const styles = StyleSheet.create({
     color: "#E0E0E0",
     fontSize: 28,
     fontWeight: "bold",
-    marginTop: 10, // Remove marginBottom since it's handled by headerContainer
+    marginTop: 10,
   },
   filterContainer: {
     flexDirection: "row",
@@ -468,16 +469,16 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     marginRight: 10,
     borderRadius: 20,
-    backgroundColor: "#1A231E",
+    backgroundColor: "#2E1A40",
     borderWidth: 1,
-    borderColor: "#2A3F33",
+    borderColor: "#8C5BE6",
   },
   filterButtonActive: {
-    backgroundColor: "#2A3F33",
-    borderColor: "#3A5F43",
+    backgroundColor: "#8C5BE6",
+    borderColor: "#8C5BE6",
   },
   filterText: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 14,
     fontWeight: "600",
   },
@@ -486,35 +487,32 @@ const styles = StyleSheet.create({
   },
   section: {
     marginTop: 5,
+    marginBottom: 15,
   },
   sectionTitle: {
     color: "#B8C3BC",
     fontSize: 20,
     fontWeight: "600",
     marginTop: 8,
-    marginBottom: 8, // Remove bottom margin since it's handled by trendingHeader
+    marginBottom: 8,
   },
   gainerCard: {
-    backgroundColor: "#1A231E",
-    // borderRadius: 15,
-    // padding: 15,
-    // marginRight: 12,
+    backgroundColor: "#2E1A40",
     flexDirection: "row",
     alignItems: "center",
-    // borderWidth: 1,
-    // borderColor: "#2A3F33",
     minWidth: 160,
   },
   TouchableGainerCard: {
-    backgroundColor: "#1A231E",
+    backgroundColor: "#2E1A40",
     borderRadius: 15,
-    padding: 15,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
     marginRight: 12,
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#2A3F33",
-    minWidth: 180,
+    borderWidth: 0.7,
+    borderColor: "#8C5BE6",
+    minWidth: "auto",
   },
   gainerContent: {
     flex: 1,
@@ -524,7 +522,7 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "#2A3F33",
+    backgroundColor: "#1A0E26",
   },
   gainerText: {
     color: "#E0E0E0",
@@ -540,22 +538,18 @@ const styles = StyleSheet.create({
   trendingItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1A231E",
-    // borderRadius: 15,
-    // padding: 15,
-    // marginBottom: 12,
-    // borderWidth: 1,
-    // borderColor: "#2A3F33",
+    backgroundColor: "#2E1A40",
   },
   touchableTrendingItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#1A231E",
+    backgroundColor: "#2E1A40",
     borderRadius: 15,
     padding: 15,
     marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#2A3F33",
+    borderWidth: 0.7,
+    borderColor: "#8C5BE6",
+    marginHorizontal: 12,
   },
   trendingBarInfo: {
     display: "flex",
@@ -576,7 +570,7 @@ const styles = StyleSheet.create({
     marginBottom: 4,
   },
   marketCap: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 13,
   },
   trendingPriceInfo: {
@@ -600,7 +594,6 @@ const styles = StyleSheet.create({
   },
   trendingBarContainer: {
     height: 32,
-    // backgroundColor: "#1A231E",
     marginBottom: 16,
     borderRadius: 8,
     overflow: "hidden",
@@ -617,7 +610,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   trendingBarIndex: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 12,
     fontWeight: "700",
     marginRight: 6,
@@ -629,7 +622,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 6,
     paddingVertical: 4,
     marginHorizontal: 3,
-    backgroundColor: "#2A3F33",
+    backgroundColor: "#2E1A40",
     borderRadius: 6,
     height: 24,
     color: "white",
@@ -640,7 +633,7 @@ const styles = StyleSheet.create({
     height: 16,
     borderRadius: 8,
     marginRight: 4,
-    backgroundColor: "#1A2A22",
+    backgroundColor: "#1A0E26",
   },
   trendingBarSymbol: {
     color: "#E0E0E0",
@@ -657,17 +650,17 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 7,
-    paddingRight: 4, // Add padding for better spacing
+    paddingRight: 4,
   },
   promoteButton: {
-    color: "#8FA396",
-    backgroundColor: "#2A3F33",
+    color: "#9B86B3",
+    backgroundColor: "#2E1A40",
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: 16,
     borderWidth: 1,
-    borderColor: "#3A5F43",
-    alignSelf: "center", // Add this to ensure vertical alignment
+    borderColor: "#8C5BE6",
+    alignSelf: "center",
   },
   promoteButtonText: {
     color: "#E0E0E0",

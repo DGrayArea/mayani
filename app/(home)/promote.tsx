@@ -124,7 +124,7 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   backButtonText: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 16,
   },
   title: {
@@ -160,7 +160,7 @@ const styles = StyleSheet.create({
     textAlign: "center", // Add this
   },
   duration: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 16,
     marginBottom: 24,
     textAlign: "center",

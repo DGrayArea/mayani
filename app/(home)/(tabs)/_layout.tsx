@@ -24,10 +24,10 @@ const TabIcon = ({
       resizeMode="contain"
       className="size-6"
     /> */}
-    <Icon name={name} size={25} color={`${focused ? "#86EEAC" : "#FFF"}`} />
+    <Icon name={name} size={25} color={`${focused ? "#7B51E0" : "#FFF"}`} />
     <Text
       className={`${
-        focused ? "text-green-300" : "text-white"
+        focused ? "text-[#7B51E0]" : "text-white"
       } text-xs w-full text-center mt-1`}
     >
       {title}
@@ -41,7 +41,7 @@ const TabsLayout = () => {
       screenOptions={{
         tabBarShowLabel: false,
         tabBarStyle: {
-          backgroundColor: "#0A0F0D",
+          backgroundColor: "#1A0E26",
           position: "absolute",
           borderTopColor: "#1A231E",
           borderTopWidth: 1,
