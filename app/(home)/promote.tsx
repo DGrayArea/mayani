@@ -114,7 +114,7 @@ const PromotePage = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#0A0F0D",
+    backgroundColor: "#1A0E26",
   },
   container: {
     flex: 1,
@@ -137,13 +137,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   promotionCard: {
-    backgroundColor: "#1A231E",
+    backgroundColor: "#2E1A40",
     borderRadius: 16,
     padding: 24,
     width: "100%",
     maxWidth: "100%",
-    borderWidth: 1,
-    borderColor: "#2A3F33",
+    borderWidth: 0.7,
+    borderColor: "#8C5BE6",
     alignItems: "center", // Add this
   },
   cardTitle: {
@@ -153,20 +153,20 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   price: {
-    color: "#4CAF50",
+    color: "#8C5BE6",
     fontSize: 32,
     fontWeight: "bold",
     marginBottom: 8,
     textAlign: "center", // Add this
   },
   duration: {
-    color: "#9B86B3",
+    color: "#8C5BE6",
     fontSize: 16,
     marginBottom: 24,
     textAlign: "center",
   },
   buyButton: {
-    backgroundColor: "#2A3F33",
+    backgroundColor: "#5A2DA0",
     paddingVertical: 12,
     paddingHorizontal: 12,
     borderRadius: 8,
@@ -186,24 +186,24 @@ const styles = StyleSheet.create({
   durationButton: {
     width: 40,
     height: 40,
-    backgroundColor: "#2A3F33",
+    backgroundColor: "#5A2DA0",
     borderRadius: 20,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#3A5F43",
+    borderWidth: 0.7,
+    borderColor: "#8C5BE6",
   },
   durationInput: {
     width: 60,
     height: 40,
-    backgroundColor: "#2A3F33",
+    backgroundColor: "#5A2DA0",
     borderRadius: 8,
     marginHorizontal: 12,
     color: "#E0E0E0",
     fontSize: 18,
     textAlign: "center",
-    borderWidth: 1,
-    borderColor: "#3A5F43",
+    borderWidth: 0.7,
+    borderColor: "#8C5BE6",
   },
 });
 

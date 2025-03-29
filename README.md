@@ -6,6 +6,7 @@
   • Background (Dark Purple): #1A0E26
   • Button Border and Text Glow: #8C5BE6
   • Button Background: #2E1A40
+  • Text Color: #9B86B3
 
   filterButton: {
   paddingHorizontal: 20,

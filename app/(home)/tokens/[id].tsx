@@ -235,16 +235,16 @@ const TokenDetails = () => {
 
   const BuuyModal = () => (
     <Modal
-      visible={isBuyModalVisible}
+      visible={buyModalVisible}
       transparent
       animationType="slide"
-      onRequestClose={() => setIsBuyModalVisible(false)}
+      onRequestClose={() => setBuyModalVisible(false)}
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContent}>
           <View style={styles.modalHeader}>
             <Text style={styles.modalTitle}>Buy {symbol}</Text>
-            <TouchableOpacity onPress={() => setIsBuyModalVisible(false)}>
+            <TouchableOpacity onPress={() => setBuyModalVisible(false)}>
               <Ionicons name="close" size={24} color="#E0E0E0" />
             </TouchableOpacity>
           </View>
@@ -369,10 +369,17 @@ const TokenDetails = () => {
               width={width - 60}
               height={220}
               style={{
-                backgroundColor: "#1A231E",
+                backgroundColor: "#2E1A40",
               }}
             >
-              <LineChart.Path color="#4CAF50" width={2}>
+              <LineChart.Path
+                color={
+                  change < 0
+                    ? String(styles.negative.color)
+                    : String(styles.positive.color)
+                }
+                width={2}
+              >
                 <LineChart.Gradient />
               </LineChart.Path>
               <LineChart.CursorCrosshair color="#4CAF50" />
@@ -440,7 +447,7 @@ const styles = StyleSheet.create({
     marginTop: 20,
     backgroundColor: "#1A231E",
     borderRadius: 12,
-    borderWidth: 1,
+    borderWidth: 0.7,
     borderColor: "#2A3F33",
     paddingVertical: 16,
     paddingHorizontal: 24,
@@ -453,7 +460,7 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    backgroundColor: "#0A0F0D",
+    backgroundColor: "#1A0E26",
     paddingHorizontal: 20,
   },
   scrollContent: {
@@ -520,11 +527,11 @@ const styles = StyleSheet.create({
   },
   chartContainer: {
     marginVertical: 20,
-    backgroundColor: "#1A231E",
+    backgroundColor: "#2E1A40",
     borderRadius: 16,
     padding: 16,
-    borderWidth: 1,
-    borderColor: "#2A3F33",
+    borderWidth: 0.7,
+    borderColor: "#8C5BE6",
   },
   intervalContainer: {
     flexDirection: "row",
@@ -535,26 +542,26 @@ const styles = StyleSheet.create({
     paddingHorizontal: 15,
     paddingVertical: 8,
     borderRadius: 20,
-    backgroundColor: "#1A231E",
+    backgroundColor: "#5A2DA0",
   },
   intervalButtonActive: {
-    backgroundColor: "#2A3F33",
+    backgroundColor: "#7B51E0",
   },
   intervalText: {
-    color: "#9B86B3",
+    color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "600",
   },
   intervalTextActive: {
-    color: "#E0E0E0",
+    color: "#FFFFFF",
   },
   statsContainer: {
     marginTop: 20,
     padding: 20,
-    backgroundColor: "#1A231E",
+    backgroundColor: "#2E1A40",
     borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "#2A3F33",
+    borderWidth: 0.7,
+    borderColor: "#8C5BE6",
   },
   statItem: {
     flexDirection: "row",

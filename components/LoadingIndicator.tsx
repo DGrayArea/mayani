@@ -12,7 +12,7 @@ export function LoadingIndicator() {
 const styles = StyleSheet.create({
   fill: {
     flex: 1,
-    backgroundColor: "#0A0F0D",
+    backgroundColor: "#1A0E26",
     justifyContent: "center",
     alignItems: "center",
   },

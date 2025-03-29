@@ -22,7 +22,7 @@ import { Link, router } from "expo-router";
 import { TrendingToken2 } from "@/types";
 import { fetchTrending } from "@/utils/query";
 import { useSharedValue } from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons"; // Add this import
+import { Ionicons } from "@expo/vector-icons";
 
 const AutoScrollingTrendingBar = ({ data }: { data: TrendingToken2[] }) => {
   const scrollX = useSharedValue(0);
@@ -37,7 +37,6 @@ const AutoScrollingTrendingBar = ({ data }: { data: TrendingToken2[] }) => {
         if (flatListRef.current) {
           scrollX.value += 1;
 
-          // Reset scroll position when reaching the end
           if (scrollX.value >= contentWidth / 3) {
             scrollX.value = 0;
             flatListRef.current.scrollToOffset({ offset: 0, animated: false });
@@ -136,7 +135,7 @@ const AutoScrollingTrendingBar = ({ data }: { data: TrendingToken2[] }) => {
       style={styles.trendingBarContainer}
       contentContainerStyle={styles.trendingBarContent}
       onContentSizeChange={(width) => setContentWidth(width)}
-      keyExtractor={(item, index) => `${item.id}-${index}`}
+      keyExtractor={(item, index) => `${item.attributes.address}-${index}`}
     />
   );
 };
@@ -157,7 +156,7 @@ const Explore = () => {
 
   const mergedData = useMemo(() => {
     if (data) {
-      const filteredData = data.data.filter((item) => {
+      const filteredData = data?.data?.filter((item) => {
         if (selectedFilter === "all") return true;
         if (
           selectedFilter === "sol" &&
@@ -172,7 +171,7 @@ const Explore = () => {
         return false;
       });
 
-      return filteredData.sort(
+      return filteredData?.sort(
         (a, b) =>
           parseFloat(b.attributes.price_change_percentage.h24) -
           parseFloat(a.attributes.price_change_percentage.h24)
@@ -182,7 +181,7 @@ const Explore = () => {
   }, [data, selectedFilter]);
 
   const filteredTopGainers = useMemo(() => {
-    return mergedData.filter(
+    return mergedData?.filter(
       (item) => parseFloat(item.attributes.price_change_percentage.h24) > 0
     );
   }, [mergedData]);
@@ -194,8 +193,7 @@ const Explore = () => {
           styles.filterButton,
           selectedFilter === "all" && styles.filterButtonActive,
         ]}
-        // onPress={() => setSelectedFilter("all")}
-        onPress={() => console.log("Stubborn")}
+        onPress={() => setSelectedFilter("all")}
       >
         <Text
           style={[
@@ -241,7 +239,7 @@ const Explore = () => {
     </View>
   );
 
-  const renderTopGainers = ({ item }: any) => {
+  const TopGainer = ({ item }: any) => {
     const isEth = item.relationships.base_token.data.id.startsWith("eth_");
     const tokenAddress = item.relationships.base_token.data.id.startsWith(
       "solana_"
@@ -252,7 +250,10 @@ const Explore = () => {
         : item.relationships.base_token.data.id;
 
     return (
-      <TouchableOpacity style={styles.TouchableGainerCard}>
+      <TouchableOpacity
+        style={styles.TouchableGainerCard}
+        onPress={() => console.log("Top gainer Item Pressed")}
+      >
         <Link
           href={{
             pathname: "/tokens/[id]",
@@ -371,10 +372,51 @@ const Explore = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <View style={styles.container}>
+        <View style={styles.headerContainer}>
+          <Text style={styles.header}>Explore</Text>
+          <TouchableOpacity onPress={() => router.push("/(home)/search")}>
+            <Ionicons name="search-outline" size={28} color="#E0E0E0" />
+          </TouchableOpacity>
+        </View>
+
+        {renderFilterButtons()}
+
+        <View style={styles.section}>
+          <View style={styles.trendingHeader}>
+            <Text style={styles.sectionTitle}>Trending</Text>
+            <TouchableOpacity
+              style={styles.promoteButton}
+              onPress={() => router.push("/(home)/promote")}
+            >
+              <Text style={styles.promoteButtonText}>🚀 Promote</Text>
+            </TouchableOpacity>
+          </View>
+
+          <AutoScrollingTrendingBar
+            data={mergedData?.sort(() => Math.random() - 0.5).slice(0, 10)}
+          />
+          <FilterModal />
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>Top Gainers</Text>
+          <FlatList
+            data={filteredTopGainers}
+            renderItem={TopGainer}
+            keyExtractor={(item) => item.attributes.address}
+            horizontal={true}
+            scrollEnabled={true}
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={{ paddingHorizontal: 2 }}
+            style={{ flexGrow: 0, width: "100%" }}
+          />
+        </View>
+      </View>
       <FlatList
         data={mergedData}
         renderItem={renderTrendingItem}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => item.attributes.address}
         initialNumToRender={10}
         maxToRenderPerBatch={10}
         windowSize={5}
@@ -386,48 +428,9 @@ const Explore = () => {
           />
         }
         ListHeaderComponent={() => (
-          <View>
-            <View style={styles.container}>
-              <View style={styles.headerContainer}>
-                <Text style={styles.header}>Explore</Text>
-                <TouchableOpacity onPress={() => router.push("/(home)/search")}>
-                  <Ionicons name="search-outline" size={28} color="#E0E0E0" />
-                </TouchableOpacity>
-              </View>
-
-              {renderFilterButtons()}
-
-              <View style={styles.section}>
-                <View style={styles.trendingHeader}>
-                  <Text style={styles.sectionTitle}>Trending</Text>
-                  <TouchableOpacity
-                    style={styles.promoteButton}
-                    onPress={() => router.push("/(home)/promote")}
-                  >
-                    <Text style={styles.promoteButtonText}>🚀 Promote</Text>
-                  </TouchableOpacity>
-                </View>
-
-                <AutoScrollingTrendingBar
-                  data={mergedData.sort(() => Math.random() - 0.5).slice(0, 10)}
-                />
-                <FilterModal />
-              </View>
-
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Top Gainers</Text>
-                <FlatList
-                  data={filteredTopGainers}
-                  renderItem={renderTopGainers}
-                  keyExtractor={(item) => item.id}
-                  horizontal={true}
-                  showsHorizontalScrollIndicator={false}
-                />
-              </View>
-
-              <View style={styles.section}>
-                <Text style={styles.sectionTitle}>Top Tokens</Text>
-              </View>
+          <View style={styles.container}>
+            <View style={styles.section2}>
+              <Text style={styles.sectionTitle2}>Top Tokens</Text>
             </View>
           </View>
         )}
@@ -445,7 +448,7 @@ const styles = StyleSheet.create({
     paddingBottom: 20,
   },
   container: {
-    flex: 1,
+    // flex: 1,
     backgroundColor: "#1A0E26",
     paddingHorizontal: 12,
   },
@@ -488,13 +491,26 @@ const styles = StyleSheet.create({
   section: {
     marginTop: 5,
     marginBottom: 15,
+    width: "100%",
+  },
+  section2: {
+    marginTop: 5,
+    marginBottom: 8,
+    width: "100%",
   },
   sectionTitle: {
     color: "#B8C3BC",
     fontSize: 20,
     fontWeight: "600",
     marginTop: 8,
-    marginBottom: 8,
+    marginBottom: 15,
+  },
+  sectionTitle2: {
+    color: "#B8C3BC",
+    fontSize: 20,
+    fontWeight: "600",
+    marginTop: 2,
+    marginBottom: 10,
   },
   gainerCard: {
     backgroundColor: "#2E1A40",
@@ -512,7 +528,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     borderWidth: 0.7,
     borderColor: "#8C5BE6",
-    minWidth: "auto",
+    minWidth: 160,
   },
   gainerContent: {
     flex: 1,

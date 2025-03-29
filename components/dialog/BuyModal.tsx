@@ -8,16 +8,24 @@ import {
   TextInput,
   TouchableWithoutFeedback,
   Alert,
+  Animated,
+  Dimensions,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
+
+const { width } = Dimensions.get("window");
 
 const BuyModal = ({ symbol, price }) => {
   const [isModalVisible, setIsModalVisible] = useState(false);
   const [buyAmount, setBuyAmount] = useState<string>("");
+  const [limitPrice, setLimitPrice] = useState<string>("");
   const [calculatedTokens, setCalculatedTokens] = useState<number>(0);
   const [amountType, setAmountType] = useState<"SOL" | "USD">("SOL");
+  const [orderType, setOrderType] = useState<"market" | "limit">("market");
+  const [slideAnim] = useState(new Animated.Value(0));
 
   const calculateTokenAmount = useCallback(
-    (inputAmount: string) => {
+    (inputAmount: string, priceToUse: number) => {
       const amount = parseFloat(inputAmount);
       if (isNaN(amount) || amount <= 0) {
         setCalculatedTokens(0);
@@ -25,16 +33,42 @@ const BuyModal = ({ symbol, price }) => {
       }
 
       const tokenAmount =
-        amountType === "USD" ? amount / price : (amount * 30) / price; // Assuming 1 SOL = $30 USD
+        amountType === "USD"
+          ? amount / priceToUse
+          : (amount * 150) / priceToUse; // Assuming 1 SOL = $150 USD
 
       setCalculatedTokens(tokenAmount);
     },
-    [amountType, price]
+    [amountType]
   );
 
   useEffect(() => {
-    calculateTokenAmount(buyAmount);
-  }, [amountType, buyAmount, calculateTokenAmount]);
+    if (orderType === "market") {
+      calculateTokenAmount(buyAmount, price);
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      const limitPriceValue = parseFloat(limitPrice) || price;
+      calculateTokenAmount(buyAmount, limitPriceValue);
+      Animated.timing(slideAnim, {
+        toValue: width - 222,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [
+    amountType,
+    buyAmount,
+    limitPrice,
+    orderType,
+    calculateTokenAmount,
+    price,
+    slideAnim,
+    width,
+  ]);
 
   const handlePurchase = () => {
     const amount = parseFloat(buyAmount);
@@ -43,11 +77,16 @@ const BuyModal = ({ symbol, price }) => {
       return;
     }
 
+    if (orderType === "limit" && (!limitPrice || parseFloat(limitPrice) <= 0)) {
+      Alert.alert("Invalid Limit Price", "Please enter a valid limit price");
+      return;
+    }
+
     Alert.alert(
-      "Confirm Purchase",
-      `Are you sure you want to buy ${calculatedTokens.toFixed(
+      `Confirm ${orderType === "market" ? "Purchase" : "Limit Order"}`,
+      `Are you sure you want to ${orderType === "market" ? "buy" : "place a limit order for"} ${calculatedTokens.toFixed(
         4
-      )} ${symbol} for ${amount} ${amountType}?`,
+      )} ${symbol} for ${amount} ${amountType}? ${orderType === "limit" ? `\n\nLimit Price: ${limitPrice}` : ""}`,
       [
         {
           text: "Cancel",
@@ -58,15 +97,16 @@ const BuyModal = ({ symbol, price }) => {
           onPress: () => {
             Alert.alert(
               "Success!",
-              `Successfully purchased ${calculatedTokens.toFixed(
+              `Successfully ${orderType === "market" ? "purchased" : "placed a limit order for"} ${calculatedTokens.toFixed(
                 4
-              )} ${symbol} for ${amount} ${amountType}`,
+              )} ${symbol} for ${amount} ${amountType} ${orderType === "limit" ? `at limit price ${limitPrice}` : ""}`,
               [
                 {
                   text: "OK",
                   onPress: () => {
                     setIsModalVisible(false);
                     setBuyAmount("");
+                    setLimitPrice("");
                     setCalculatedTokens(0);
                   },
                 },
@@ -79,12 +119,15 @@ const BuyModal = ({ symbol, price }) => {
   };
 
   const resetFilters = useCallback(() => {
-    setBuyAmount("0");
+    setBuyAmount("");
+    setLimitPrice("");
     setCalculatedTokens(0);
   }, []);
 
   const toggleModal = () => setIsModalVisible(!isModalVisible);
   const toggleClose = () => setIsModalVisible(false);
+
+  const quickAmounts = [10, 50, 100, 200];
 
   return (
     <View style={styles.container}>
@@ -96,48 +139,118 @@ const BuyModal = ({ symbol, price }) => {
         visible={isModalVisible}
         animationType="slide"
         transparent={true}
-        onRequestClose={toggleModal}
+        onRequestClose={toggleClose}
       >
-        <TouchableWithoutFeedback onPress={toggleModal}>
+        <TouchableWithoutFeedback onPress={toggleClose}>
           <View style={styles.modalOverlay}>
             <TouchableWithoutFeedback>
               <View style={styles.modalContent}>
                 <View style={styles.modalHeader}>
-                  <Text style={styles.modalTitle}>Buy</Text>
-                  <TouchableOpacity onPress={resetFilters}>
-                    <Text style={styles.resetText}>Reset</Text>
+                  <Text style={styles.modalTitle}>Buy {symbol}</Text>
+                  <TouchableOpacity
+                    onPress={toggleClose}
+                    style={styles.closeButton}
+                  >
+                    <Ionicons name="close" size={24} color="#9B86B3" />
                   </TouchableOpacity>
                 </View>
 
-                <View style={styles.inputContainer}>
+                <View style={styles.priceContainer}>
+                  <Text style={styles.priceLabel}>Current Price</Text>
+                  <Text style={styles.priceValue}>${price}</Text>
+                </View>
+
+                <View style={styles.tabContainer}>
+                  <View style={styles.tabBackground}>
+                    <Animated.View
+                      style={[
+                        styles.tabIndicator,
+                        { transform: [{ translateX: slideAnim }] },
+                      ]}
+                    />
+                  </View>
+                  <TouchableOpacity
+                    style={styles.tabButton}
+                    onPress={() => setOrderType("market")}
+                  >
+                    <Text
+                      style={[
+                        styles.tabText,
+                        orderType === "market" && styles.tabTextActive,
+                      ]}
+                    >
+                      Market
+                    </Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.tabButton}
+                    onPress={() => setOrderType("limit")}
+                  >
+                    <Text
+                      style={[
+                        styles.tabText,
+                        orderType === "limit" && styles.tabTextActive,
+                      ]}
+                    >
+                      Limit
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+
+                <View style={styles.inputWrapper}>
+                  <Text style={styles.inputLabel}>Amount ({amountType})</Text>
                   <TextInput
-                    style={styles.input}
-                    placeholder="Enter amount"
-                    placeholderTextColor="#8FA396"
+                    style={styles.amountInput}
+                    placeholder="0.00"
+                    placeholderTextColor="#9B86B3"
                     keyboardType="decimal-pad"
                     value={buyAmount}
-                    onChangeText={(text) => {
-                      setBuyAmount(text);
-                      calculateTokenAmount(text);
-                    }}
+                    onChangeText={setBuyAmount}
                   />
-                  {calculatedTokens > 0 && (
-                    <Text style={styles.estimatedTokens}>
-                      ≈ {calculatedTokens.toLocaleString()} {symbol}
-                    </Text>
+
+                  <View style={styles.quickAmountContainer}>
+                    {quickAmounts.map((amount) => (
+                      <TouchableOpacity
+                        key={amount}
+                        style={styles.quickAmountButton}
+                        onPress={() => setBuyAmount(amount.toString())}
+                      >
+                        <Text style={styles.quickAmountText}>{amount}</Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+
+                  {orderType === "limit" && (
+                    <View style={styles.limitPriceContainer}>
+                      <Text style={styles.inputLabel}>Limit Price (USD)</Text>
+                      <View style={styles.limitInputWrapper}>
+                        <Text style={styles.currencySymbol}>$</Text>
+                        <TextInput
+                          style={styles.limitInput}
+                          placeholder={price.toString()}
+                          placeholderTextColor="#9B86B3"
+                          keyboardType="decimal-pad"
+                          value={limitPrice}
+                          onChangeText={setLimitPrice}
+                        />
+                      </View>
+                    </View>
                   )}
-                  <View style={styles.toggleContainer}>
+                </View>
+
+                <View style={styles.calculationContainer}>
+                  <View style={styles.currencyToggle}>
                     <TouchableOpacity
                       style={[
-                        styles.toggleButton,
-                        amountType === "SOL" && styles.toggleButtonActive,
+                        styles.currencyButton,
+                        amountType === "SOL" && styles.currencyButtonActive,
                       ]}
                       onPress={() => setAmountType("SOL")}
                     >
                       <Text
                         style={[
-                          styles.toggleText,
-                          amountType === "SOL" && styles.toggleTextActive,
+                          styles.currencyText,
+                          amountType === "SOL" && styles.currencyTextActive,
                         ]}
                       >
                         SOL
@@ -145,38 +258,48 @@ const BuyModal = ({ symbol, price }) => {
                     </TouchableOpacity>
                     <TouchableOpacity
                       style={[
-                        styles.toggleButton,
-                        amountType === "USD" && styles.toggleButtonActive,
+                        styles.currencyButton,
+                        amountType === "USD" && styles.currencyButtonActive,
                       ]}
                       onPress={() => setAmountType("USD")}
                     >
                       <Text
                         style={[
-                          styles.toggleText,
-                          amountType === "USD" && styles.toggleTextActive,
+                          styles.currencyText,
+                          amountType === "USD" && styles.currencyTextActive,
                         ]}
                       >
                         USD
                       </Text>
                     </TouchableOpacity>
                   </View>
+
+                  {calculatedTokens > 0 && (
+                    <View style={styles.summaryContainer}>
+                      <Text style={styles.summaryLabel}>You will receive:</Text>
+                      <Text style={styles.summaryValue}>
+                        {calculatedTokens.toLocaleString(undefined, {
+                          maximumFractionDigits: 4,
+                        })}{" "}
+                        {symbol}
+                      </Text>
+                    </View>
+                  )}
                 </View>
 
-                <View style={styles.buttonRow}>
-                  <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={toggleClose}
-                  >
-                    <Text style={styles.actionButtonText}>Cancel</Text>
-                  </TouchableOpacity>
-                  <TouchableOpacity
-                    style={styles.actionButton}
-                    onPress={handlePurchase}
-                    disabled={!calculatedTokens}
-                  >
-                    <Text style={styles.actionButtonText}>Buy</Text>
-                  </TouchableOpacity>
-                </View>
+                <TouchableOpacity
+                  style={[
+                    styles.buyButton,
+                    !calculatedTokens && styles.buyButtonDisabled,
+                    orderType === "limit" && styles.limitOrderButton,
+                  ]}
+                  onPress={handlePurchase}
+                  disabled={!calculatedTokens}
+                >
+                  <Text style={styles.buyButtonText}>
+                    {orderType === "market" ? "Buy Now" : "Place Limit Order"}
+                  </Text>
+                </TouchableOpacity>
               </View>
             </TouchableWithoutFeedback>
           </View>
@@ -194,163 +317,226 @@ const styles = StyleSheet.create({
     marginTop: 0,
     marginBottom: 5,
   },
-  filterButton: {
-    backgroundColor: "#1A231E",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#2A3F33",
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-  },
-  filterButtonText: {
-    color: "#8FA396",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.5)",
+    backgroundColor: "rgba(10, 5, 15, 0.8)",
     justifyContent: "flex-end",
   },
   modalContent: {
-    backgroundColor: "#0A0F0D",
-    padding: 16,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
+    backgroundColor: "#1A0E26",
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingVertical: 24,
   },
   modalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    paddingHorizontal: 20,
     marginBottom: 16,
   },
   modalTitle: {
-    fontSize: 18,
-    color: "#8FA396",
+    fontSize: 22,
+    color: "#E0E0E0",
     fontWeight: "bold",
   },
-  resetText: {
-    color: "#8FA396",
+  closeButton: {
+    padding: 4,
+  },
+  priceContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 20,
+  },
+  priceLabel: {
+    fontSize: 14,
+    color: "#9B86B3",
+    marginBottom: 4,
+  },
+  priceValue: {
+    fontSize: 24,
+    color: "#E0E0E0",
+    fontWeight: "bold",
+  },
+  tabContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginHorizontal: 20,
+    height: 48,
+    position: "relative",
+    marginBottom: 24,
+  },
+  tabBackground: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "#2E1A40",
+    borderRadius: 12,
+    zIndex: 0,
+  },
+  tabIndicator: {
+    position: "absolute",
+    width: "50%",
+    height: "100%",
+    backgroundColor: "#5A2DA0",
+    borderRadius: 12,
+    zIndex: 1,
+  },
+  tabButton: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 2,
+  },
+  tabText: {
     fontSize: 16,
-    fontWeight: "bold",
+    fontWeight: "600",
+    color: "#9B86B3",
   },
-  filterSection: {
+  tabTextActive: {
+    color: "#E0E0E0",
+  },
+  inputWrapper: {
+    paddingHorizontal: 20,
     marginBottom: 16,
   },
-  filterOption: {
+  inputLabel: {
+    fontSize: 14,
+    color: "#9B86B3",
+    marginBottom: 8,
+  },
+  amountInput: {
+    backgroundColor: "#2E1A40",
+    borderRadius: 12,
+    padding: 16,
+    color: "#E0E0E0",
+    fontSize: 20,
+    textAlign: "center",
+    fontWeight: "bold",
+    borderWidth: 1,
+    borderColor: "#5A2DA0",
+  },
+  quickAmountContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 12,
+  },
+  quickAmountButton: {
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: "#2E1A40",
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#5A2DA0",
+  },
+  quickAmountText: {
+    color: "#9B86B3",
+    fontSize: 14,
+  },
+  limitPriceContainer: {
+    marginTop: 16,
+  },
+  limitInputWrapper: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#2E1A40",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "#5A2DA0",
+    paddingHorizontal: 16,
+  },
+  currencySymbol: {
+    color: "#9B86B3",
+    fontSize: 20,
+    marginRight: 8,
+  },
+  limitInput: {
+    flex: 1,
+    padding: 16,
+    color: "#E0E0E0",
+    fontSize: 20,
+    textAlign: "left",
+    fontWeight: "bold",
+  },
+  calculationContainer: {
+    paddingHorizontal: 20,
+    marginBottom: 24,
+  },
+  currencyToggle: {
+    flexDirection: "row",
+    backgroundColor: "#2E1A40",
+    borderRadius: 12,
+    padding: 4,
+    marginBottom: 16,
+  },
+  currencyButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: "center",
+    borderRadius: 8,
+  },
+  currencyButtonActive: {
+    backgroundColor: "#5A2DA0",
+  },
+  currencyText: {
+    color: "#9B86B3",
+    fontSize: 16,
+    fontWeight: "600",
+  },
+  currencyTextActive: {
+    color: "#E0E0E0",
+  },
+  summaryContainer: {
+    backgroundColor: "#2E1A40",
+    borderRadius: 12,
+    padding: 16,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: "#2A3F33",
   },
-  filterOptionText: {
-    color: "#8FA396",
-    fontSize: 16,
+  summaryLabel: {
+    color: "#9B86B3",
+    fontSize: 14,
   },
-  sectionTitle: {
-    color: "#8FA396",
-    marginVertical: 12,
+  summaryValue: {
+    color: "#E0E0E0",
     fontSize: 16,
     fontWeight: "bold",
   },
-  rangeInput: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 16,
+  buyButton: {
+    backgroundColor: "#8C5BE6",
+    borderRadius: 12,
+    paddingVertical: 16,
+    marginHorizontal: 20,
+    alignItems: "center",
   },
-  buttonRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 16,
+  buyButtonDisabled: {
+    opacity: 0.5,
+  },
+  limitOrderButton: {
+    backgroundColor: "#5A2DA0",
+  },
+  buyButtonText: {
+    color: "#FFFFFF",
+    fontSize: 18,
+    fontWeight: "bold",
   },
   actionButton2: {
     marginTop: 20,
-    backgroundColor: "#1A231E",
+    backgroundColor: "#2E1A40",
     borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#2A3F33",
+    borderWidth: 0.7,
+    borderColor: "#8C5BE6",
     paddingVertical: 16,
     paddingHorizontal: 24,
     alignItems: "center",
     width: "100%",
   },
   actionButtonText2: {
-    color: "#8FA396",
+    color: "#9B86B3",
     fontSize: 16,
     fontWeight: "bold",
-  },
-  actionButton: {
-    backgroundColor: "#1A231E",
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#2A3F33",
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    alignItems: "center",
-  },
-  actionButtonText: {
-    color: "#8FA396",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  inputContainer: {
-    marginBottom: 20,
-  },
-  toggleContainer: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-  },
-  toggleButton: {
-    flex: 1,
-    paddingVertical: 10,
-    borderRadius: 8,
-    backgroundColor: "#2A3F33",
-    alignItems: "center",
-    marginHorizontal: 5,
-  },
-  toggleButtonActive: {
-    backgroundColor: "#4CAF50",
-  },
-  toggleText: {
-    color: "#8FA396",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  toggleTextActive: {
-    color: "#E0E0E0",
-  },
-  buyButton: {
-    backgroundColor: "#4CAF50",
-    borderRadius: 8,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  buyButtonDisabled: {
-    backgroundColor: "#2A3F33",
-    opacity: 0.5,
-  },
-  input: {
-    backgroundColor: "#2A3F33",
-    borderRadius: 8,
-    padding: 12,
-    color: "#E0E0E0",
-    fontSize: 16,
-    marginBottom: 8,
-    textAlign: "center",
-  },
-  buyButtonText: {
-    color: "#E0E0E0",
-    fontSize: 16,
-    fontWeight: "bold",
-  },
-  estimatedTokens: {
-    color: "#8FA396",
-    fontSize: 14,
-    textAlign: "center",
-    marginTop: 8,
-    marginBottom: 16,
   },
 });
 
