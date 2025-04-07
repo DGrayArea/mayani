@@ -43,6 +43,9 @@
     "extra": {
       "router": {
         "origin": false
+      },
+      "eas": {
+        "projectId": "d5e8f848-8301-4f90-819a-1050143a38b0"
       }
     },
     "owner": "dgrayarea"
