@@ -1,11 +1,12 @@
 // @ts-nocheck
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
   TouchableOpacity,
   TextInput,
   ScrollView,
+  Image,
   Modal,
   SafeAreaView,
   StyleSheet,
@@ -13,761 +14,827 @@ import {
   Platform,
   StatusBar,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import images from "@/constants/images";
+import useWalletStore from "@/hooks/walletStore";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
-const P2P = () => {
-  const [activeTab, setActiveTab] = useState("browse");
-  const [showPostModal, setShowPostModal] = useState(false);
-  const [showFilters, setShowFilters] = useState(false);
-  const [selectedCrypto, setSelectedCrypto] = useState("All");
-  const [selectedPayment, setSelectedPayment] = useState("All");
-
-  const [newAd, setNewAd] = useState({
-    type: "buy",
-    crypto: "",
+const Presale = () => {
+  const [activeTab, setActiveTab] = useState("upcoming");
+  const [selected, setSelected] = useState(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [createModalVisible, setCreateModalVisible] = useState(false);
+  const [amount, setAmount] = useState("");
+  const [loading, setLoading] = useState(false);
+  
+  // Create presale form states
+  const [formData, setFormData] = useState({
+    name: "",
+    symbol: "",
+    description: "",
     price: "",
-    amount: "",
-    payment: "",
+    saleStart: "",
+    saleEnd: "",
+    hardCap: "",
+    softCap: ""
   });
+  
+  const { currentChain } = useWalletStore();
 
-  const [p2pOrders, setP2pOrders] = useState([
+  const upcomingProjects = [
     {
       id: "1",
-      type: "buy",
-      crypto: "ETH",
-      price: 3240.0,
-      amount: 0.5,
-      payment: "Bank Transfer",
-      user: "trader123",
-      rating: "98%",
-      completedTrades: 156,
-      available: true,
-      isAd: true,
+      name: "AI Oracle Network",
+      symbol: "AION",
+      image: "https://via.placeholder.com/64",
+      description: "Decentralized AI-powered oracle solution for smart contracts",
+      price: 0.025,
+      startDate: "2023-10-05",
+      category: "AI & Oracle",
+      chainSupport: ["ETH", "SOL"],
+      whitelistDeadline: "2023-10-01"
     },
     {
       id: "2",
-      type: "sell",
-      crypto: "SOL",
-      price: 125.0,
-      amount: 10,
-      payment: "PayPal",
-      user: "cryptoking",
-      rating: "95%",
-      completedTrades: 89,
-      available: true,
-      isAd: false,
+      name: "Biodiversity NFT",
+      symbol: "BNFT",
+      image: "https://via.placeholder.com/64",
+      description: "NFT collection funding rainforest preservation",
+      price: 0.03,
+      startDate: "2023-09-28",
+      category: "NFT & Impact",
+      chainSupport: ["ETH"],
+      whitelistDeadline: "2023-09-25"
     },
-  ]);
-
-  const cryptoOptions = ["All", "BTC", "ETH", "SOL", "USDT"];
-  const paymentOptions = [
-    "All",
-    "Bank Transfer",
-    "PayPal",
-    "Credit Card",
-    "Cash",
+    {
+      id: "3",
+      name: "MetaVerse Lands",
+      symbol: "MVL",
+      image: "https://via.placeholder.com/64",
+      description: "Virtual real estate in the expanded metaverse ecosystem",
+      price: 0.015,
+      startDate: "2023-11-15",
+      category: "Metaverse",
+      chainSupport: ["ETH"],
+      whitelistDeadline: "2023-11-10"
+    },
+    {
+      id: "4",
+      name: "SolRacer",
+      symbol: "RACE",
+      image: "https://via.placeholder.com/64",
+      description: "Play-to-earn racing game on Solana with NFT vehicles",
+      price: 0.008,
+      startDate: "2023-10-30",
+      category: "Gaming",
+      chainSupport: ["SOL"],
+      whitelistDeadline: "2023-10-25"
+    }
   ];
 
-  const filteredOrders = p2pOrders.filter((order) => {
-    if (selectedCrypto !== "All" && order.crypto !== selectedCrypto)
-      return false;
-    if (selectedPayment !== "All" && order.payment !== selectedPayment)
-      return false;
-    return true;
-  });
-
-  const myAds = p2pOrders.filter((order) => order.isAd);
-
-  const handlePostAd = () => {
-    if (!newAd.crypto || !newAd.price || !newAd.amount || !newAd.payment) {
-      // Add validation feedback here
+  const handleBuyToken = () => {
+    if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
+      alert("Please enter a valid amount");
       return;
     }
 
-    const newAdObject = {
-      ...newAd,
-      id: Date.now().toString(),
-      user: "currentUser",
-      rating: "New",
-      completedTrades: 0,
-      available: true,
-      isAd: true,
-      price: parseFloat(newAd.price),
-      amount: parseFloat(newAd.amount),
-    };
-
-    setP2pOrders([newAdObject, ...p2pOrders]);
-    setNewAd({
-      type: "buy",
-      crypto: "",
-      price: "",
-      amount: "",
-      payment: "",
-    });
-    setShowPostModal(false);
-    setActiveTab("myAds");
+    setLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setLoading(false);
+      setModalVisible(false);
+      setAmount("");
+      alert("This feature will be available in upcoming versions. Stay tuned!");
+    }, 1500);
   };
 
-  const FilterButton = ({ title, isSelected, onPress }) => (
+  const handleJoinWhitelist = (project) => {
+    alert(`Whitelist registration for ${project.name} will be available in upcoming versions!`);
+  };
+  
+  const handleCreatePresale = () => {
+    // Validate the form
+    if (!formData.name || !formData.symbol || !formData.price) {
+      alert("Please fill in all required fields");
+      return;
+    }
+
+    setLoading(true);
+    
+    // Simulate API call
+    setTimeout(() => {
+      setLoading(false);
+      setCreateModalVisible(false);
+      setFormData({
+        name: "",
+        symbol: "",
+        description: "",
+      price: "",
+        saleStart: "",
+        saleEnd: "",
+        hardCap: "",
+        softCap: ""
+      });
+      alert("Presale creation will be available in upcoming versions. Stay tuned!");
+    }, 1500);
+  };
+
+  const renderProjectCard = (project) => {
+    const isSupported = project.chainSupport.includes(currentChain);
+    
+    return (
     <TouchableOpacity
-      style={[styles.filterButton, isSelected && styles.filterButtonSelected]}
-      onPress={onPress}
-    >
-      <Text
+        key={project.id}
         style={[
-          styles.filterButtonText,
-          isSelected && styles.filterButtonTextSelected,
+          styles.projectCard,
+          !isSupported && styles.unsupportedProjectCard
         ]}
+        disabled={!isSupported}
       >
-        {title}
-      </Text>
-    </TouchableOpacity>
-  );
-
-  const P2POrder = ({ item }) => (
-    <View style={[styles.orderCard, item.isAd && styles.adCard]}>
-      <View style={styles.orderHeader}>
-        <View
-          style={[
-            styles.orderTypeBadge,
-            {
-              backgroundColor:
-                item.type === "buy"
-                  ? styles.colors.buyLight
-                  : styles.colors.sellLight,
-            },
+        <View style={styles.projectHeader}>
+          <Image
+            source={{ uri: project.image }}
+            style={styles.projectImage}
+          />
+          <View style={styles.projectTitleContainer}>
+            <Text style={styles.projectName}>{project.name}</Text>
+            <View style={styles.symbolChainContainer}>
+              <Text style={styles.projectSymbol}>${project.symbol}</Text>
+              <View style={styles.chainSupportContainer}>
+                {project.chainSupport.map(chain => (
+                  <Image
+                    key={chain}
+                    source={chain === "ETH" ? images.eth1 : images.sol1}
+                    style={styles.chainIcon}
+                  />
+                ))}
+              </View>
+        </View>
+          </View>
+        </View>
+        
+        <Text style={styles.projectDescription} numberOfLines={2}>
+          {project.description}
+          </Text>
+        
+        <View style={styles.presaleInfo}>
+          <View style={styles.infoItem}>
+            <Text style={styles.infoLabel}>Price</Text>
+            <Text style={styles.infoValue}>${project.price}</Text>
+        </View>
+          <View style={styles.infoItem}>
+            <Text style={styles.infoLabel}>Starts</Text>
+            <Text style={styles.infoValue}>{project.startDate}</Text>
+      </View>
+        </View>
+        
+            <TouchableOpacity
+              style={[
+            styles.whitelistButton,
+            !isSupported && styles.disabledButton
           ]}
+          onPress={() => isSupported && handleJoinWhitelist(project)}
+          disabled={!isSupported}
         >
-          <Text
-            style={[
-              styles.orderTypeText,
-              {
-                color:
-                  item.type === "buy"
-                    ? styles.colors.buyDark
-                    : styles.colors.sellDark,
-              },
-            ]}
-          >
-            {item.type.toUpperCase()}
-          </Text>
-        </View>
+          <Text style={styles.whitelistButtonText}>Join Whitelist</Text>
+        </TouchableOpacity>
+            </TouchableOpacity>
+    );
+  };
 
-        <Text style={styles.cryptoText}>{item.crypto}</Text>
-
-        {item.isAd && (
-          <View style={styles.adBadge}>
-            <Text style={styles.adBadgeText}>AD</Text>
-          </View>
-        )}
-      </View>
-
-      <View style={styles.orderDetails}>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Price:</Text>
-          <Text style={styles.detailValue}>${item.price.toFixed(2)}</Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Amount:</Text>
-          <Text style={styles.detailValue}>
-            {item.amount} {item.crypto}
-          </Text>
-        </View>
-        <View style={styles.detailRow}>
-          <Text style={styles.detailLabel}>Payment:</Text>
-          <Text style={styles.detailValue}>{item.payment}</Text>
-        </View>
-      </View>
-
-      <View style={styles.userInfo}>
-        <View>
-          <Text style={styles.username}>{item.user}</Text>
-          <Text style={styles.trades}>{item.completedTrades} trades</Text>
-        </View>
-        <Text style={styles.rating}>Rating: {item.rating}</Text>
-      </View>
-
-      {activeTab === "myAds" && (
-        <View style={styles.adControls}>
-          <TouchableOpacity style={styles.editButton}>
-            <Text style={styles.buttonText}>Edit</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.deleteButton}>
-            <Text style={styles.buttonText}>Delete</Text>
-          </TouchableOpacity>
-        </View>
-      )}
-    </View>
+  const renderCreateButton = () => (
+            <TouchableOpacity
+      style={styles.createPresaleButton}
+      onPress={() => setCreateModalVisible(true)}
+    >
+      <Text style={styles.createPresaleButtonText}>Create New Presale</Text>
+            </TouchableOpacity>
   );
-
-  const PostAdModal = () => (
-    <Modal visible={showPostModal} animationType="slide" transparent={true}>
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContent}>
-          <Text style={styles.modalTitle}>Post New Ad</Text>
-
-          <View style={styles.typeSelector}>
-            <TouchableOpacity
-              style={[
-                styles.typeButton,
-                newAd.type === "buy" && styles.typeButtonSelected,
-              ]}
-              onPress={() => setNewAd({ ...newAd, type: "buy" })}
-            >
-              <Text
-                style={[
-                  styles.typeButtonText,
-                  newAd.type === "buy" && styles.typeButtonTextSelected,
-                ]}
-              >
-                BUY
-              </Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[
-                styles.typeButton,
-                newAd.type === "sell" && styles.typeButtonSelected,
-              ]}
-              onPress={() => setNewAd({ ...newAd, type: "sell" })}
-            >
-              <Text
-                style={[
-                  styles.typeButtonText,
-                  newAd.type === "sell" && styles.typeButtonTextSelected,
-                ]}
-              >
-                SELL
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          <FormInput
-            label="Cryptocurrency"
-            placeholder="BTC, ETH, SOL, etc."
-            value={newAd.crypto}
-            onChangeText={(text) => setNewAd({ ...newAd, crypto: text })}
-          />
-
-          <FormInput
-            label="Price (USD)"
-            placeholder="0.00"
-            keyboardType="decimal-pad"
-            value={newAd.price}
-            onChangeText={(text) => setNewAd({ ...newAd, price: text })}
-          />
-
-          <FormInput
-            label="Amount"
-            placeholder="0.00"
-            keyboardType="decimal-pad"
-            value={newAd.amount}
-            onChangeText={(text) => setNewAd({ ...newAd, amount: text })}
-          />
-
-          <FormInput
-            label="Payment Method"
-            placeholder="Bank Transfer, PayPal, etc."
-            value={newAd.payment}
-            onChangeText={(text) => setNewAd({ ...newAd, payment: text })}
-          />
-
-          <View style={styles.modalButtons}>
-            <TouchableOpacity
-              style={styles.cancelButton}
-              onPress={() => setShowPostModal(false)}
-            >
-              <Text style={styles.cancelButtonText}>Cancel</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.postButton} onPress={handlePostAd}>
-              <Text style={styles.postButtonText}>Post Ad</Text>
-            </TouchableOpacity>
-          </View>
+  
+  const renderCreatePresaleView = () => (
+    <View style={styles.createContainer}>
+      <Text style={styles.createDescription}>
+        Launch your own token presale on Ape It Wallet. Create a presale to raise funds for your project and build your community.
+      </Text>
+      
+      {renderCreateButton()}
+      
+      <View style={styles.createInfoContainer}>
+        <View style={styles.createInfoItem}>
+          <Text style={styles.createInfoTitle}>Community-Powered</Text>
+          <Text style={styles.createInfoText}>Connect directly with your investors</Text>
+        </View>
+        
+        <View style={styles.createInfoItem}>
+          <Text style={styles.createInfoTitle}>Secure Fundraising</Text>
+          <Text style={styles.createInfoText}>Smart contracts ensure fair distribution</Text>
+        </View>
+        
+        <View style={styles.createInfoItem}>
+          <Text style={styles.createInfoTitle}>Cross-Chain</Text>
+          <Text style={styles.createInfoText}>Launch on Ethereum or Solana</Text>
         </View>
       </View>
-    </Modal>
-  );
-
-  const FormInput = ({ label, ...props }) => (
-    <View style={styles.inputContainer}>
-      <Text style={styles.inputLabel}>{label}</Text>
-      <TextInput
-        style={styles.input}
-        placeholderTextColor={styles.colors.placeholderText}
-        {...props}
-      />
     </View>
   );
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="light-content" />
-      <View style={styles.content}>
-        <View style={styles.tabs}>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === "browse" && styles.activeTab]}
-            onPress={() => setActiveTab("browse")}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === "browse" && styles.activeTabText,
-              ]}
-            >
-              Browse
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.tab, activeTab === "myAds" && styles.activeTab]}
-            onPress={() => setActiveTab("myAds")}
-          >
-            <Text
-              style={[
-                styles.tabText,
-                activeTab === "myAds" && styles.activeTabText,
-              ]}
-            >
-              My Ads
-            </Text>
-          </TouchableOpacity>
-        </View>
-
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.header}>
-          <Text style={styles.title}>
-            {activeTab === "browse" ? "Available Orders" : "My Posted Ads"}
+          <Text style={styles.title}>Token Presale</Text>
+        </View>
+        
+        <LinearGradient
+          colors={['#8C5BE6', '#5A2DA0']}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.banner}
+        >
+          <Text style={styles.bannerTitle}>Ape It Wallet Presales</Text>
+          <Text style={styles.bannerDescription}>
+            Get early access to promising crypto projects before they launch
           </Text>
+        </LinearGradient>
+        
+        <View style={styles.tabContainer}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "upcoming" && styles.activeTab]}
+            onPress={() => setActiveTab("upcoming")}
+          >
+            <Text style={[styles.tabText, activeTab === "upcoming" && styles.activeTabText]}>
+              Upcoming
+            </Text>
+          </TouchableOpacity>
 
-          {activeTab === "browse" && (
-            <TouchableOpacity
-              style={styles.filterToggle}
-              onPress={() => setShowFilters(!showFilters)}
-            >
-              <Text style={styles.filterToggleText}>
-                {showFilters ? "Hide Filters" : "Show Filters"}
-              </Text>
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "create" && styles.activeTab]}
+            onPress={() => setActiveTab("create")}
+          >
+            <Text style={[styles.tabText, activeTab === "create" && styles.activeTabText]}>
+              Create Presale
+            </Text>
+          </TouchableOpacity>
         </View>
 
-        {showFilters && activeTab === "browse" && (
-          <View style={styles.filters}>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={styles.filterGroup}>
-                <Text style={styles.filterLabel}>Crypto:</Text>
-                {cryptoOptions.map((crypto) => (
-                  <FilterButton
-                    key={crypto}
-                    title={crypto}
-                    isSelected={selectedCrypto === crypto}
-                    onPress={() => setSelectedCrypto(crypto)}
-                  />
-                ))}
+        <View style={styles.projectsContainer}>
+          {activeTab === "upcoming" && upcomingProjects.map(project => renderProjectCard(project))}
+          {activeTab === "create" && renderCreatePresaleView()}
+        </View>
+      </ScrollView>
+      
+      {/* Create Presale Modal */}
+      <Modal
+        visible={createModalVisible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={() => setCreateModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Create Presale</Text>
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setCreateModalVisible(false)}
+              >
+                <Text style={styles.closeButtonText}>✕</Text>
+              </TouchableOpacity>
+            </View>
+            
+            <ScrollView style={styles.modalContent}>
+              <Text style={styles.inputLabel}>Token Name*</Text>
+              <TextInput
+                style={styles.amountInput}
+                placeholder="Enter token name"
+                value={formData.name}
+                onChangeText={(text) => setFormData({...formData, name: text})}
+                placeholderTextColor="#9B86B3"
+              />
+              
+              <Text style={styles.inputLabel}>Token Symbol*</Text>
+              <TextInput
+                style={styles.amountInput}
+                placeholder="Enter token symbol (e.g., BTC)"
+                value={formData.symbol}
+                onChangeText={(text) => setFormData({...formData, symbol: text})}
+                placeholderTextColor="#9B86B3"
+              />
+              
+              <Text style={styles.inputLabel}>Description</Text>
+              <TextInput
+                style={[styles.amountInput, {height: 80, textAlignVertical: 'top'}]}
+                placeholder="Enter token description"
+                value={formData.description}
+                onChangeText={(text) => setFormData({...formData, description: text})}
+                placeholderTextColor="#9B86B3"
+                multiline={true}
+                numberOfLines={3}
+              />
+              
+              <Text style={styles.inputLabel}>Token Price (USD)*</Text>
+              <TextInput
+                style={styles.amountInput}
+                placeholder="Enter token price"
+                value={formData.price}
+                onChangeText={(text) => setFormData({...formData, price: text})}
+                placeholderTextColor="#9B86B3"
+                keyboardType="numeric"
+              />
+              
+              <View style={styles.modalButtonsContainer}>
+            <TouchableOpacity
+                  style={[
+                    styles.createButton,
+                    loading && styles.loadingButton
+                  ]}
+                  onPress={handleCreatePresale}
+                  disabled={loading}
+                >
+                  <Text style={styles.createButtonText}>
+                    {loading ? "Processing..." : "Create Presale"}
+                  </Text>
+                </TouchableOpacity>
               </View>
-
-              <View style={styles.filterGroup}>
-                <Text style={styles.filterLabel}>Payment:</Text>
-                {paymentOptions.map((payment) => (
-                  <FilterButton
-                    key={payment}
-                    title={payment}
-                    isSelected={selectedPayment === payment}
-                    onPress={() => setSelectedPayment(payment)}
-                  />
-                ))}
-              </View>
+              
+              <Text style={styles.noticeText}>
+                * Required fields. More features will be available in upcoming versions.
+              </Text>
             </ScrollView>
           </View>
-        )}
+        </View>
+      </Modal>
+      
+      {/* Join Whitelist Modal */}
+      {selected && (
+        <Modal
+          visible={modalVisible}
+          transparent={true}
+          animationType="slide"
+          onRequestClose={() => setModalVisible(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContainer}>
+              <View style={styles.modalHeader}>
+                <Text style={styles.modalTitle}>Join Whitelist: {selected.symbol}</Text>
+                <TouchableOpacity
+                  style={styles.closeButton}
+                  onPress={() => setModalVisible(false)}
+                >
+                  <Text style={styles.closeButtonText}>✕</Text>
+                </TouchableOpacity>
+              </View>
 
-        <ScrollView style={styles.orderList}>
-          {(activeTab === "browse" ? filteredOrders : myAds).map((order) => (
-            <P2POrder key={order.id} item={order} />
-          ))}
-        </ScrollView>
+              <View style={styles.modalContent}>
+                <View style={styles.tokenInfoContainer}>
+                  <Image
+                    source={{ uri: selected.image }}
+                    style={styles.modalTokenImage}
+                  />
+                  <View>
+                    <Text style={styles.modalTokenName}>{selected.name}</Text>
+                    <Text style={styles.modalTokenSymbol}>${selected.symbol}</Text>
+                  </View>
+                </View>
+                
+                <View style={styles.divider} />
+                
+                <View style={styles.modalInfoRow}>
+                  <Text style={styles.modalInfoLabel}>Token Price:</Text>
+                  <Text style={styles.modalInfoValue}>${selected.price}</Text>
+                </View>
+                
+                <View style={styles.modalInfoRow}>
+                  <Text style={styles.modalInfoLabel}>Sale Starts:</Text>
+                  <Text style={styles.modalInfoValue}>{selected.startDate}</Text>
+              </View>
+                
+                <View style={styles.modalInfoRow}>
+                  <Text style={styles.modalInfoLabel}>Category:</Text>
+                  <Text style={styles.modalInfoValue}>{selected.category}</Text>
+          </View>
+                
+                <View style={styles.divider} />
+                
+                <Text style={styles.modalInfoLabel}>Email Address:</Text>
+                <TextInput
+                  style={styles.amountInput}
+                  placeholder="Enter your email for updates"
+                  placeholderTextColor="#9B86B3"
+                />
 
         <TouchableOpacity
-          onPress={() => setShowPostModal(true)}
-          style={styles.fab}
-        >
-          <Text style={styles.fabText}>+</Text>
+                  style={[
+                    styles.buyButton,
+                    loading && styles.loadingButton
+                  ]}
+                  onPress={() => handleJoinWhitelist(selected)}
+                  disabled={loading}
+                >
+                  <Text style={styles.buyButtonText}>
+                    {loading ? "Processing..." : "Join Whitelist"}
+                  </Text>
         </TouchableOpacity>
 
-        <PostAdModal />
+                <Text style={styles.noticeText}>
+                  You&apos;ll receive updates about this presale and be notified when it launches.
+                </Text>
+              </View>
+            </View>
       </View>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  colors: {
-    background: "#0A0F0D",
-    surface: "#1A231E",
-    border: "#2A3F33",
-    accent: "#4CAF50",
-    text: "#9B86B3",
-    subtext: "#666666",
-    buyLight: "#E8F5E9",
-    buyDark: "#4CAF50",
-    sellLight: "#FFEBEE",
-    sellDark: "#F44336",
-    placeholderText: "#666666",
-  },
-
   container: {
     flex: 1,
     backgroundColor: "#1A0E26",
+    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
-
-  content: {
-    flex: 1,
-    maxWidth: 600,
-    alignSelf: "center",
-    width: "100%",
-    paddingHorizontal: 12,
+  scrollContent: {
+    paddingBottom: 20,
   },
-
-  tabs: {
-    flexDirection: "row",
+  header: {
+    padding: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  title: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: "#E0E0E0",
+  },
+  banner: {
+    marginHorizontal: 16,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 20,
+  },
+  bannerTitle: {
+    fontSize: 22,
+    fontWeight: 'bold',
+    color: '#FFFFFF',
+    marginBottom: 8,
+  },
+  bannerDescription: {
+    fontSize: 14,
+    color: 'rgba(255, 255, 255, 0.8)',
+  },
+  tabContainer: {
+    flexDirection: 'row',
+    marginHorizontal: 16,
     marginBottom: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: "#2E1A40",
+    backgroundColor: '#2E1A40',
+    borderRadius: 12,
+    padding: 4,
   },
-
   tab: {
     flex: 1,
     paddingVertical: 12,
-    alignItems: "center",
+    alignItems: 'center',
+    borderRadius: 10,
   },
-
   activeTab: {
-    borderBottomWidth: 2,
-    borderBottomColor: "#8C5BE6",
+    backgroundColor: '#5A2DA0',
   },
-
   tabText: {
-    color: "#9B86B3",
-    fontSize: 16,
-    fontWeight: "500",
-  },
-
-  activeTabText: {
-    fontWeight: "700",
-  },
-
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 16,
-  },
-
-  title: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#9B86B3",
-  },
-
-  filterToggle: {
-    padding: 8,
-  },
-
-  filterToggleText: {
-    color: "#8C5BE6",
-    fontWeight: "600",
-  },
-
-  filters: {
-    marginBottom: 16,
-  },
-
-  filterGroup: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginRight: 16,
-  },
-
-  filterLabel: {
-    color: "#9B86B3",
-    marginRight: 8,
-  },
-
-  filterButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-    backgroundColor: "#2E1A40",
-    marginRight: 8,
-  },
-
-  filterButtonSelected: {
-    backgroundColor: "#5A2DA0",
-  },
-
-  filterButtonText: {
-    color: "#9B86B3",
     fontSize: 14,
+    fontWeight: '600',
+    color: '#9B86B3',
   },
-
-  filterButtonTextSelected: {
-    color: "white",
+  activeTabText: {
+    color: '#FFFFFF',
   },
-
-  orderList: {
-    flex: 1,
+  projectsContainer: {
+    paddingHorizontal: 16,
   },
-
-  orderCard: {
-    backgroundColor: "#2E1A40",
-    borderRadius: 12,
+  projectCard: {
+    backgroundColor: '#2E1A40',
+    borderRadius: 16,
     padding: 16,
     marginBottom: 16,
-    borderWidth: 0.7,
-    borderColor: "#8C5BE6",
-  },
-
-  adCard: {
     borderWidth: 1,
-    borderColor: "#8C5BE6",
+    borderColor: 'rgba(140, 91, 230, 0.3)',
   },
-
-  orderHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+  unsupportedProjectCard: {
+    opacity: 0.7,
+  },
+  projectHeader: {
+    flexDirection: 'row',
     marginBottom: 12,
   },
-
-  orderTypeBadge: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
-    marginRight: 8,
+  projectImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    marginRight: 12,
+    backgroundColor: '#1A0E26',
   },
-
-  orderTypeText: {
-    fontSize: 12,
-    fontWeight: "bold",
+  projectTitleContainer: {
+    flex: 1,
+    justifyContent: 'center',
   },
-
-  cryptoText: {
-    color: "#9B86B3",
-    fontWeight: "600",
+  projectName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#E0E0E0',
+    marginBottom: 4,
   },
-
-  adBadge: {
-    marginLeft: "auto",
-    backgroundColor: "#5A2DA0",
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 4,
+  symbolChainContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
   },
-
-  adBadgeText: {
-    color: "#E8F5E9",
-    fontSize: 10,
-    fontWeight: "bold",
+  projectSymbol: {
+    fontSize: 14,
+    color: '#9B86B3',
   },
-
-  orderDetails: {
+  chainSupportContainer: {
+    flexDirection: 'row',
+  },
+  chainIcon: {
+    width: 16,
+    height: 16,
+    marginLeft: 4,
+  },
+  projectDescription: {
+    fontSize: 14,
+    color: '#A9A9A9',
+    marginBottom: 16,
+    lineHeight: 20,
+  },
+  presaleInfo: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 12,
   },
-
-  detailRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
+  infoItem: {
+    flex: 1,
   },
-
-  detailLabel: {
-    color: "#FFFFFF",
-  },
-
-  detailValue: {
-    color: "#FFFFFF",
-  },
-
-  userInfo: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#5A2DA0",
-  },
-
-  username: {
-    color: "#9B86B3",
-    fontWeight: "600",
-  },
-
-  trades: {
-    color: "#FFFFFF",
+  infoLabel: {
     fontSize: 12,
-    marginTop: 2,
+    color: '#9B86B3',
+    marginBottom: 4,
   },
-
-  rating: {
-    color: "#666666",
+  infoValue: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#E0E0E0',
   },
-
-  adControls: {
-    flexDirection: "row",
-    marginTop: 12,
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: "#5A2DA0",
-  },
-
-  editButton: {
-    flex: 1,
-    backgroundColor: "#7B51E0",
-    padding: 8,
-    borderRadius: 4,
-    alignItems: "center",
-    marginRight: 6,
-  },
-
-  deleteButton: {
-    flex: 1,
-    backgroundColor: "#5A2DA0",
-    padding: 8,
-    borderRadius: 4,
-    alignItems: "center",
-    marginLeft: 6,
-  },
-
-  buttonText: {
-    color: "white",
-    fontWeight: "500",
-  },
-
-  fab: {
-    position: "absolute",
-    bottom: 62,
-    right: 10,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "#8C5BE6",
-    justifyContent: "center",
-    alignItems: "center",
-    elevation: 5,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 3,
-  },
-
-  fabText: {
-    fontSize: 24,
-    color: "white",
-    fontWeight: "bold",
-  },
-
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: 24,
-  },
-
-  modalContent: {
-    width: "100%",
-    maxWidth: 400,
-    backgroundColor: "#2E1A40",
-    borderRadius: 16,
-    padding: 24,
-    borderWidth: 0.7,
-    borderColor: "#8C5BE6",
-  },
-
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#9B86B3",
-    marginBottom: 24,
-    textAlign: "center",
-  },
-
-  typeSelector: {
-    flexDirection: "row",
-    marginBottom: 24,
-  },
-
-  typeButton: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: "center",
-    borderWidth: 0.7,
-    borderColor: "#8C5BE6",
-  },
-
-  typeButtonSelected: {
-    backgroundColor: "#5A2DA0",
-  },
-
-  typeButtonText: {
-    color: "#9B86B3",
-    fontWeight: "bold",
-  },
-
-  typeButtonTextSelected: {
-    color: "#E8F5E9",
-  },
-
-  inputContainer: {
+  progressContainer: {
     marginBottom: 16,
   },
-
-  inputLabel: {
-    color: "#8C5BE6",
+  progressBarBackground: {
+    height: 8,
+    backgroundColor: 'rgba(140, 91, 230, 0.2)',
+    borderRadius: 4,
+    overflow: 'hidden',
+  },
+  progressBar: {
+    height: '100%',
+    backgroundColor: '#8C5BE6',
+  },
+  progressText: {
+    fontSize: 12,
+    color: '#9B86B3',
+    marginTop: 4,
+    textAlign: 'right',
+  },
+  actionButton: {
+    backgroundColor: '#8C5BE6',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  actionButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  disabledButton: {
+    backgroundColor: '#5A2DA0',
+    opacity: 0.7,
+  },
+  whitelistButton: {
+    backgroundColor: '#2E1A40',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#8C5BE6',
+  },
+  whitelistButtonText: {
+    color: '#8C5BE6',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  completedButton: {
+    backgroundColor: '#2E1A40',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  completedButtonText: {
+    color: '#9B86B3',
+    fontSize: 16,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: SCREEN_WIDTH * 0.9,
+    backgroundColor: '#2E1A40',
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(140, 91, 230, 0.3)',
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#E0E0E0',
+  },
+  closeButton: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: 'rgba(140, 91, 230, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  closeButtonText: {
+    color: '#E0E0E0',
+    fontSize: 14,
+  },
+  modalContent: {
+    padding: 16,
+  },
+  tokenInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  modalTokenImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+    backgroundColor: '#1A0E26',
+  },
+  modalTokenName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#E0E0E0',
+  },
+  modalTokenSymbol: {
+    fontSize: 14,
+    color: '#9B86B3',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(140, 91, 230, 0.3)',
+    marginVertical: 16,
+  },
+  modalInfoRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: 8,
   },
-
-  input: {
-    backgroundColor: "#1A0E26",
-    borderWidth: 0.7,
-    borderColor: "#8C5BE6",
+  modalInfoLabel: {
+    fontSize: 14,
+    color: '#9B86B3',
+  },
+  modalInfoValue: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#E0E0E0',
+  },
+  amountInput: {
+    backgroundColor: 'rgba(26, 14, 38, 0.7)',
     borderRadius: 8,
     padding: 12,
-    color: "#9B86B3",
-  },
-
-  modalButtons: {
-    flexDirection: "row",
     marginTop: 8,
+    marginBottom: 16,
+    color: '#E0E0E0',
+    borderWidth: 1,
+    borderColor: 'rgba(140, 91, 230, 0.3)',
   },
-
-  cancelButton: {
-    flex: 1,
+  modalCalculation: {
+    backgroundColor: 'rgba(26, 14, 38, 0.7)',
     padding: 12,
-    borderWidth: 0.7,
-    borderColor: "#5A2DA0",
     borderRadius: 8,
-    alignItems: "center",
-    marginRight: 8,
+    marginBottom: 16,
   },
-
-  cancelButtonText: {
-    color: "#9B86B3",
+  calculationText: {
+    color: '#E0E0E0',
+    fontSize: 16,
+    textAlign: 'center',
   },
-
-  postButton: {
-    flex: 1,
+  buyButton: {
+    backgroundColor: '#8C5BE6',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  buyButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  loadingButton: {
+    opacity: 0.7,
+  },
+  noticeText: {
+    fontSize: 12,
+    color: '#9B86B3',
+    textAlign: 'center',
+    fontStyle: 'italic',
+  },
+  createPresaleButton: {
+    backgroundColor: '#8C5BE6',
+    paddingVertical: 16,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginVertical: 24,
+  },
+  createPresaleButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 18,
+  },
+  createContainer: {
+    backgroundColor: '#2E1A40',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(140, 91, 230, 0.3)',
+  },
+  createDescription: {
+    fontSize: 16,
+    color: '#E0E0E0',
+    lineHeight: 24,
+    marginBottom: 16,
+    textAlign: 'center',
+  },
+  createInfoContainer: {
+    marginTop: 20,
+  },
+  createInfoItem: {
+    marginBottom: 16,
     padding: 12,
-    backgroundColor: "#7B51E0",
+    backgroundColor: 'rgba(26, 14, 38, 0.7)',
     borderRadius: 8,
-    alignItems: "center",
-    marginLeft: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(140, 91, 230, 0.2)',
   },
-
-  postButtonText: {
-    color: "white",
-    fontWeight: "bold",
+  createInfoTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#E0E0E0',
+    marginBottom: 4,
   },
+  createInfoText: {
+    fontSize: 14,
+    color: '#9B86B3',
+  },
+  createButton: {
+    backgroundColor: '#8C5BE6',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  createButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 16,
+  },
+  modalButtonsContainer: {
+    marginVertical: 8,
+  },
+  inputLabel: {
+    fontSize: 14,
+    color: '#9B86B3',
+    marginBottom: 4,
+  }
 });
 
-export default P2P;
+export default Presale;

@@ -1,5 +1,4 @@
 //@ts-nocheck
-import { useAuth, useClerk, useUser } from "@clerk/clerk-expo";
 import { router } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
@@ -13,11 +12,11 @@ import {
   Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import useWalletStore from "@/hooks/walletStore";
 
 const Settings = () => {
-  const { user } = useUser();
-  const { signOut } = useClerk();
-  const { isLoaded } = useAuth();
+  const { clearSolWallet, clearEthWallet, solWalletAddress } = useWalletStore();
+  
   const [settings, setSettings] = useState({
     notifications: true,
     priceAlerts: true,
@@ -29,16 +28,16 @@ const Settings = () => {
 
   const handleSignOut = useCallback(async () => {
     try {
-      if (!isLoaded) {
-        return;
-      }
-
-      await signOut();
-      router.push("/(auth)/sign-in");
+      // Clear wallet data
+      clearSolWallet();
+      clearEthWallet();
+      
+      // Navigate to sign-in screen
+      router.replace("/(auth)/sign-in");
     } catch (error) {
       console.error("Error signing out:", error);
     }
-  }, [isLoaded, signOut, router]);
+  }, [clearSolWallet, clearEthWallet, router]);
 
   const [currency, setCurrency] = useState("USD");
   const [language, setLanguage] = useState("English");
@@ -76,7 +75,11 @@ const Settings = () => {
         {
           text: "Delete",
           style: "destructive",
-          onPress: () => console.log("Delete account pressed"),
+          onPress: () => {
+            clearSolWallet();
+            clearEthWallet();
+            router.replace("/(auth)/sign-in");
+          },
         },
       ]
     );
@@ -100,8 +103,8 @@ const Settings = () => {
       <Switch
         value={settings[key]}
         onValueChange={() => toggleSetting(key)}
-        thumbColor={settings[key] ? "#8C6BAA" : "#767577"}
-        trackColor={{ false: "#1A0E26", true: "#5A2DA0" }}
+        thumbColor={settings[key] ? "#007AFF" : "#767577"}
+        trackColor={{ false: "#1A0E26", true: "#0055CC" }}
         ios_backgroundColor="#1A0E26"
         style={styles.switch}
       />
@@ -139,17 +142,19 @@ const Settings = () => {
         <View style={styles.profileSection}>
           <View style={styles.profileImageContainer}>
             <Image
-              source={{ uri: user?.imageUrl ?? "/api/placeholder/80/80" }}
+              source={{ uri: "/api/placeholder/80/80" }}
               style={styles.profileImage}
             />
             <View style={styles.statusIndicator} />
           </View>
           <View style={styles.profileInfo}>
             <Text style={styles.profileName}>
-              {user?.fullName ?? "User Crypto"}
+              {solWalletAddress ? 
+                `${solWalletAddress.substring(0, 6)}...${solWalletAddress.substring(solWalletAddress.length - 4)}` : 
+                "Wallet"}
             </Text>
             <Text style={styles.profileEmail}>
-              {user?.emailAddresses[0].emailAddress ?? "example@gmail.com"}
+              Solana Wallet
             </Text>
           </View>
           <TouchableOpacity style={styles.editButton} activeOpacity={0.7}>
@@ -216,7 +221,7 @@ const Settings = () => {
           {renderSectionHeader("Account", "")}
           <TouchableOpacity
             style={[styles.actionButton, styles.logoutButton]}
-            // onPress={handleLogout}
+            onPress={handleLogout}
             activeOpacity={0.7}
           >
             <Text style={styles.logoutText}>Logout</Text>
@@ -243,164 +248,144 @@ const styles = StyleSheet.create({
     backgroundColor: "#1A0E26",
   },
   settingsContainer: {
-    paddingHorizontal: 12,
-    paddingBottom: 30,
+    padding: 16,
   },
   profileSection: {
-    backgroundColor: "#2E1A40",
-    padding: 24,
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 24,
-    borderBottomWidth: 1,
-    borderBottomColor: "#8C5BE6",
+    padding: 16,
+    backgroundColor: "#2A1240",
+    marginBottom: 16,
+    borderRadius: 12,
   },
   profileImageContainer: {
     position: "relative",
+    marginRight: 12,
   },
   profileImage: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "#1A0E26",
-    borderWidth: 1,
-    borderColor: "#8C5BE6",
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: "#3A1F5A",
   },
   statusIndicator: {
     position: "absolute",
-    width: 14,
-    height: 14,
-    backgroundColor: "#4CAF50",
-    borderRadius: 7,
-    bottom: 5,
-    right: 5,
-    borderWidth: 1,
-    borderColor: "#14201B",
+    bottom: 0,
+    right: 0,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: "#00FF00",
+    borderWidth: 2,
+    borderColor: "#1A0E26",
   },
   profileInfo: {
-    marginLeft: 16,
     flex: 1,
   },
   profileName: {
-    fontSize: 20,
-    fontWeight: "bold",
-    color: "#9B86B3",
-    letterSpacing: 0.3,
+    fontSize: 18,
+    fontWeight: "600",
+    color: "#FFFFFF",
+    marginBottom: 4,
   },
   profileEmail: {
     fontSize: 14,
     color: "#9B86B3",
-    marginTop: 4,
-    opacity: 0.7,
   },
   editButton: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    borderWidth: 0.7,
-    borderColor: "#8C5BE6",
-    backgroundColor: "#2E1A40",
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    backgroundColor: "#3A1F5A",
+    borderRadius: 8,
   },
   editButtonText: {
-    color: "#8C5BE6",
+    color: "#FFFFFF",
     fontSize: 14,
     fontWeight: "500",
   },
   sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
     marginTop: 24,
     marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "600",
     color: "#9B86B3",
-    marginRight: 12,
+    marginBottom: 8,
   },
   sectionDivider: {
-    flex: 1,
     height: 1,
-    backgroundColor: "#2E1A40",
+    backgroundColor: "#3A1F5A",
+    marginBottom: 8,
   },
   settingItem: {
-    backgroundColor: "#2E1A40",
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    padding: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    backgroundColor: "#2A1240",
     borderRadius: 12,
     marginBottom: 8,
-    justifyContent: "space-between",
-    borderWidth: 0.7,
-    borderColor: "#8C5BE6",
   },
   settingInfo: {
     flex: 1,
   },
   settingTitle: {
     fontSize: 16,
-    color: "#9B86B3",
-    fontWeight: "500",
+    color: "#FFFFFF",
+    marginBottom: 4,
   },
   settingDescription: {
-    fontSize: 12,
+    fontSize: 14,
     color: "#9B86B3",
-    marginTop: 4,
-    opacity: 0.7,
+  },
+  switch: {
+    transform: [{ scaleX: 0.8 }, { scaleY: 0.8 }],
   },
   selectValue: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#0A0F0D",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
   },
   valueText: {
-    fontSize: 14,
+    fontSize: 16,
     color: "#9B86B3",
     marginRight: 8,
   },
   chevron: {
-    fontSize: 18,
-    color: "#8C5BE6",
-    fontWeight: "600",
-  },
-  switch: {
-    transform: [{ scaleX: 0.9 }, { scaleY: 0.9 }],
+    fontSize: 20,
+    color: "#9B86B3",
   },
   actionButton: {
-    backgroundColor: "#2E1A40",
-    padding: 16,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
     borderRadius: 12,
-    marginTop: 8,
-    alignItems: "center",
-    borderWidth: 0.7,
+    marginBottom: 8,
   },
   logoutButton: {
-    borderColor: "#8C5BE6",
-    marginTop: 16,
-  },
-  logoutText: {
-    color: "#2196F3",
-    fontSize: 16,
-    fontWeight: "600",
+    backgroundColor: "#3A1F5A",
   },
   deleteButton: {
-    borderColor: "#8C5BE6",
-    marginTop: 12,
+    backgroundColor: "#4A1F5A",
+  },
+  logoutText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "500",
+    textAlign: "center",
   },
   deleteText: {
-    color: "#F44336",
+    color: "#FF3B30",
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: "500",
+    textAlign: "center",
   },
   version: {
-    textAlign: "center",
-    color: "#9B86B3",
     fontSize: 14,
-    marginTop: 30,
-    opacity: 0.6,
+    color: "#9B86B3",
+    textAlign: "center",
+    marginTop: 24,
+    marginBottom: 16,
   },
 });
 

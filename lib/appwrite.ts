@@ -13,7 +13,6 @@ export const config = {
   infuraId: process.env.EXPO_PUBLIC_INFURA_ID,
   moralisKey: process.env.EXPO_PUBLIC_MORALIS_KEY,
   apiEndpoint: process.env.EXPO_PUBLIC_API_ENDPOINT,
-  publishableKey: process.env.EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY!,
 };
 
 // export const client = new Client();

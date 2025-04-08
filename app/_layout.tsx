@@ -1,21 +1,26 @@
 import "../crypto-polyfill";
+import React from "react";
 import { Stack } from "expo-router";
 import "./global.css";
 import * as SplashScreen from "expo-splash-screen";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { QueryClientProvider, focusManager } from "@tanstack/react-query";
 import { queryClient } from "@/utils/query";
-import { AppStateStatus, Platform, StyleSheet } from "react-native";
+import { AppStateStatus, Platform, StyleSheet, View } from "react-native";
 import { useAppState } from "@/hooks/useAppState";
 import { useOnlineManager } from "@/hooks/useOnlineManager";
-import { ClerkProvider, ClerkLoaded } from "@clerk/clerk-expo";
 import { Slot } from "expo-router";
-import { config } from "@/lib/appwrite";
-import { tokenCache } from "@/cache";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
-import ErrorBoundary from "../components/ErrorBoundary";
+import { AuthProvider } from "@/context/AuthContext";
+import ErrorBoundary from "@/components/ErrorBoundary";
+import { useFonts } from "expo-font";
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync().catch(() => {
+  /* ignore error */
+});
 
 function onAppStateChange(status: AppStateStatus) {
   // React Query already supports in web browser refetch on window focus by default
@@ -25,49 +30,65 @@ function onAppStateChange(status: AppStateStatus) {
 }
 
 export default function RootLayout() {
+  const [appIsReady, setAppIsReady] = useState(false);
+  const [fontsLoaded, fontError] = useFonts({
+    "SpaceMono": require("../assets/fonts/SpaceMono-Regular.ttf"),
+  });
+
   useEffect(() => {
-    SplashScreen.hideAsync();
+    async function prepare() {
+      try {
+        // Pre-load fonts, make any API calls you need to do here
+        await Promise.all([]);
+      } catch (e) {
+        console.warn(e);
+      } finally {
+        // Tell the application to render
+        setAppIsReady(true);
+        await SplashScreen.hideAsync().catch(() => {
+          /* ignore error */
+        });
+      }
+    }
+
+    prepare();
   }, []);
 
   useOnlineManager();
-
   useAppState(onAppStateChange);
 
-  const publishableKey = config.publishableKey;
-
-  if (!publishableKey) {
-    throw new Error("Add EXPO_PUBLIC_CLERK_PUBLISHABLE_KEY to your .env file");
+  if (!appIsReady || !fontsLoaded) {
+    return null;
   }
 
-  const renderContent = () => (
-    <>
-      <StatusBar style="light" backgroundColor="transparent" translucent />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-        }}
-      >
-        <Slot />
-      </Stack>
-    </>
-  );
+  if (fontError) {
+    console.error('Font loading error:', fontError);
+  }
 
   return (
-    <GestureHandlerRootView style={styles.container}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
       <ErrorBoundary>
-        <ClerkProvider tokenCache={tokenCache} publishableKey={publishableKey}>
-          <ClerkLoaded>
-            <QueryClientProvider client={queryClient}>
-              {Platform.OS === "android" ? (
-                <SafeAreaView style={styles.safeArea} edges={["top"]}>
-                  {renderContent()}
-                </SafeAreaView>
-              ) : (
-                renderContent()
-              )}
-            </QueryClientProvider>
-          </ClerkLoaded>
-        </ClerkProvider>
+        <QueryClientProvider client={queryClient}>
+          <AuthProvider>
+            {Platform.OS === "android" ? (
+              <SafeAreaView style={styles.safeArea} edges={["top"]}>
+                <Stack
+                  screenOptions={{
+                    headerShown: false,
+                    animation: "slide_from_right",
+                  }}
+                />
+              </SafeAreaView>
+            ) : (
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                  animation: "slide_from_right",
+                }}
+              />
+            )}
+          </AuthProvider>
+        </QueryClientProvider>
       </ErrorBoundary>
     </GestureHandlerRootView>
   );
@@ -76,10 +97,6 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#1A0E26", // Match your gradient start color
+    backgroundColor: '#000000', // Add a background color to prevent white flash
   },
-  container: {
-    flex: 1,
-  },
-  // ...rest of your styles
 });

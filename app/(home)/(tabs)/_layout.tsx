@@ -98,14 +98,14 @@ const TabsLayout = () => {
       <Tabs.Screen
         name="p2p"
         options={{
-          title: "P2P",
+          title: "Presale",
           headerShown: false,
           tabBarIcon: ({ focused }) => (
             <TabIcon
-              name="people"
-              Icon={Ionicons}
+              name="rocket"
+              Icon={FontAwesome}
               focused={focused}
-              title="P2P"
+              title="Presale"
             />
           ),
         }}

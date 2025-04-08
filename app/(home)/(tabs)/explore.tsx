@@ -16,13 +16,273 @@ import {
   TouchableOpacity,
   RefreshControl,
   ScrollView,
+  Dimensions,
+  ImageBackground,
+  Modal,
+  TextInput,
+  Switch,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, router } from "expo-router";
 import { TrendingToken2 } from "@/types";
 import { fetchTrending } from "@/utils/query";
 import { useSharedValue } from "react-native-reanimated";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, FontAwesome, MaterialIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
+import useWalletStore from '@/hooks/walletStore';
+
+const { width } = Dimensions.get("window");
+
+// BuyModal Component to handle buying with order types
+const BuyModal = ({ visible, onClose, token }) => {
+  const [orderType, setOrderType] = useState('market'); // market, limit, stop
+  const [amount, setAmount] = useState('');
+  const [price, setPrice] = useState('');
+  const [stopLossPrice, setStopLossPrice] = useState('');
+  const [takeProfitPrice, setTakeProfitPrice] = useState('');
+  const [enableStopLoss, setEnableStopLoss] = useState(false);
+  const [enableTakeProfit, setEnableTakeProfit] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (visible && token) {
+      // Set initial price to current token price when modal opens
+      setPrice(token.attributes?.base_token_price_usd?.toString() || '0');
+    }
+  }, [visible, token]);
+
+  const handleSubmitOrder = () => {
+    if (!amount || parseFloat(amount) <= 0) {
+      Alert.alert('Error', 'Please enter a valid amount');
+      return;
+    }
+
+    if (orderType !== 'market' && (!price || parseFloat(price) <= 0)) {
+      Alert.alert('Error', 'Please enter a valid price');
+      return;
+    }
+
+    if (enableStopLoss && (!stopLossPrice || parseFloat(stopLossPrice) <= 0)) {
+      Alert.alert('Error', 'Please enter a valid stop loss price');
+      return;
+    }
+
+    if (enableTakeProfit && (!takeProfitPrice || parseFloat(takeProfitPrice) <= 0)) {
+      Alert.alert('Error', 'Please enter a valid take profit price');
+      return;
+    }
+
+    // Simulate order submission
+    setLoading(true);
+    setTimeout(() => {
+      setLoading(false);
+      
+      // Format order details for the alert
+      let orderDetails = `Order Type: ${orderType.toUpperCase()}\nAmount: ${amount}`;
+      
+      if (orderType !== 'market') {
+        orderDetails += `\nPrice: $${price}`;
+      }
+      
+      if (enableStopLoss) {
+        orderDetails += `\nStop Loss: $${stopLossPrice}`;
+      }
+      
+      if (enableTakeProfit) {
+        orderDetails += `\nTake Profit: $${takeProfitPrice}`;
+      }
+      
+      Alert.alert(
+        'Order Submitted',
+        `Your order has been submitted successfully!\n\n${orderDetails}`,
+        [{ text: 'OK', onPress: () => {
+          // Reset form and close modal
+          resetForm();
+          onClose();
+        }}]
+      );
+    }, 1500);
+  };
+
+  const resetForm = () => {
+    setOrderType('market');
+    setAmount('');
+    setPrice('');
+    setStopLossPrice('');
+    setTakeProfitPrice('');
+    setEnableStopLoss(false);
+    setEnableTakeProfit(false);
+  };
+
+  const renderOrderTypeSelector = () => (
+    <View style={styles.orderTypeContainer}>
+      <TouchableOpacity 
+        style={[styles.orderTypeButton, orderType === 'market' && styles.activeOrderType]}
+        onPress={() => setOrderType('market')}
+      >
+        <Text style={[styles.orderTypeText, orderType === 'market' && styles.activeOrderTypeText]}>Market</Text>
+      </TouchableOpacity>
+      <TouchableOpacity 
+        style={[styles.orderTypeButton, orderType === 'limit' && styles.activeOrderType]}
+        onPress={() => setOrderType('limit')}
+      >
+        <Text style={[styles.orderTypeText, orderType === 'limit' && styles.activeOrderTypeText]}>Limit</Text>
+      </TouchableOpacity>
+      <TouchableOpacity 
+        style={[styles.orderTypeButton, orderType === 'stop' && styles.activeOrderType]}
+        onPress={() => setOrderType('stop')}
+      >
+        <Text style={[styles.orderTypeText, orderType === 'stop' && styles.activeOrderTypeText]}>Stop</Text>
+      </TouchableOpacity>
+    </View>
+  );
+
+  return (
+    <Modal
+      visible={visible}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={onClose}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>
+              {orderType === 'market' ? 'Market Order' : 
+                orderType === 'limit' ? 'Limit Order' : 'Stop Order'}
+            </Text>
+            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+              <MaterialIcons name="close" size={22} color="#E0E0E0" />
+            </TouchableOpacity>
+          </View>
+
+          {token && (
+            <View style={styles.tokenInfoContainer}>
+              <Image
+                source={{
+                  uri: token.relationships?.base_token?.data?.id?.startsWith("eth_")
+                    ? token.tokenInfo?.tokenLogo
+                    : token.tokenInfo?.type === "jupiter"
+                      ? token.tokenInfo?.data?.logoURI
+                      : token.tokenInfo?.data?.logo || "/api/image/24",
+                }}
+                style={styles.modalTokenImage}
+              />
+              <View>
+                <Text style={styles.modalTokenName}>
+                  {token.relationships?.base_token?.data?.id?.startsWith("eth_")
+                    ? token.tokenInfo?.tokenName
+                    : token.tokenInfo?.data?.name || ""}
+                </Text>
+                <Text style={styles.modalTokenPrice}>
+                  ${formatPrice(Number(token.attributes?.base_token_price_usd))}
+                </Text>
+              </View>
+            </View>
+          )}
+
+          <ScrollView style={styles.modalContent}>
+            {renderOrderTypeSelector()}
+
+            <Text style={styles.inputLabel}>Amount</Text>
+            <View style={styles.inputContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Enter amount"
+                placeholderTextColor="#9B86B3"
+                keyboardType="numeric"
+                value={amount}
+                onChangeText={setAmount}
+              />
+            </View>
+
+            {orderType !== 'market' && (
+              <>
+                <Text style={styles.inputLabel}>{orderType === 'limit' ? 'Limit Price' : 'Stop Price'}</Text>
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder={`Enter ${orderType === 'limit' ? 'limit' : 'stop'} price`}
+                    placeholderTextColor="#9B86B3"
+                    keyboardType="numeric"
+                    value={price}
+                    onChangeText={setPrice}
+                  />
+                  <Text style={styles.inputPrefix}>$</Text>
+                </View>
+              </>
+            )}
+
+            <View style={styles.divider} />
+
+            <View style={styles.toggleContainer}>
+              <View style={styles.toggleRow}>
+                <Text style={styles.toggleLabel}>Stop Loss</Text>
+                <Switch
+                  value={enableStopLoss}
+                  onValueChange={setEnableStopLoss}
+                  trackColor={{ false: "#2E1A40", true: "#8C5BE6" }}
+                  thumbColor={enableStopLoss ? "#FFFFFF" : "#9B86B3"}
+                />
+              </View>
+
+              {enableStopLoss && (
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter stop loss price"
+                    placeholderTextColor="#9B86B3"
+                    keyboardType="numeric"
+                    value={stopLossPrice}
+                    onChangeText={setStopLossPrice}
+                  />
+                  <Text style={styles.inputPrefix}>$</Text>
+                </View>
+              )}
+            </View>
+
+            <View style={styles.toggleContainer}>
+              <View style={styles.toggleRow}>
+                <Text style={styles.toggleLabel}>Take Profit</Text>
+                <Switch
+                  value={enableTakeProfit}
+                  onValueChange={setEnableTakeProfit}
+                  trackColor={{ false: "#2E1A40", true: "#8C5BE6" }}
+                  thumbColor={enableTakeProfit ? "#FFFFFF" : "#9B86B3"}
+                />
+              </View>
+
+              {enableTakeProfit && (
+                <View style={styles.inputContainer}>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Enter take profit price"
+                    placeholderTextColor="#9B86B3"
+                    keyboardType="numeric"
+                    value={takeProfitPrice}
+                    onChangeText={setTakeProfitPrice}
+                  />
+                  <Text style={styles.inputPrefix}>$</Text>
+                </View>
+              )}
+            </View>
+
+            <TouchableOpacity
+              style={[styles.submitButton, loading && styles.loadingButton]}
+              onPress={handleSubmitOrder}
+              disabled={loading}
+            >
+              <Text style={styles.submitButtonText}>
+                {loading ? "Processing..." : "Place Order"}
+              </Text>
+            </TouchableOpacity>
+          </ScrollView>
+        </View>
+      </View>
+    </Modal>
+  );
+};
 
 const AutoScrollingTrendingBar = ({ data }: { data: TrendingToken2[] }) => {
   const scrollX = useSharedValue(0);
@@ -142,6 +402,9 @@ const AutoScrollingTrendingBar = ({ data }: { data: TrendingToken2[] }) => {
 
 const Explore = () => {
   const [selectedFilter, setSelectedFilter] = useState("all");
+  const { generateSolWallet, generateEthWallet, solWallet, ethWallet } = useWalletStore();
+  const [showBuyModal, setShowBuyModal] = useState(false);
+  const [selectedToken, setSelectedToken] = useState<any>(null);
 
   const { isPending, error, data, refetch } = useQuery<
     { data: TrendingToken2[] } | undefined
@@ -154,37 +417,14 @@ const Explore = () => {
   const { isRefetchingByUser, refetchByUser } = useRefreshByUser(refetch);
   useRefreshOnFocus(refetch);
 
-  const mergedData = useMemo(() => {
-    if (data) {
-      const filteredData = data?.data?.filter((item) => {
-        if (selectedFilter === "all") return true;
-        if (
-          selectedFilter === "sol" &&
-          item.relationships.base_token.data.id.startsWith("solana_")
-        )
-          return true;
-        if (
-          selectedFilter === "eth" &&
-          item.relationships.base_token.data.id.startsWith("eth_")
-        )
-          return true;
-        return false;
-      });
-
-      return filteredData?.sort(
-        (a, b) =>
-          parseFloat(b.attributes.price_change_percentage.h24) -
-          parseFloat(a.attributes.price_change_percentage.h24)
-      );
+  const handleBuyPress = async (token: any) => {
+    if (!solWallet && !ethWallet) {
+      router.push("/");
+      return;
     }
-    return [];
-  }, [data, selectedFilter]);
-
-  const filteredTopGainers = useMemo(() => {
-    return mergedData?.filter(
-      (item) => parseFloat(item.attributes.price_change_percentage.h24) > 0
-    );
-  }, [mergedData]);
+    setSelectedToken(token);
+    setShowBuyModal(true);
+  };
 
   const renderFilterButtons = () => (
     <View style={styles.filterContainer}>
@@ -236,8 +476,61 @@ const Explore = () => {
           ETH
         </Text>
       </TouchableOpacity>
+      <TouchableOpacity
+        style={[
+          styles.filterButton,
+          selectedFilter === "usdt" && styles.filterButtonActive,
+        ]}
+        onPress={() => setSelectedFilter("usdt")}
+      >
+        <Text
+          style={[
+            styles.filterText,
+            selectedFilter === "usdt" && styles.filterTextActive,
+          ]}
+        >
+          USDT
+        </Text>
+      </TouchableOpacity>
     </View>
   );
+
+  const mergedData = useMemo(() => {
+    if (data) {
+      const filteredData = data?.data?.filter((item) => {
+        if (selectedFilter === "all") return true;
+        if (
+          selectedFilter === "sol" &&
+          item.relationships.base_token.data.id.startsWith("solana_")
+        )
+          return true;
+        if (
+          selectedFilter === "eth" &&
+          item.relationships.base_token.data.id.startsWith("eth_")
+        )
+          return true;
+        if (
+          selectedFilter === "usdt" &&
+          item.relationships.base_token.data.id.includes("usdt")
+        )
+          return true;
+        return false;
+      });
+
+      return filteredData?.sort(
+        (a, b) =>
+          parseFloat(b.attributes.price_change_percentage.h24) -
+          parseFloat(a.attributes.price_change_percentage.h24)
+      );
+    }
+    return [];
+  }, [data, selectedFilter]);
+
+  const filteredTopGainers = useMemo(() => {
+    return mergedData?.filter(
+      (item) => parseFloat(item.attributes.price_change_percentage.h24) > 0
+    );
+  }, [mergedData]);
 
   const TopGainer = ({ item }: any) => {
     const isEth = item.relationships.base_token.data.id.startsWith("eth_");
@@ -252,13 +545,7 @@ const Explore = () => {
     return (
       <TouchableOpacity
         style={styles.TouchableGainerCard}
-        onPress={() => console.log("Top gainer Item Pressed")}
-      >
-        <Link
-          href={{
-            pathname: "/tokens/[id]",
-            params: { id: tokenAddress, token: JSON.stringify(item) },
-          }}
+        onPress={() => handleBuyPress(item)}
         >
           <View style={styles.gainerCard}>
             <Image
@@ -295,7 +582,6 @@ const Explore = () => {
               </Text>
             </View>
           </View>
-        </Link>
       </TouchableOpacity>
     );
   };
@@ -372,19 +658,51 @@ const Explore = () => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
+      <LinearGradient
+        colors={["#1A0E26", "#2A1240"]}
+        style={styles.gradientBackground}
+      >
       <View style={styles.container}>
         <View style={styles.headerContainer}>
           <Text style={styles.header}>Explore</Text>
-          <TouchableOpacity onPress={() => router.push("/(home)/search")}>
-            <Ionicons name="search-outline" size={28} color="#E0E0E0" />
+            <View style={styles.headerButtons}>
+              <TouchableOpacity 
+                style={styles.iconButton}
+                onPress={() => router.push("/(home)/search")}
+              >
+                <Ionicons name="search-outline" size={22} color="#F0F0F0" />
+              </TouchableOpacity>
+              <TouchableOpacity 
+                style={styles.iconButton}
+              >
+                <Ionicons name="notifications-outline" size={22} color="#F0F0F0" />
           </TouchableOpacity>
+            </View>
         </View>
 
         {renderFilterButtons()}
-
-        <View style={styles.section}>
+        </View>
+        
+        <ScrollView 
+          style={{flex: 1}}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetchingByUser}
+              onRefresh={refetchByUser}
+              colors={["#8C5BE6"]}
+              tintColor="#8C5BE6"
+            />
+          }
+        >
+          <View style={styles.container}>
+            <View style={styles.sectionWrapper}>
           <View style={styles.trendingHeader}>
+                <View style={styles.sectionTitleContainer}>
+                  <FontAwesome name="line-chart" size={18} color="#8C5BE6" style={styles.sectionIcon} />
             <Text style={styles.sectionTitle}>Trending</Text>
+                </View>
             <TouchableOpacity
               style={styles.promoteButton}
               onPress={() => router.push("/(home)/promote")}
@@ -393,14 +711,19 @@ const Explore = () => {
             </TouchableOpacity>
           </View>
 
+              <View style={styles.trendingBarWrapper}>
           <AutoScrollingTrendingBar
             data={mergedData?.sort(() => Math.random() - 0.5).slice(0, 10)}
           />
+              </View>
           <FilterModal />
         </View>
 
-        <View style={styles.section}>
+            <View style={styles.sectionWrapper}>
+              <View style={styles.sectionTitleContainer}>
+                <FontAwesome name="arrow-up" size={18} color="#4CAF50" style={styles.sectionIcon} />
           <Text style={styles.sectionTitle}>Top Gainers</Text>
+              </View>
           <FlatList
             data={filteredTopGainers}
             renderItem={TopGainer}
@@ -408,131 +731,231 @@ const Explore = () => {
             horizontal={true}
             scrollEnabled={true}
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={{ paddingHorizontal: 2 }}
+                contentContainerStyle={{ paddingHorizontal: 2, paddingVertical: 8 }}
             style={{ flexGrow: 0, width: "100%" }}
           />
         </View>
+            
+            <View style={styles.sectionWrapper}>
+              <View style={styles.sectionTitleContainer}>
+                <FontAwesome name="star" size={18} color="#F9A825" style={styles.sectionIcon} />
+                <Text style={styles.sectionTitle}>Spotlight</Text>
       </View>
-      <FlatList
-        data={mergedData}
-        renderItem={renderTrendingItem}
-        keyExtractor={(item) => item.attributes.address}
-        initialNumToRender={10}
-        maxToRenderPerBatch={10}
-        windowSize={5}
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={isRefetchingByUser}
-            onRefresh={refetchByUser}
-          />
-        }
-        ListHeaderComponent={() => (
-          <View style={styles.container}>
-            <View style={styles.section2}>
-              <Text style={styles.sectionTitle2}>Top Tokens</Text>
+            
+              {mergedData.map((item) => (
+                <TouchableOpacity 
+                  key={item.attributes.address} 
+                  style={styles.touchableTrendingItem}
+                  activeOpacity={0.8}
+                  onPress={() => handleBuyPress(item)}
+                >
+                  <View style={styles.trendingItem}>
+                    <View style={styles.avatarContainer}>
+                      <Image
+                        source={{
+                          uri: item.relationships.base_token.data.id.startsWith("eth_")
+                            ? //@ts-ignore
+                              item.tokenInfo?.tokenLogo
+                            : item.tokenInfo?.type === "jupiter"
+                              ? item.tokenInfo?.data.logoURI
+                              : item.tokenInfo?.data.logo || "/api/image/24",
+                        }}
+                        style={styles.avatar}
+                      />
+            </View>
+                    <View style={styles.trendingInfo}>
+                      {isPending ? (
+                        <SkeletonLoader />
+                      ) : (
+                        <Text style={styles.trendingName}>
+                          {item.relationships.base_token.data.id.startsWith("eth_")
+                            ? //@ts-ignore
+                              item.tokenInfo?.tokenName
+                            : item.tokenInfo?.data.name || ""}
+                        </Text>
+                      )}
+                      <Text style={styles.marketCap}>
+                        ${formatNumber(Number(item.attributes.fdv_usd))} MKT CAP
+                      </Text>
+                    </View>
+                    <View style={styles.trendingPriceInfo}>
+                      <Text style={styles.trendingPrice}>
+                        ${formatPrice(Number(item.attributes.base_token_price_usd))}
+                      </Text>
+                      <View style={[
+                        styles.changeContainer,
+                        item.attributes.price_change_percentage.h24.includes("-")
+                          ? styles.negativeContainer
+                          : styles.positiveContainer,
+                      ]}>
+                        <Text
+                          style={[
+                            styles.trendingChange,
+                            item.attributes.price_change_percentage.h24.includes("-")
+                              ? styles.negative
+                              : styles.positive,
+                          ]}
+                        >
+                          {item.attributes.price_change_percentage.h24.includes("-") ? "" : "+"}
+                          {item.attributes.price_change_percentage.h24}%
+                        </Text>
+                      </View>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
-        )}
-        contentContainerStyle={styles.scrollContent}
-      />
+        </ScrollView>
+        
+        <BuyModal 
+          visible={showBuyModal} 
+          onClose={() => setShowBuyModal(false)} 
+          token={selectedToken}
+        />
+      </LinearGradient>
     </SafeAreaView>
   );
 };
+
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#1A0E26",
+  },
+  gradientBackground: {
+    flex: 1,
   },
   scrollContent: {
-    paddingBottom: 20,
+    paddingBottom: 40,
   },
   container: {
-    // flex: 1,
-    backgroundColor: "#1A0E26",
-    paddingHorizontal: 12,
+    paddingHorizontal: 16,
   },
   headerContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 15,
+    marginBottom: 24,
+    marginTop: 8,
+  },
+  headerButtons: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   header: {
-    color: "#E0E0E0",
-    fontSize: 28,
+    color: "#F0F0F0",
+    fontSize: 32,
     fontWeight: "bold",
     marginTop: 10,
+    fontFamily: "System",
+    letterSpacing: 0.5,
+  },
+  iconButton: {
+    backgroundColor: "rgba(140, 91, 230, 0.2)",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 10,
+    borderWidth: 1,
+    borderColor: "rgba(140, 91, 230, 0.5)",
   },
   filterContainer: {
     flexDirection: "row",
+    marginBottom: 24,
+    paddingVertical: 4,
   },
   filterButton: {
     paddingHorizontal: 20,
     paddingVertical: 10,
-    marginRight: 10,
+    marginRight: 12,
     borderRadius: 20,
-    backgroundColor: "#2E1A40",
+    backgroundColor: "rgba(46, 26, 64, 0.8)",
     borderWidth: 1,
-    borderColor: "#8C5BE6",
+    borderColor: "rgba(140, 91, 230, 0.5)",
   },
   filterButtonActive: {
-    backgroundColor: "#8C5BE6",
+    backgroundColor: "rgba(140, 91, 230, 0.9)",
     borderColor: "#8C5BE6",
   },
   filterText: {
-    color: "#9B86B3",
+    color: "#A990C9",
     fontSize: 14,
     fontWeight: "600",
   },
   filterTextActive: {
-    color: "#E0E0E0",
+    color: "#FFFFFF",
   },
-  section: {
-    marginTop: 5,
-    marginBottom: 15,
+  sectionWrapper: {
+    marginBottom: 25,
     width: "100%",
+    backgroundColor: "rgba(34, 17, 51, 0.8)",
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
+    borderWidth: 1,
+    borderColor: "rgba(140, 91, 230, 0.3)",
   },
-  section2: {
-    marginTop: 5,
-    marginBottom: 8,
-    width: "100%",
-  },
-  sectionTitle: {
-    color: "#B8C3BC",
-    fontSize: 20,
-    fontWeight: "600",
-    marginTop: 8,
-    marginBottom: 15,
-  },
-  sectionTitle2: {
-    color: "#B8C3BC",
-    fontSize: 20,
-    fontWeight: "600",
-    marginTop: 2,
+  trendingBarWrapper: {
+    backgroundColor: "rgba(46, 26, 64, 0.6)",
+    borderRadius: 12,
+    padding: 8,
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: "rgba(140, 91, 230, 0.15)",
   },
-  gainerCard: {
-    backgroundColor: "#2E1A40",
+  sectionTitleContainer: {
     flexDirection: "row",
     alignItems: "center",
-    minWidth: 160,
+    marginBottom: 15,
+  },
+  sectionIcon: {
+    marginRight: 8,
+  },
+  sectionTitle: {
+    color: "#FFFFFF",
+    fontSize: 20,
+    fontWeight: "700",
+    letterSpacing: 0.5,
+  },
+  gainerCard: {
+    backgroundColor: "rgba(46, 26, 64, 0.8)",
+    flexDirection: "row",
+    alignItems: "center",
+    minWidth: 170,
   },
   TouchableGainerCard: {
-    backgroundColor: "#2E1A40",
-    borderRadius: 15,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
+    backgroundColor: "rgba(46, 26, 64, 0.8)",
+    borderRadius: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
     marginRight: 12,
     flexDirection: "row",
     alignItems: "center",
-    borderWidth: 0.7,
-    borderColor: "#8C5BE6",
-    minWidth: 160,
+    borderWidth: 1,
+    borderColor: "rgba(140, 91, 230, 0.5)",
+    minWidth: 170,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
+    elevation: 3,
   },
   gainerContent: {
     flex: 1,
-    marginLeft: 10,
+    marginLeft: 12,
+  },
+  avatarContainer: {
+    borderRadius: 20,
+    padding: 2,
+    backgroundColor: "rgba(140, 91, 230, 0.2)",
+    borderWidth: 1,
+    borderColor: "rgba(140, 91, 230, 0.3)",
   },
   avatar: {
     width: 40,
@@ -541,7 +964,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#1A0E26",
   },
   gainerText: {
-    color: "#E0E0E0",
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 4,
@@ -554,18 +977,23 @@ const styles = StyleSheet.create({
   trendingItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#2E1A40",
+    backgroundColor: "rgba(46, 26, 64, 0)",
+    paddingVertical: 4,
   },
   touchableTrendingItem: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#2E1A40",
-    borderRadius: 15,
-    padding: 15,
+    backgroundColor: "rgba(46, 26, 64, 0.8)",
+    borderRadius: 16,
+    padding: 16,
     marginBottom: 12,
-    borderWidth: 0.7,
-    borderColor: "#8C5BE6",
-    marginHorizontal: 12,
+    borderWidth: 1,
+    borderColor: "rgba(140, 91, 230, 0.5)",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.15,
+    shadowRadius: 4,
+    elevation: 4,
   },
   trendingBarInfo: {
     display: "flex",
@@ -580,27 +1008,42 @@ const styles = StyleSheet.create({
     marginLeft: 12,
   },
   trendingName: {
-    color: "#E0E0E0",
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
     marginBottom: 4,
   },
   marketCap: {
-    color: "#9B86B3",
+    color: "#A990C9",
     fontSize: 13,
   },
   trendingPriceInfo: {
     alignItems: "flex-end",
   },
   trendingPrice: {
-    color: "#E0E0E0",
+    color: "#FFFFFF",
     fontSize: 16,
     fontWeight: "600",
-    marginBottom: 4,
+    marginBottom: 6,
+  },
+  changeContainer: {
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  positiveContainer: {
+    backgroundColor: "rgba(76, 175, 80, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(76, 175, 80, 0.3)",
+  },
+  negativeContainer: {
+    backgroundColor: "rgba(255, 82, 82, 0.15)",
+    borderWidth: 1,
+    borderColor: "rgba(255, 82, 82, 0.3)",
   },
   trendingChange: {
     fontSize: 14,
-    fontWeight: "500",
+    fontWeight: "600",
   },
   positive: {
     color: "#4CAF50",
@@ -610,7 +1053,7 @@ const styles = StyleSheet.create({
   },
   trendingBarContainer: {
     height: 32,
-    marginBottom: 16,
+    marginBottom: 8,
     borderRadius: 8,
     overflow: "hidden",
     width: "100%",
@@ -626,7 +1069,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   trendingBarIndex: {
-    color: "#9B86B3",
+    color: "#A990C9",
     fontSize: 12,
     fontWeight: "700",
     marginRight: 6,
@@ -635,51 +1078,204 @@ const styles = StyleSheet.create({
     display: "flex",
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 6,
+    paddingHorizontal: 8,
     paddingVertical: 4,
     marginHorizontal: 3,
-    backgroundColor: "#2E1A40",
-    borderRadius: 6,
-    height: 24,
+    backgroundColor: "rgba(46, 26, 64, 0.9)",
+    borderRadius: 8,
+    height: 26,
     color: "white",
     justifyContent: "space-between",
+    borderWidth: 1,
+    borderColor: "rgba(140, 91, 230, 0.2)",
   },
   trendingBarAvatar: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
+    width: 18,
+    height: 18,
+    borderRadius: 9,
     marginRight: 4,
     backgroundColor: "#1A0E26",
+    borderWidth: 1,
+    borderColor: "rgba(140, 91, 230, 0.3)",
   },
   trendingBarSymbol: {
-    color: "#E0E0E0",
+    color: "#FFFFFF",
     fontSize: 12,
     fontWeight: "600",
     marginRight: 5,
   },
   trendingBarChange: {
     fontSize: 11,
-    fontWeight: "500",
+    fontWeight: "600",
   },
   trendingHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 7,
-    paddingRight: 4,
+    marginBottom: 14,
   },
   promoteButton: {
-    color: "#9B86B3",
-    backgroundColor: "#2E1A40",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
+    backgroundColor: "rgba(46, 26, 64, 0.8)",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#8C5BE6",
+    borderColor: "rgba(140, 91, 230, 0.6)",
     alignSelf: "center",
   },
   promoteButtonText: {
-    color: "#E0E0E0",
+    color: "#FFFFFF",
+    fontWeight: "600",
+  },
+  // Buy Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContainer: {
+    width: width * 0.9,
+    maxHeight: '80%',
+    backgroundColor: '#221133',
+    borderRadius: 16,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(140, 91, 230, 0.5)',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 16,
+    backgroundColor: 'rgba(46, 26, 64, 0.9)',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(140, 91, 230, 0.3)',
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#E0E0E0',
+  },
+  closeButton: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    backgroundColor: 'rgba(140, 91, 230, 0.3)',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  modalContent: {
+    padding: 16,
+  },
+  tokenInfoContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(140, 91, 230, 0.3)',
+    backgroundColor: 'rgba(26, 14, 38, 0.6)',
+  },
+  modalTokenImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    marginRight: 12,
+    backgroundColor: '#1A0E26',
+  },
+  modalTokenName: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#E0E0E0',
+    marginBottom: 4,
+  },
+  modalTokenPrice: {
+    fontSize: 16,
+    color: '#9B86B3',
+  },
+  orderTypeContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+    backgroundColor: 'rgba(26, 14, 38, 0.6)',
+    borderRadius: 12,
+    padding: 4,
+  },
+  orderTypeButton: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: 'center',
+    borderRadius: 8,
+  },
+  activeOrderType: {
+    backgroundColor: '#8C5BE6',
+  },
+  orderTypeText: {
+    color: '#9B86B3',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  activeOrderTypeText: {
+    color: '#FFFFFF',
+  },
+  inputLabel: {
+    color: '#E0E0E0',
+    fontSize: 16,
+    marginBottom: 8,
+    marginTop: 12,
+  },
+  inputContainer: {
+    backgroundColor: 'rgba(26, 14, 38, 0.6)',
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: 'rgba(140, 91, 230, 0.3)',
+    marginBottom: 16,
+    position: 'relative',
+  },
+  input: {
+    color: '#E0E0E0',
+    padding: 12,
+    fontSize: 16,
+  },
+  inputPrefix: {
+    position: 'absolute',
+    left: 12,
+    top: 12,
+    color: '#9B86B3',
+    fontSize: 16,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: 'rgba(140, 91, 230, 0.3)',
+    marginVertical: 16,
+  },
+  toggleContainer: {
+    marginBottom: 16,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  toggleLabel: {
+    color: '#E0E0E0',
+    fontSize: 16,
+  },
+  submitButton: {
+    backgroundColor: '#8C5BE6',
+    paddingVertical: 14,
+    borderRadius: 8,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  submitButtonText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  loadingButton: {
+    opacity: 0.7,
   },
 });
 

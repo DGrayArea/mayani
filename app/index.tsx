@@ -1,6 +1,6 @@
 import "../crypto-polyfill";
 import React, { useEffect, useRef } from "react";
-import { Link } from "expo-router";
+import { Link, Redirect } from "expo-router";
 import {
   Text,
   View,
@@ -14,9 +14,9 @@ import {
   StatusBar,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
-import { useUser } from "@clerk/clerk-expo";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { Redirect } from "expo-router";
+import useWalletStore from "@/hooks/walletStore";
+import { FontAwesome5 } from "@expo/vector-icons";
 
 const ANIMATION_DURATION = 1200;
 
@@ -28,6 +28,7 @@ const Home = () => {
     slide: new Animated.Value(-50),
     logoRotate: new Animated.Value(0),
     buttonScale: new Animated.Value(1),
+    memeFlip: new Animated.Value(0),
   }).current;
 
   useEffect(() => {
@@ -59,7 +60,35 @@ const Home = () => {
         }),
       ]),
     ]).start();
+
+    // Start a repeating animation for the meme icon flip
+    Animated.loop(
+      Animated.sequence([
+        Animated.timing(animations.memeFlip, {
+          toValue: 1,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+        Animated.timing(animations.memeFlip, {
+          toValue: 0,
+          duration: 1000,
+          useNativeDriver: true,
+        }),
+      ])
+    ).start();
   }, []);
+
+  const { solWalletAddress } = useWalletStore();
+  const isWalletConnected = !!solWalletAddress;
+
+  // Redirect based on wallet connection status
+  if (isWalletConnected) {
+    return <Redirect href="/(home)/(tabs)/explore" />;
+  }
+  
+  if (!isWalletConnected) {
+    return <Redirect href="/sign-in" />;
+  }
 
   const handlePressIn = () => {
     Animated.spring(animations.buttonScale, {
@@ -79,22 +108,12 @@ const Home = () => {
     }).start();
   };
 
-  const { user, isLoaded, isSignedIn } = useUser();
-
-  if (!isLoaded) {
-    return (
-      <SafeAreaView style={styles.loadingContainer}>
-        <StatusBar barStyle="light-content" />
-        <ActivityIndicator size="large" color="#00897b" />
-      </SafeAreaView>
-    );
-  }
-
-  // if (user) {
-  //   return <Redirect href="/(home)/(tabs)/explore" />;
-  // }
-
   const spin = animations.logoRotate.interpolate({
+    inputRange: [0, 1],
+    outputRange: ["0deg", "360deg"],
+  });
+
+  const flip = animations.memeFlip.interpolate({
     inputRange: [0, 1],
     outputRange: ["0deg", "360deg"],
   });
@@ -123,6 +142,7 @@ const Home = () => {
               style={styles.logo}
               resizeMode="cover"
             />
+            <View style={styles.logoOverlay} />
           </Animated.View>
 
           <Animated.Text
@@ -137,19 +157,29 @@ const Home = () => {
             Welcome to Ape It
           </Animated.Text>
 
-          <Animated.Text
-            style={[
-              styles.subtitle,
-              {
-                opacity: animations.fade,
-                transform: [
-                  { translateX: Animated.multiply(animations.slide, -1) },
-                ],
-              },
-            ]}
-          >
-            Your Gateway to Safer degen
-          </Animated.Text>
+          <View style={styles.subtitleContainer}>
+            <Animated.Text
+              style={[
+                styles.subtitle,
+                {
+                  opacity: animations.fade,
+                  transform: [
+                    { translateX: Animated.multiply(animations.slide, -1) },
+                  ],
+                },
+              ]}
+            >
+              Your Gateway to Memes
+            </Animated.Text>
+            <Animated.View
+              style={{
+                transform: [{ rotateY: flip }],
+                marginLeft: 8,
+              }}
+            >
+              <FontAwesome5 name="laugh-squint" size={22} color="#FFD700" />
+            </Animated.View>
+          </View>
 
           <Animated.View
             style={[
@@ -279,7 +309,12 @@ const styles = StyleSheet.create({
     marginBottom: 32,
     borderRadius: 75,
     overflow: "hidden",
+    backgroundColor: "transparent",
+    width: 150,
+    height: 150,
     ...platformStyles.shadows.logo,
+    borderWidth: 2,
+    borderColor: "#8C5BE6",
   },
   logo: {
     width: 150,
@@ -304,10 +339,14 @@ const styles = StyleSheet.create({
     fontFamily: platformStyles.fonts.title,
     ...platformStyles.shadows.text,
   },
-  subtitle: {
-    fontSize: 18,
-    color: "rgba(255, 255, 255, 0.8)",
+  subtitleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 48,
+  },
+  subtitle: {
+    fontSize: 22,
+    color: "rgba(255, 255, 255, 0.8)",
     textAlign: "center",
     fontFamily: platformStyles.fonts.subtitle,
   },

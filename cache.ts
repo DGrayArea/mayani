@@ -1,30 +1,44 @@
 import * as SecureStore from "expo-secure-store";
 import { Platform } from "react-native";
-import { TokenCache } from "@clerk/clerk-expo/dist/cache";
 
-const createTokenCache = (): TokenCache => {
-  return {
-    getToken: async (key: string) => {
-      try {
-        const item = await SecureStore.getItemAsync(key);
-        if (item) {
-          console.log(`${key} was used 🔐 \n`);
-        } else {
-          console.log("No values stored under key: " + key);
-        }
-        return item;
-      } catch (error) {
-        console.error("secure store get item error: ", error);
-        await SecureStore.deleteItemAsync(key);
-        return null;
+// Secure storage for wallet keys
+export const walletStorage = {
+  getPrivateKey: async (key: string): Promise<string | null> => {
+    try {
+      const storedKey = await SecureStore.getItemAsync(key);
+      if (storedKey) {
+        console.log(`Private key for ${key} retrieved`);
       }
-    },
-    saveToken: (key: string, token: string) => {
-      return SecureStore.setItemAsync(key, token);
-    },
-  };
+      return storedKey;
+    } catch (error) {
+      console.error("Error retrieving private key:", error);
+      return null;
+    }
+  },
+  savePrivateKey: async (key: string, privateKey: string): Promise<void> => {
+    try {
+      await SecureStore.setItemAsync(key, privateKey);
+      console.log(`Private key for ${key} stored securely`);
+    } catch (error) {
+      console.error("Error storing private key:", error);
+    }
+  },
+  removePrivateKey: async (key: string): Promise<void> => {
+    try {
+      await SecureStore.deleteItemAsync(key);
+      console.log(`Private key for ${key} removed`);
+    } catch (error) {
+      console.error("Error removing private key:", error);
+    }
+  }
 };
 
-// SecureStore is not supported on the web
-export const tokenCache =
-  Platform.OS !== "web" ? createTokenCache() : undefined;
+// Backward compatibility for any existing code using tokenCache
+export const tokenCache = {
+  getToken: async (key: string) => {
+    return walletStorage.getPrivateKey(key);
+  },
+  saveToken: async (key: string, token: string) => {
+    return walletStorage.savePrivateKey(key, token);
+  }
+};

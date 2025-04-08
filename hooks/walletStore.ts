@@ -3,65 +3,120 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as web3 from "@solana/web3.js";
-import * as ethers from "ethers";
+import { Keypair } from '@solana/web3.js';
+import { ethers } from 'ethers';
+
+interface TokenBalance {
+  sol: number;
+  eth: number;
+  usdt: number;
+}
 
 interface WalletState {
+  solWallet: Keypair | null;
+  ethWallet: ethers.HDNodeWallet | null;
+  privateKey: string | null;
   solWalletAddress: string | null;
-  solPrivateKey: string | null;
   ethWalletAddress: string | null;
-  ethPrivateKey: string | null;
-  currentChain: "SOL" | "ETH";
+  currentChain: string;
+  balances: TokenBalance;
+}
+
+interface WalletStore extends WalletState {
   generateSolWallet: () => void;
   generateEthWallet: () => void;
   clearSolWallet: () => void;
   clearEthWallet: () => void;
-  switchChain: (chain: "SOL" | "ETH") => void;
-  getSolKeypair: () => web3.Keypair | null;
-  getEthWallet: () => ethers.Wallet | null;
+  switchChain: (chain: string) => void;
+  getSolKeypair: () => Keypair | null;
+  getEthWallet: () => ethers.HDNodeWallet | null;
+  updateBalance: (token: keyof TokenBalance, amount: number) => void;
+  getBalance: (token: keyof TokenBalance) => number;
 }
 
-const useWalletStore = create<WalletState | any>()(
+const useWalletStore = create<WalletStore>()(
   persist(
     (set, get) => ({
+      solWallet: null,
+      ethWallet: null,
+      privateKey: null,
       solWalletAddress: null,
-      solPrivateKey: null,
       ethWalletAddress: null,
-      ethPrivateKey: null,
       currentChain: "SOL",
+      balances: {
+        sol: 0,
+        eth: 0,
+        usdt: 0,
+      },
 
       generateSolWallet: () => {
         const wallet = web3.Keypair.generate();
+        const privateKey = Buffer.from(wallet.secretKey).toString("base64");
         set({
+          solWallet: wallet,
           solWalletAddress: wallet.publicKey.toBase58(),
-          solPrivateKey: Buffer.from(wallet.secretKey).toString("base64"),
+          privateKey,
         });
       },
 
       generateEthWallet: () => {
         const wallet = ethers.Wallet.createRandom();
         set({
+          ethWallet: wallet,
           ethWalletAddress: wallet.address,
-          ethPrivateKey: wallet.privateKey,
+          privateKey: wallet.privateKey,
         });
       },
 
       clearSolWallet: () =>
-        set({ solWalletAddress: null, solPrivateKey: null }),
+        set({
+          solWallet: null,
+          solWalletAddress: null,
+          privateKey: null,
+          balances: {
+            sol: 0,
+            eth: 0,
+            usdt: 0,
+          },
+        }),
+
       clearEthWallet: () =>
-        set({ ethWalletAddress: null, ethPrivateKey: null }),
+        set({
+          ethWallet: null,
+          ethWalletAddress: null,
+          privateKey: null,
+          balances: {
+            sol: 0,
+            eth: 0,
+            usdt: 0,
+          },
+        }),
 
       switchChain: (chain) => set({ currentChain: chain }),
 
       getSolKeypair: () => {
-        const { solPrivateKey } = get();
-        return solPrivateKey
-          ? web3.Keypair.fromSecretKey(Buffer.from(solPrivateKey, "base64"))
+        const { privateKey } = get();
+        return privateKey
+          ? web3.Keypair.fromSecretKey(Buffer.from(privateKey, "base64"))
           : null;
       },
 
       getEthWallet: () => {
-        const { ethPrivateKey } = get();
-        return ethPrivateKey ? new ethers.Wallet(ethPrivateKey) : null;
+        const { privateKey } = get();
+        return privateKey ? new ethers.Wallet(privateKey) : null;
+      },
+
+      updateBalance: (token, amount) => {
+        set((state) => ({
+          balances: {
+            ...state.balances,
+            [token]: amount,
+          },
+        }));
+      },
+
+      getBalance: (token) => {
+        return get().balances[token];
       },
     }),
     {
@@ -80,10 +135,10 @@ const useWalletStore = create<WalletState | any>()(
       },
       partialize: (state) => ({
         solWalletAddress: state.solWalletAddress,
-        solPrivateKey: state.solPrivateKey,
         ethWalletAddress: state.ethWalletAddress,
-        ethPrivateKey: state.ethPrivateKey,
+        privateKey: state.privateKey,
         currentChain: state.currentChain,
+        balances: state.balances,
       }),
     }
   )

@@ -1,23 +1,18 @@
 import "../../crypto-polyfill";
+import React, { useEffect } from "react";
 import { Redirect, Stack } from "expo-router";
-import { ActivityIndicator, StyleSheet, Platform } from "react-native";
-import { useUser } from "@clerk/clerk-expo";
+import { ActivityIndicator, StyleSheet, Platform, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import useWalletStore from "@/hooks/walletStore";
 
 export default function AppLayout() {
-  const { user, isLoaded, isSignedIn } = useUser();
+  const { solWalletAddress, privateKey } = useWalletStore();
+  const isWalletConnected = !!solWalletAddress && !!privateKey;
 
-  if (!isLoaded) {
-    return (
-      <SafeAreaView className="bg-white h-full flex justify-center items-center">
-        <ActivityIndicator className="text-primary-300" size="large" />
-      </SafeAreaView>
-    );
+  // If no wallet is connected, redirect to sign in
+  if (!isWalletConnected) {
+    return <Redirect href="/sign-in" />;
   }
-
-  // if (!isSignedIn) {
-  //   return <Redirect href="/sign-in" />;
-  // }
 
   return (
     <>

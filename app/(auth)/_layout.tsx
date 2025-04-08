@@ -1,13 +1,10 @@
-import { Redirect, Stack } from "expo-router";
-import { useAuth, useUser } from "@clerk/clerk-expo";
+import React from "react";
+import { Stack } from "expo-router";
+import useWalletStore from "@/hooks/walletStore";
 
 export default function AuthRoutesLayout() {
-  const { user } = useUser();
-  const { isSignedIn } = useAuth();
-
-  // if (user || isSignedIn) {
-  //   return <Redirect href={"/(home)/(tabs)/explore"} />;
-  // }
+  // We keep the routes accessible without redirects
+  // Let the sign-in screen handle wallet validation
 
   return (
     <Stack

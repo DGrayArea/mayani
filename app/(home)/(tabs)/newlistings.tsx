@@ -9,6 +9,9 @@ import {
   Image,
   FlatList,
   RefreshControl,
+  Alert,
+  TextInput,
+  Modal,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
@@ -20,6 +23,7 @@ import { fetchPumpShots } from "@/utils/query";
 import { JupiterToken, PumpShot } from "@/types";
 import { getRelativeTime } from "@/utils/numbers";
 import axios from "axios";
+import { Link, router } from "expo-router";
 
 const NewListings = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
@@ -29,6 +33,13 @@ const NewListings = () => {
     {}
   );
   const [metadataLoading, setMetadataLoading] = useState(false);
+  const [showBuyModal, setShowBuyModal] = useState(false);
+  const [selectedToken, setSelectedToken] = useState<any>(null);
+  const [amount, setAmount] = useState("");
+  const [price, setPrice] = useState("");
+  const [stopLoss, setStopLoss] = useState("");
+  const [takeProfit, setTakeProfit] = useState("");
+  const [isLimitOrder, setIsLimitOrder] = useState(false);
 
   const { isPending, error, data, refetch } = useQuery<{ data: PumpShot[] }>({
     queryKey: ["newListings"],
@@ -209,8 +220,14 @@ const NewListings = () => {
         <Text style={styles.holders}>{item.holders} holders</Text>
       </View>
 
-      <TouchableOpacity style={styles.buyButton}>
-        <Text style={styles.buyButtonText}>Buy Now</Text>
+      <TouchableOpacity 
+        style={styles.buyButton}
+        onPress={() => {
+          setSelectedToken(item);
+          setShowBuyModal(true);
+        }}
+      >
+        <Text style={styles.buyButtonText}>Trade Now</Text>
       </TouchableOpacity>
     </View>
   );
@@ -258,7 +275,15 @@ const NewListings = () => {
         <Text style={styles.launchTime}>Listed {item.launchTime}</Text>
         <Text style={styles.holders}>{item.holders} holders</Text>
       </View>
-      <TouchableOpacity style={styles.dethroneButton}>
+      <TouchableOpacity 
+        style={styles.dethroneButton}
+        onPress={() => {
+          router.push({
+            pathname: "/tokens/[id]",
+            params: { id: item.id, token: JSON.stringify(item) },
+          });
+        }}
+      >
         <Text style={styles.dethroneButtonText}>Trade Now</Text>
       </TouchableOpacity>
     </View>
@@ -322,11 +347,56 @@ const NewListings = () => {
         <Text style={styles.holders}>{item.holders} holders</Text>
       </View>
 
-      <TouchableOpacity style={styles.dethroneButton}>
+      <TouchableOpacity 
+        style={styles.dethroneButton}
+        onPress={() => {
+          router.push({
+            pathname: "/tokens/[id]",
+            params: { id: item.mintAddress, token: JSON.stringify(item) },
+          });
+        }}
+      >
         <Text style={styles.dethroneButtonText}>Trade Now</Text>
       </TouchableOpacity>
     </View>
   );
+
+  const handleBuy = () => {
+    if (!amount || !price) {
+      Alert.alert("Error", "Please enter amount and price");
+      return;
+    }
+
+    if (isLimitOrder) {
+      if (!stopLoss || !takeProfit) {
+        Alert.alert("Error", "Please set stop loss and take profit levels");
+        return;
+      }
+      
+      // Validate stop loss and take profit levels
+      const stopLossValue = parseFloat(stopLoss);
+      const takeProfitValue = parseFloat(takeProfit);
+      const priceValue = parseFloat(price);
+      
+      if (stopLossValue >= priceValue) {
+        Alert.alert("Error", "Stop loss must be below the entry price");
+        return;
+      }
+      
+      if (takeProfitValue <= priceValue) {
+        Alert.alert("Error", "Take profit must be above the entry price");
+        return;
+      }
+    }
+
+    // Handle buy logic here
+    Alert.alert("Success", "Order placed successfully");
+    setShowBuyModal(false);
+    setAmount("");
+    setPrice("");
+    setStopLoss("");
+    setTakeProfit("");
+  };
 
   if (isPending || metadataLoading) {
     return <LoadingIndicator />;
@@ -440,6 +510,99 @@ const NewListings = () => {
           scrollEnabled={false}
         />
       </ScrollView>
+
+      {showBuyModal && (
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={showBuyModal}
+          onRequestClose={() => setShowBuyModal(false)}
+        >
+          <View style={styles.modalContainer}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Buy {selectedToken?.name}</Text>
+              
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Amount</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter amount"
+                  value={amount}
+                  onChangeText={setAmount}
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Price</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter price"
+                  value={price}
+                  onChangeText={setPrice}
+                  keyboardType="numeric"
+                />
+              </View>
+
+              <View style={styles.orderTypeContainer}>
+                <TouchableOpacity
+                  style={[styles.orderTypeButton, !isLimitOrder && styles.activeOrderType]}
+                  onPress={() => setIsLimitOrder(false)}
+                >
+                  <Text style={[styles.orderTypeText, !isLimitOrder && styles.activeOrderTypeText]}>
+                    Market
+                  </Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.orderTypeButton, isLimitOrder && styles.activeOrderType]}
+                  onPress={() => setIsLimitOrder(true)}
+                >
+                  <Text style={[styles.orderTypeText, isLimitOrder && styles.activeOrderTypeText]}>
+                    Limit
+                  </Text>
+                </TouchableOpacity>
+              </View>
+
+              {isLimitOrder && (
+                <>
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.inputLabel}>Stop Loss</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter stop loss price"
+                      value={stopLoss}
+                      onChangeText={setStopLoss}
+                      keyboardType="numeric"
+                    />
+                  </View>
+
+                  <View style={styles.inputContainer}>
+                    <Text style={styles.inputLabel}>Take Profit</Text>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter take profit price"
+                      value={takeProfit}
+                      onChangeText={setTakeProfit}
+                      keyboardType="numeric"
+                    />
+                  </View>
+                </>
+              )}
+
+              <TouchableOpacity style={styles.buyButton} onPress={handleBuy}>
+                <Text style={styles.buyButtonText}>Buy Now</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.closeButton}
+                onPress={() => setShowBuyModal(false)}
+              >
+                <Text style={styles.closeButtonText}>Cancel</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      )}
     </SafeAreaView>
   );
 };
@@ -681,6 +844,82 @@ const styles = StyleSheet.create({
   emptyText: {
     color: "#9B86B3",
     fontSize: 16,
+  },
+  modalContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "rgba(0, 0, 0, 0.5)",
+  },
+  modalContent: {
+    backgroundColor: "#1E1E1E",
+    borderRadius: 12,
+    padding: 20,
+    width: "90%",
+    maxWidth: 400,
+  },
+  modalTitle: {
+    fontSize: 20,
+    fontWeight: "bold",
+    color: "#FFFFFF",
+    marginBottom: 20,
+    textAlign: "center",
+  },
+  inputContainer: {
+    marginBottom: 15,
+  },
+  inputLabel: {
+    color: "#FFFFFF",
+    marginBottom: 5,
+  },
+  input: {
+    backgroundColor: "#2A2A2A",
+    borderRadius: 8,
+    padding: 12,
+    color: "#FFFFFF",
+  },
+  orderTypeContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 15,
+  },
+  orderTypeButton: {
+    flex: 1,
+    padding: 10,
+    borderRadius: 8,
+    backgroundColor: "#2A2A2A",
+    marginHorizontal: 5,
+  },
+  activeOrderType: {
+    backgroundColor: "#007AFF",
+  },
+  orderTypeText: {
+    color: "#FFFFFF",
+    textAlign: "center",
+  },
+  activeOrderTypeText: {
+    color: "#FFFFFF",
+    fontWeight: "bold",
+  },
+  buyButton: {
+    backgroundColor: "#007AFF",
+    borderRadius: 8,
+    padding: 15,
+    alignItems: "center",
+    marginTop: 10,
+  },
+  buyButtonText: {
+    color: "#FFFFFF",
+    fontSize: 16,
+    fontWeight: "bold",
+  },
+  closeButton: {
+    marginTop: 15,
+    padding: 10,
+    alignItems: "center",
+  },
+  closeButtonText: {
+    color: "#FFFFFF",
   },
 });
 
