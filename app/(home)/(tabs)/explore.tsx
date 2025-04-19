@@ -31,6 +31,7 @@ import { useSharedValue } from "react-native-reanimated";
 import { Ionicons, FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import useWalletStore from '@/hooks/walletStore';
+import useFilterStore from '@/hooks/filterStore';
 
 const { width } = Dimensions.get("window");
 
@@ -496,34 +497,89 @@ const Explore = () => {
   );
 
   const mergedData = useMemo(() => {
-    if (data) {
-      const filteredData = data?.data?.filter((item) => {
-        if (selectedFilter === "all") return true;
-        if (
-          selectedFilter === "sol" &&
-          item.relationships.base_token.data.id.startsWith("solana_")
-        )
-          return true;
-        if (
-          selectedFilter === "eth" &&
-          item.relationships.base_token.data.id.startsWith("eth_")
-        )
-          return true;
-        if (
-          selectedFilter === "usdt" &&
-          item.relationships.base_token.data.id.includes("usdt")
-        )
-          return true;
-        return false;
-      });
+    if (!data || !data.data) return [];
+    
+    const filterState = useFilterStore.getState();
+    const { filters } = filterState;
+    
+    // First filter by chain
+    const chainFiltered = data.data.filter((item) => {
+      if (selectedFilter === "all") return true;
+      if (
+        selectedFilter === "sol" &&
+        item.relationships.base_token.data.id.startsWith("solana_")
+      )
+        return true;
+      if (
+        selectedFilter === "eth" &&
+        item.relationships.base_token.data.id.startsWith("eth_")
+      )
+        return true;
+      if (
+        selectedFilter === "usdt" &&
+        item.relationships.base_token.data.id.includes("usdt")
+      )
+        return true;
+      return false;
+    });
 
-      return filteredData?.sort(
-        (a, b) =>
-          parseFloat(b.attributes.price_change_percentage.h24) -
-          parseFloat(a.attributes.price_change_percentage.h24)
-      );
-    }
-    return [];
+    // Apply additional filters
+    const filtered = chainFiltered.filter(item => {
+      // Skip additional filtering if no filters are active
+      if (filters.withSocial === true && filterState.activeFilterCount <= 1) {
+        return true;
+      }
+      
+      // Market cap filters
+      const marketCap = parseFloat(item.attributes.fdv_usd);
+      if (filters.marketCapFrom && marketCap < parseFloat(filters.marketCapFrom)) {
+        return false;
+      }
+      if (filters.marketCapTo && marketCap > parseFloat(filters.marketCapTo)) {
+        return false;
+      }
+      
+      // Volume filters would go here if available in the data
+      
+      // Filter by social presence if required
+      if (filters.withSocial && !item.tokenInfo?.data?.logo) {
+        return false;
+      }
+      
+      return true;
+    });
+
+    // Sort the data
+    return filtered.sort((a, b) => {
+      const sortDir = filters.sortDirection === 'asc' ? 1 : -1;
+      
+      switch (filters.sortBy) {
+        case 'priceChange':
+          return sortDir * (
+            parseFloat(b.attributes.price_change_percentage.h24) -
+            parseFloat(a.attributes.price_change_percentage.h24)
+          );
+          
+        case 'marketCap':
+          return sortDir * (
+            parseFloat(b.attributes.fdv_usd) -
+            parseFloat(a.attributes.fdv_usd)
+          );
+          
+        case 'price':
+          return sortDir * (
+            parseFloat(b.attributes.base_token_price_usd) -
+            parseFloat(a.attributes.base_token_price_usd)
+          );
+          
+        // Default to volume/trending sort
+        default:
+          return sortDir * (
+            parseFloat(b.attributes.price_change_percentage.h24) -
+            parseFloat(a.attributes.price_change_percentage.h24)
+          );
+      }
+    });
   }, [data, selectedFilter]);
 
   const filteredTopGainers = useMemo(() => {

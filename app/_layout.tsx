@@ -16,6 +16,8 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { AuthProvider } from "@/context/AuthContext";
 import ErrorBoundary from "@/components/ErrorBoundary";
 import { useFonts } from "expo-font";
+import { prefetchAppData } from "@/utils/prefetching";
+import NetInfo from "@react-native-community/netinfo";
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -31,10 +33,12 @@ function onAppStateChange(status: AppStateStatus) {
 
 export default function RootLayout() {
   const [appIsReady, setAppIsReady] = useState(false);
+  const [initialDataFetched, setInitialDataFetched] = useState(false);
   const [fontsLoaded, fontError] = useFonts({
     "SpaceMono": require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
+  // First pass - load fonts and essential resources
   useEffect(() => {
     async function prepare() {
       try {
@@ -45,14 +49,46 @@ export default function RootLayout() {
       } finally {
         // Tell the application to render
         setAppIsReady(true);
-        await SplashScreen.hideAsync().catch(() => {
-          /* ignore error */
-        });
       }
     }
 
     prepare();
   }, []);
+
+  // Second pass - prefetch data for better UX once the app is visible
+  useEffect(() => {
+    async function prefetchInitialData() {
+      if (appIsReady && fontsLoaded) {
+        try {
+          // Check for internet connectivity before prefetching
+          const netInfo = await NetInfo.fetch();
+          
+          if (netInfo.isConnected) {
+            // Hide splash screen before prefetching to show the UI faster
+            await SplashScreen.hideAsync().catch(() => {
+              /* ignore error */
+            });
+            
+            // Prefetch initial app data
+            await prefetchAppData(queryClient);
+          } else {
+            console.warn('No internet connection, skipping prefetch');
+          }
+        } catch (e) {
+          console.warn('Error prefetching data:', e);
+        } finally {
+          setInitialDataFetched(true);
+          
+          // Ensure splash screen is hidden even if prefetching fails
+          await SplashScreen.hideAsync().catch(() => {
+            /* ignore error */
+          });
+        }
+      }
+    }
+
+    prefetchInitialData();
+  }, [appIsReady, fontsLoaded]);
 
   useOnlineManager();
   useAppState(onAppStateChange);
@@ -70,12 +106,14 @@ export default function RootLayout() {
       <ErrorBoundary>
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
+            <StatusBar style="light" />
             {Platform.OS === "android" ? (
               <SafeAreaView style={styles.safeArea} edges={["top"]}>
                 <Stack
                   screenOptions={{
                     headerShown: false,
                     animation: "slide_from_right",
+                    contentStyle: { backgroundColor: '#1A0E26' },
                   }}
                 />
               </SafeAreaView>
@@ -84,6 +122,7 @@ export default function RootLayout() {
                 screenOptions={{
                   headerShown: false,
                   animation: "slide_from_right",
+                  contentStyle: { backgroundColor: '#1A0E26' },
                 }}
               />
             )}
@@ -97,6 +136,6 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#000000', // Add a background color to prevent white flash
+    backgroundColor: '#1A0E26', // Match the LinearGradient background
   },
 });

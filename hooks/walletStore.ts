@@ -1,37 +1,56 @@
 import "../crypto-polyfill";
 import { create } from "zustand";
-import { persist } from "zustand/middleware";
+import { persist, createJSONStorage } from "zustand/middleware";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as web3 from "@solana/web3.js";
 import { Keypair } from '@solana/web3.js';
 import { ethers } from 'ethers';
 
-interface TokenBalance {
+// Define types for better type safety
+export interface TokenBalance {
   sol: number;
   eth: number;
   usdt: number;
 }
 
-interface WalletState {
+export interface Transaction {
+  id: string;
+  type: 'send' | 'receive';
+  amount: number;
+  token: keyof TokenBalance;
+  timestamp: number;
+  status: 'completed' | 'pending' | 'failed';
+  address: string;
+  hash?: string;
+}
+
+export interface WalletState {
   solWallet: Keypair | null;
   ethWallet: ethers.HDNodeWallet | null;
   privateKey: string | null;
   solWalletAddress: string | null;
   ethWalletAddress: string | null;
-  currentChain: string;
+  currentChain: 'SOL' | 'ETH';
   balances: TokenBalance;
+  transactions: Transaction[];
+  error: string | null;
+  isLoading: boolean;
 }
 
-interface WalletStore extends WalletState {
-  generateSolWallet: () => void;
-  generateEthWallet: () => void;
+export interface WalletStore extends WalletState {
+  generateSolWallet: () => Promise<void>;
+  generateEthWallet: () => Promise<void>;
   clearSolWallet: () => void;
   clearEthWallet: () => void;
-  switchChain: (chain: string) => void;
+  switchChain: (chain: 'SOL' | 'ETH') => void;
   getSolKeypair: () => Keypair | null;
   getEthWallet: () => ethers.HDNodeWallet | null;
   updateBalance: (token: keyof TokenBalance, amount: number) => void;
   getBalance: (token: keyof TokenBalance) => number;
+  addTransaction: (transaction: Omit<Transaction, 'id' | 'timestamp'>) => void;
+  getTransactions: (token?: keyof TokenBalance) => Transaction[];
+  clearError: () => void;
+  setIsLoading: (loading: boolean) => void;
 }
 
 const useWalletStore = create<WalletStore>()(
@@ -48,24 +67,47 @@ const useWalletStore = create<WalletStore>()(
         eth: 0,
         usdt: 0,
       },
+      transactions: [],
+      error: null,
+      isLoading: false,
 
-      generateSolWallet: () => {
-        const wallet = web3.Keypair.generate();
-        const privateKey = Buffer.from(wallet.secretKey).toString("base64");
-        set({
-          solWallet: wallet,
-          solWalletAddress: wallet.publicKey.toBase58(),
-          privateKey,
-        });
+      generateSolWallet: async () => {
+        try {
+          set({ isLoading: true, error: null });
+          const wallet = web3.Keypair.generate();
+          const privateKey = Buffer.from(wallet.secretKey).toString("base64");
+          set({
+            solWallet: wallet,
+            solWalletAddress: wallet.publicKey.toBase58(),
+            privateKey,
+            isLoading: false,
+          });
+        } catch (error) {
+          console.error("Error generating Solana wallet:", error);
+          set({ 
+            error: error instanceof Error ? error.message : "Failed to generate Solana wallet", 
+            isLoading: false 
+          });
+        }
       },
 
-      generateEthWallet: () => {
-        const wallet = ethers.Wallet.createRandom();
-        set({
-          ethWallet: wallet,
-          ethWalletAddress: wallet.address,
-          privateKey: wallet.privateKey,
-        });
+      generateEthWallet: async () => {
+        try {
+          set({ isLoading: true, error: null });
+          const wallet = ethers.Wallet.createRandom();
+          set({
+            ethWallet: wallet,
+            ethWalletAddress: wallet.address,
+            privateKey: wallet.privateKey,
+            isLoading: false,
+          });
+        } catch (error) {
+          console.error("Error generating Ethereum wallet:", error);
+          set({ 
+            error: error instanceof Error ? error.message : "Failed to generate Ethereum wallet", 
+            isLoading: false 
+          });
+        }
       },
 
       clearSolWallet: () =>
@@ -74,9 +116,8 @@ const useWalletStore = create<WalletStore>()(
           solWalletAddress: null,
           privateKey: null,
           balances: {
+            ...get().balances,
             sol: 0,
-            eth: 0,
-            usdt: 0,
           },
         }),
 
@@ -86,9 +127,8 @@ const useWalletStore = create<WalletStore>()(
           ethWalletAddress: null,
           privateKey: null,
           balances: {
-            sol: 0,
+            ...get().balances,
             eth: 0,
-            usdt: 0,
           },
         }),
 
@@ -96,14 +136,21 @@ const useWalletStore = create<WalletStore>()(
 
       getSolKeypair: () => {
         const { privateKey } = get();
-        return privateKey
-          ? web3.Keypair.fromSecretKey(Buffer.from(privateKey, "base64"))
-          : null;
+        if (!privateKey) return null;
+        
+        try {
+          return web3.Keypair.fromSecretKey(Buffer.from(privateKey, "base64"));
+        } catch (error) {
+          console.error("Error creating Solana keypair:", error);
+          set({ error: "Invalid Solana private key" });
+          return null;
+        }
       },
 
       getEthWallet: () => {
-        const { privateKey } = get();
-        return privateKey ? new ethers.Wallet(privateKey) : null;
+        const { ethWallet } = get();
+        if (ethWallet) return ethWallet;
+        return null;
       },
 
       updateBalance: (token, amount) => {
@@ -118,27 +165,39 @@ const useWalletStore = create<WalletStore>()(
       getBalance: (token) => {
         return get().balances[token];
       },
+      
+      addTransaction: (transaction) => {
+        const newTransaction: Transaction = {
+          ...transaction,
+          id: Math.random().toString(36).substring(2, 15),
+          timestamp: Date.now(),
+        };
+        
+        set((state) => ({
+          transactions: [newTransaction, ...state.transactions].slice(0, 50) // Keep last 50 transactions
+        }));
+      },
+      
+      getTransactions: (token) => {
+        const { transactions } = get();
+        if (!token) return transactions;
+        return transactions.filter(tx => tx.token === token);
+      },
+      
+      clearError: () => set({ error: null }),
+      
+      setIsLoading: (loading) => set({ isLoading: loading }),
     }),
     {
       name: "multi-chain-wallet-storage",
-      storage: {
-        getItem: async (name) => {
-          const value = await AsyncStorage.getItem(name);
-          return value ? JSON.parse(value) : null;
-        },
-        setItem: async (name, value) => {
-          await AsyncStorage.setItem(name, JSON.stringify(value));
-        },
-        removeItem: async (name) => {
-          await AsyncStorage.removeItem(name);
-        },
-      },
+      storage: createJSONStorage(() => AsyncStorage),
       partialize: (state) => ({
         solWalletAddress: state.solWalletAddress,
         ethWalletAddress: state.ethWalletAddress,
         privateKey: state.privateKey,
         currentChain: state.currentChain,
         balances: state.balances,
+        transactions: state.transactions,
       }),
     }
   )
