@@ -42,6 +42,7 @@
     "expo-clipboard": "^7.0.1",
     "expo-constants": "~17.0.7",
     "expo-crypto": "^14.0.2",
+    "expo-dev-client": "~5.0.12",
     "expo-font": "~13.0.4",
     "expo-haptics": "~14.0.1",
     "expo-linear-gradient": "^14.0.2",
@@ -68,8 +69,9 @@
     "react-native-web": "~0.19.13",
     "react-native-webview": "13.12.5",
     "tailwindcss": "^3.4.17",
-    "zustand": "^5.0.3",
-    "expo-dev-client": "~5.0.12"
+    "qs": "^6.12.1",
+    "viem": "^2.17.3",
+    "zustand": "^5.0.3"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
