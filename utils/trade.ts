@@ -1,10 +1,17 @@
-import { Connection, Keypair, Transaction } from "@solana/web3.js";
+import {
+  Connection,
+  Keypair,
+  PublicKey,
+  Transaction,
+  VersionedTransaction,
+} from "@solana/web3.js";
 import axios from "axios";
 import { ethers } from "ethers";
 import { SWAP_ROUTER_ABI } from "@/config/SwapRouter";
 import { concat, numberToHex, size } from "viem";
 import { normalizeAmount, structureError } from "./helpers";
 import { approveERC20ForSwap, approveERC20ForUniswap } from "./approvals";
+import { config } from "@/lib/appwrite";
 
 const UNISWAP_ROUTER_ADDRESS = "0xE592427A0AEce92De3Edee1F18E0157C05861564"; // Mainnet V3
 const ETH_ADDRESS = "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE";
@@ -24,75 +31,112 @@ export async function swapWithJupiter(
   tokenAMint: string,
   tokenBMint: string,
   amount: string,
-  wallet: Keypair
+  privateKey: string
 ) {
   const SIGNER_ACCOUNT = {
-    pubkey: process.env.SIGNER_PUB_KEY,
+    relay: config.jupiterRelay,
     fBps: 100,
     fShareBps: 10000,
   };
-  if (!SIGNER_ACCOUNT.pubkey) {
-    throw new Error("SIGNER_PUB_KEY is not set in environment variables");
+  if (!SIGNER_ACCOUNT.relay) {
+    throw new Error("SIGNER_RELAY is not set in environment variables");
+  }
+
+  const decoded = Buffer.from(privateKey, "base64");
+
+  const wallet = Keypair.fromSecretKey(new Uint8Array(decoded));
+
+  if (!wallet) {
+    throw new Error("Wallet not found");
+  }
+  if (!connection) {
+    throw new Error("Connection not found");
+  }
+  if (!tokenAMint || !tokenBMint) {
+    throw new Error("Token mint addresses not found");
+  }
+  if (!amount) {
+    throw new Error("Amount not found");
+  }
+  if (!privateKey) {
+    throw new Error("Private key not found");
+  }
+  // Step 1: Get swap quote with 1% fee
+  const quoteResponse = await quoteWithJupiter(tokenAMint, tokenBMint, amount);
+  if (quoteResponse.error) {
+    throw new Error("Failed to get swap quote");
+  }
+  if (!quoteResponse) {
+    throw new Error("No swap quote data");
+  }
+
+  // get serialized transactions for the swap
+
+  const swapTransaction = await axios.post(
+    "https://quote-api.jup.ag/v6/swap",
+    {
+      quoteResponse,
+      userPublicKey: "HYe4vSaEGqQKnDrxWDrk3o5H2gznv7qtij5G6NNG8WHd", // wallet.publicKey,
+      feeAccount: SIGNER_ACCOUNT.relay,
+      feeBps: SIGNER_ACCOUNT.fBps,
+      feeShareBps: SIGNER_ACCOUNT.fShareBps,
+      referralAccount: SIGNER_ACCOUNT.relay,
+      wrapAndUnwrapSol: true,
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }
+  );
+  // deserialize the transaction
+  const swapTransactionBuf = Buffer.from(
+    swapTransaction.data.swapTransaction,
+    "base64"
+  );
+  var transaction = VersionedTransaction.deserialize(swapTransactionBuf);
+
+  // sign the transaction
+  transaction.sign([wallet]);
+
+  // get the latest block hash
+  const latestBlockHash = await connection.getLatestBlockhash();
+
+  // Execute the transaction
+  const rawTransaction = transaction.serialize();
+  const txid = await connection.sendRawTransaction(rawTransaction, {
+    skipPreflight: true,
+    maxRetries: 2,
+  });
+  await connection.confirmTransaction({
+    blockhash: latestBlockHash.blockhash,
+    lastValidBlockHeight: latestBlockHash.lastValidBlockHeight,
+    signature: txid,
+  });
+
+  return txid;
+}
+
+export async function quoteWithJupiter(
+  tokenAMint: string,
+  tokenBMint: string,
+  amount: string
+) {
+  const SIGNER_ACCOUNT = {
+    relay: config.jupiterRelay,
+    fBps: 100,
+    fShareBps: 10000,
+  };
+  if (!SIGNER_ACCOUNT.relay) {
+    throw new Error("SIGNER_RELAY is not set in environment variables");
   }
 
   try {
-    // Step 1: Get swap quote with 1% fee
     const quoteResponse = await axios.get(
-      `https://api.jup.ag/v1/quote?inputMint=${tokenAMint}&outputMint=${tokenBMint}&amount=${amount}&slippageBps=50&feeBps=100`
+      `https://quote-api.jup.ag/v6/quote?inputMint=${tokenAMint}&outputMint=${tokenBMint}&amount=${amount}&slippageBps=50&feeBps=100`
     );
 
-    const response = await quoteResponse.data;
-    // Step 2: Prepare swap transaction
-    const swapResponse = await axios.post(
-      "https://api.jup.ag/v1/swap",
-      {
-        response,
-        userPublicKey: wallet.publicKey,
-        referralAccount: SIGNER_ACCOUNT.pubkey,
-        feeBps: SIGNER_ACCOUNT.fBps,
-        feeShareBps: SIGNER_ACCOUNT.fShareBps,
-      },
-      {
-        headers: {
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    // Step 3: Execute swap
-    const swapTransaction = Transaction.from(
-      Buffer.from(swapResponse.data.swapTransaction, "base64")
-    );
-    // const signedTx = await swapTransaction.sign(wallet);
-    // const txid = await connection.sendRawTransaction(signedTx.serialize());
-    // const latestBlockhash = await connection.getLatestBlockhash("finalized");
-    // await connection.confirmTransaction(
-    //   {
-    //     signature: signedTx,
-    //     blockhash: latestBlockhash.blockhash,
-    //     lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
-    //   },
-    //   "finalized"
-    // );
-
-    // return txid;
-
-    swapTransaction.sign(wallet); // For Keypair
-    const txid = await connection.sendRawTransaction(
-      swapTransaction.serialize()
-    );
-
-    const latestBlockhash = await connection.getLatestBlockhash("finalized");
-    await connection.confirmTransaction(
-      {
-        signature: txid,
-        blockhash: latestBlockhash.blockhash,
-        lastValidBlockHeight: latestBlockhash.lastValidBlockHeight,
-      },
-      "finalized"
-    );
-
-    return txid;
+    return quoteResponse.data;
   } catch (error) {
     console.error("Swap failed:", error);
     return { error: error };

@@ -1,5 +1,5 @@
 import FilterModal from "@/components/FilterModal";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   View,
   Text,
@@ -40,6 +40,26 @@ const NewListings = () => {
   const [stopLoss, setStopLoss] = useState("");
   const [takeProfit, setTakeProfit] = useState("");
   const [isLimitOrder, setIsLimitOrder] = useState(false);
+  const [prices, setPrices] = useState<any>({
+    eth: 0,
+    sol: 0,
+  });
+
+  useEffect(() => {
+    const getPrices = async () => {
+      const ethPrice = await axios.get(
+        "https://api.geckoterminal.com/api/v2/networks/eth/tokens/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+      );
+      const solPrice = await axios.get(
+        "https://api.geckoterminal.com/api/v2/networks/solana/tokens/So11111111111111111111111111111111111111112"
+      );
+      setPrices({
+        eth: ethPrice.data.data.attributes.price_usd,
+        sol: solPrice.data.data.attributes.price_usd,
+      });
+    };
+    getPrices();
+  }, []);
 
   const { isPending, error, data, refetch } = useQuery<{ data: PumpShot[] }>({
     queryKey: ["newListings"],
@@ -122,7 +142,7 @@ const NewListings = () => {
       return FALLBACK_IMAGE;
     }
   };
-
+  console.log(selectedToken);
   useEffect(() => {
     const fetchAllMetadata = async () => {
       if (data?.data) {
@@ -164,6 +184,88 @@ const NewListings = () => {
     }
   };
 
+  // const handleSubmitOrder = useCallback(async () => {
+  //   const tokenAddress = token.relationships.base_token.data.id.startsWith(
+  //     "solana_"
+  //   )
+  //     ? token.relationships.base_token.data.id.slice(7)
+  //     : token.relationships.base_token.data.id.startsWith("eth_")
+  //       ? token.relationships.base_token.data.id.slice(4)
+  //       : token.relationships.base_token.data.id;
+
+  //   if (!amount || parseFloat(amount) <= 0) {
+  //     Alert.alert("Error", "Please enter a valid amount");
+  //     return;
+  //   }
+
+  //   setLoading(true);
+  //   try {
+  //     if (token.isEth) {
+  //       if (Number(getBalance("eth")) > Number(nativeEquivalent.native)) {
+  //         const txid = await get0xPermit2Swap(
+  //           "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+  //           tokenAddress,
+  //           Number(amount) * 10 ** Number(token.decimals),
+  //           ethWalletAddress,
+  //           privateKey!
+  //         );
+  //         // Show success message
+  //         Alert.alert(
+  //           "Success",
+  //           `Swap completed successfully: https://etherscan.io/tx/${txid?.hash}`
+  //         );
+  //       } else {
+  //         Alert.alert(
+  //           "Error",
+  //           "Insufficient balance for the swap amount or no swap route found"
+  //         );
+  //       }
+  //     } else {
+  //       if (Number(getBalance("sol")) > Number(nativeEquivalent.native)) {
+  //         const txid = await swapWithJupiter(
+  //           new Connection(config.heliusUrl),
+  //           "So11111111111111111111111111111111111111112",
+  //           tokenAddress,
+  //           String(Number(amount) * 10 ** Number(token.decimals)),
+  //           solPrivateKey!
+  //         );
+  //         Alert.alert(
+  //           `Success", "Swap completed successfully https://solscan.io/tx/${txid}`
+  //         );
+  //       } else {
+  //         Alert.alert(
+  //           "Error",
+  //           "Insufficient balance for the swap amount or no swap route found"
+  //         );
+  //       }
+  //     }
+  //   } catch (error) {
+  //     console.error("Swap error:", error);
+  //     Alert.alert(
+  //       "Error",
+  //       "Failed to complete swap due to insufficient gas or allowance"
+  //     );
+  //   } finally {
+  //     setLoading(false);
+  //     resetForm();
+  //     onClose();
+  //   }
+  // }, [
+  //   amount,
+  //   privateKey,
+  //   solPrivateKey,
+  //   solWalletAddress,
+  //   ethWalletAddress,
+  //   nativeEquivalent,
+  //   config,
+  //   price,
+  //   orderType,
+  //   token,
+  //   enableStopLoss,
+  //   enableTakeProfit,
+  //   stopLossPrice,
+  //   takeProfitPrice,
+  // ]);
   const renderTokenCard = ({ item }: { item: PumpShot }) => (
     <View style={styles.tokenCard}>
       <View style={styles.tokenHeader}>
@@ -220,7 +322,7 @@ const NewListings = () => {
         <Text style={styles.holders}>{item.holders} holders</Text>
       </View>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.buyButton}
         onPress={() => {
           setSelectedToken(item);
@@ -275,13 +377,11 @@ const NewListings = () => {
         <Text style={styles.launchTime}>Listed {item.launchTime}</Text>
         <Text style={styles.holders}>{item.holders} holders</Text>
       </View>
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.dethroneButton}
         onPress={() => {
-          router.push({
-            pathname: "/tokens/[id]",
-            params: { id: item.id, token: JSON.stringify(item) },
-          });
+          setSelectedToken(item);
+          setShowBuyModal(true);
         }}
       >
         <Text style={styles.dethroneButtonText}>Trade Now</Text>
@@ -347,13 +447,11 @@ const NewListings = () => {
         <Text style={styles.holders}>{item.holders} holders</Text>
       </View>
 
-      <TouchableOpacity 
+      <TouchableOpacity
         style={styles.dethroneButton}
         onPress={() => {
-          router.push({
-            pathname: "/tokens/[id]",
-            params: { id: item.mintAddress, token: JSON.stringify(item) },
-          });
+          setSelectedToken(item);
+          setShowBuyModal(true);
         }}
       >
         <Text style={styles.dethroneButtonText}>Trade Now</Text>
@@ -372,17 +470,17 @@ const NewListings = () => {
         Alert.alert("Error", "Please set stop loss and take profit levels");
         return;
       }
-      
+
       // Validate stop loss and take profit levels
       const stopLossValue = parseFloat(stopLoss);
       const takeProfitValue = parseFloat(takeProfit);
       const priceValue = parseFloat(price);
-      
+
       if (stopLossValue >= priceValue) {
         Alert.alert("Error", "Stop loss must be below the entry price");
         return;
       }
-      
+
       if (takeProfitValue <= priceValue) {
         Alert.alert("Error", "Take profit must be above the entry price");
         return;
@@ -397,6 +495,24 @@ const NewListings = () => {
     setStopLoss("");
     setTakeProfit("");
   };
+
+  const nativeEquivalent = useMemo(() => {
+    if (!selectedToken) return { native: 0, usd: 0 };
+
+    const tokenPriceInUsd = Number(selectedToken.price) || 0;
+    const tokenAmount = Number(amount) || 0;
+
+    const totalUsd = tokenPriceInUsd * tokenAmount;
+
+    const ethPriceInUsd = Number(prices.eth) || 1;
+    const solPriceInUsd = Number(prices.sol) || 1;
+    const native = (totalUsd / solPriceInUsd).toFixed(4);
+
+    return {
+      native: Number(native),
+      usd: Number(totalUsd.toFixed(2)),
+    };
+  }, []);
 
   if (isPending || metadataLoading) {
     return <LoadingIndicator />;
@@ -521,7 +637,7 @@ const NewListings = () => {
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
               <Text style={styles.modalTitle}>Buy {selectedToken?.name}</Text>
-              
+
               <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Amount</Text>
                 <TextInput
@@ -533,7 +649,7 @@ const NewListings = () => {
                 />
               </View>
 
-              <View style={styles.inputContainer}>
+              {/* <View style={styles.inputContainer}>
                 <Text style={styles.inputLabel}>Price</Text>
                 <TextInput
                   style={styles.input}
@@ -542,22 +658,53 @@ const NewListings = () => {
                   onChangeText={setPrice}
                   keyboardType="numeric"
                 />
+              </View> */}
+
+              <View style={styles.inputContainer}>
+                <Text style={styles.inputLabel}>Total Amount</Text>
+                <View style={styles.input}>
+                  <Text className="text-white">
+                    {nativeEquivalent.native} {true ? "ETH" : "SOL"}
+                  </Text>
+                </View>
               </View>
+              <Text
+                style={{ color: "#E0E0E0", fontSize: 18, marginBottom: 10 }}
+              >
+                ≃${nativeEquivalent.usd.toFixed(2)}
+              </Text>
 
               <View style={styles.orderTypeContainer}>
                 <TouchableOpacity
-                  style={[styles.orderTypeButton, !isLimitOrder && styles.activeOrderType]}
+                  style={[
+                    styles.orderTypeButton,
+                    !isLimitOrder && styles.activeOrderType,
+                  ]}
                   onPress={() => setIsLimitOrder(false)}
                 >
-                  <Text style={[styles.orderTypeText, !isLimitOrder && styles.activeOrderTypeText]}>
+                  <Text
+                    style={[
+                      styles.orderTypeText,
+                      !isLimitOrder && styles.activeOrderTypeText,
+                    ]}
+                  >
                     Market
                   </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
-                  style={[styles.orderTypeButton, isLimitOrder && styles.activeOrderType]}
+                  style={[
+                    styles.orderTypeButton,
+                    isLimitOrder && styles.activeOrderType,
+                  ]}
                   onPress={() => setIsLimitOrder(true)}
+                  disabled={true}
                 >
-                  <Text style={[styles.orderTypeText, isLimitOrder && styles.activeOrderTypeText]}>
+                  <Text
+                    style={[
+                      styles.orderTypeText,
+                      isLimitOrder && styles.activeOrderTypeText,
+                    ]}
+                  >
                     Limit
                   </Text>
                 </TouchableOpacity>

@@ -35,7 +35,7 @@ export default function RootLayout() {
   const [appIsReady, setAppIsReady] = useState(false);
   const [initialDataFetched, setInitialDataFetched] = useState(false);
   const [fontsLoaded, fontError] = useFonts({
-    "SpaceMono": require("../assets/fonts/SpaceMono-Regular.ttf"),
+    SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
 
   // First pass - load fonts and essential resources
@@ -62,23 +62,23 @@ export default function RootLayout() {
         try {
           // Check for internet connectivity before prefetching
           const netInfo = await NetInfo.fetch();
-          
+
           if (netInfo.isConnected) {
             // Hide splash screen before prefetching to show the UI faster
             await SplashScreen.hideAsync().catch(() => {
               /* ignore error */
             });
-            
+
             // Prefetch initial app data
             await prefetchAppData(queryClient);
           } else {
-            console.warn('No internet connection, skipping prefetch');
+            console.warn("No internet connection, skipping prefetch");
           }
         } catch (e) {
-          console.warn('Error prefetching data:', e);
+          console.warn("Error prefetching data:", e);
         } finally {
           setInitialDataFetched(true);
-          
+
           // Ensure splash screen is hidden even if prefetching fails
           await SplashScreen.hideAsync().catch(() => {
             /* ignore error */
@@ -98,7 +98,7 @@ export default function RootLayout() {
   }
 
   if (fontError) {
-    console.error('Font loading error:', fontError);
+    console.error("Font loading error:", fontError);
   }
 
   return (
@@ -113,7 +113,7 @@ export default function RootLayout() {
                   screenOptions={{
                     headerShown: false,
                     animation: "slide_from_right",
-                    contentStyle: { backgroundColor: '#1A0E26' },
+                    contentStyle: { backgroundColor: "#1A0E26" },
                   }}
                 />
               </SafeAreaView>
@@ -122,7 +122,7 @@ export default function RootLayout() {
                 screenOptions={{
                   headerShown: false,
                   animation: "slide_from_right",
-                  contentStyle: { backgroundColor: '#1A0E26' },
+                  contentStyle: { backgroundColor: "#1A0E26" },
                 }}
               />
             )}
@@ -136,6 +136,6 @@ export default function RootLayout() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#1A0E26', // Match the LinearGradient background
+    backgroundColor: "#1A0E26", // Match the LinearGradient background
   },
 });

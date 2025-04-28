@@ -1,15 +1,5 @@
 import { ethers } from "ethers";
-import { SWAP_ROUTER_ABI } from "@/config/SwapRouter";
-import { wethAbi } from "@/config/SwapRouter";
-import {
-  getContract,
-  erc20Abi,
-  parseUnits,
-  maxUint256,
-  concat,
-  numberToHex,
-  size,
-} from "viem";
+import { getContract, erc20Abi, maxUint256 } from "viem";
 import type { WalletClient } from "viem";
 import type { Address } from "viem";
 import axios from "axios";
@@ -159,24 +149,16 @@ async function approveERC20ForUniswap(provider, wallet, tokenAddress, amount) {
 }
 
 async function checkAllowance(provider, tokenAddress, owner, spender) {
-  const abi = [
-    {
-      constant: true,
-      inputs: [
-        { name: "_owner", type: "address" },
-        { name: "_spender", type: "address" },
-      ],
-      name: "allowance",
-      outputs: [{ name: "", type: "uint256" }],
-      payable: false,
-      stateMutability: "view",
-      type: "function",
-    },
-  ];
-
-  const contract = new ethers.Contract(tokenAddress, abi, provider);
+  const contract = new ethers.Contract(tokenAddress, erc20Abi, provider);
   const allowance = await contract.allowance(owner, spender);
   return allowance.toString();
+}
+
+async function checkBalance(provider, tokenAddress, owner) {
+  const contract = new ethers.Contract(tokenAddress, erc20Abi, provider);
+  const balance = await contract.balanceOf(owner);
+  const decimals = await contract.decimals();
+  return { balance: balance.toString(), decimals };
 }
 
 function encodeApproveFunction(spender, amount, abi) {
@@ -201,4 +183,9 @@ export const approvePermit2 = async ({
   return await client.waitForTransactionReceipt({ hash });
 };
 
-export { approveERC20ForSwap, approveERC20ForUniswap, checkAllowance };
+export {
+  approveERC20ForSwap,
+  approveERC20ForUniswap,
+  checkAllowance,
+  checkBalance,
+};

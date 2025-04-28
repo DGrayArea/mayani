@@ -11,6 +11,8 @@ import eth1 from "@/assets/images/eth1.png";
 import eth2 from "@/assets/images/eth2.png";
 import sol1 from "@/assets/images/sol.png";
 import sol2 from "@/assets/images/sol2.png";
+import tetherLogo from "@/assets/images/tether.png";
+import defaultLogo from "@/assets/images/default.png";
 
 export default {
   onboarding,
@@ -26,4 +28,6 @@ export default {
   eth2,
   sol1,
   sol2,
+  tetherLogo,
+  defaultLogo,
 };
