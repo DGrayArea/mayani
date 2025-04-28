@@ -1,4 +1,5 @@
-import axios from "axios";
+import { ethTokens } from "../config/eth";
+import { solTokens } from "../config/sol";
 import { useState, useEffect } from "react";
 import { Alert } from "react-native";
 
@@ -11,20 +12,14 @@ export const useTokenLists = (currentChain) => {
     const fetchTokenList = async () => {
       try {
         setLoading(true);
-        const ethUrl = "https://gateway.ipfs.io/ipns/tokens.uniswap.org";
-        const solUrl = "https://tokens.jup.ag/tokens?tags=verified";
-
-        const ethResponse = await axios.get(ethUrl);
-        const solResponse = await axios.get(solUrl);
-
-        const ethData = await ethResponse.data.tokens;
-        const solData = await solResponse.data;
-
-        setEthJsonList(ethData);
-        setSolJsonList(solData);
+        //@ts-expect-error expect
+        setEthJsonList(ethTokens);
+        //@ts-expect-error expect
+        setSolJsonList(solTokens);
       } catch (error) {
         console.error("Error loading token list:", error);
-        Alert.alert("Error", "Failed to fetch token list.");
+        //@ts-ignore
+        Alert.alert("Error", "Failed to fetch token list.", error);
       } finally {
         setLoading(false);
       }
