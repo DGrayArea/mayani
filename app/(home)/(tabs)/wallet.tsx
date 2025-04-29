@@ -29,10 +29,17 @@ import {
 import { checkAllowance, checkBalance } from "@/utils/approvals";
 import { config } from "@/lib/appwrite";
 import { useTokenLists } from "@/utils/token-tools";
-import { getWalletTokens } from "@/lib/moralis";
+import {
+  extractTokenInfoFromDexscreener,
+  getTokenWithPriceInfo,
+  getWalletTokens,
+} from "@/lib/moralis";
 import { quoteWithJupiter, swapWithJupiter } from "@/utils/trade";
 import { Connection } from "@solana/web3.js";
 import PrivateKeyModal from "@/components/dialog/PrivateKeyModal";
+import { FungibleToken } from "@/types";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import axios from "axios";
 
 const tokenList = {
   ETH: {
@@ -118,6 +125,9 @@ const Wallet = () => {
   const [isApproving, setIsApproving] = useState(false);
   const [priceData, setPriceData] = useState<any>({});
   const [privateKeyModal, setPrivateKeyModal] = useState(true);
+  const [extraTokens, setExtraTokens] = useState<any>([]);
+  const [loadingExtra, setLoadingExtra] = useState(false);
+
   interface UserAssets {
     ethTokens: {
       logo: string;
@@ -128,21 +138,22 @@ const Wallet = () => {
       token_address: string;
       name: string;
     }[];
-    solTokens: {
-      logo: string;
-      usd_price: number;
-      symbol: string;
-      usd_price_24hr_percent_change: string;
-      balance_formatted: number;
-      mint: string;
-      amount: string;
-      name: string;
-    }[];
+    heliusTokens: FungibleToken[];
+    solInfo: {
+      balance: string;
+      price: string;
+      value: string;
+    };
   }
 
   const [userAssets, setsetUserAssets] = useState<UserAssets>({
     ethTokens: [],
-    solTokens: [],
+    heliusTokens: [],
+    solInfo: {
+      balance: "0",
+      price: "0",
+      value: "0",
+    },
   });
 
   const [swapFromData, setSwapFromData] = useState(() => ({
@@ -198,7 +209,7 @@ const Wallet = () => {
     }
     // Simulate fetching wallet data
     fetchWalletData();
-  }, []);
+  }, [solWalletAddress, ethWalletAddress]);
 
   useEffect(() => {
     const getUserAssets = async () => {
@@ -207,7 +218,11 @@ const Wallet = () => {
           ethWalletAddress,
           solWalletAddress
         );
-        setsetUserAssets(assets);
+        setsetUserAssets({
+          ethTokens: assets.ethTokens || [],
+          heliusTokens: assets.heliusTokens || [],
+          solInfo: assets.solInfo || { balance: "0", price: "0", value: "0" },
+        });
       }
     };
     getUserAssets();
@@ -295,9 +310,16 @@ const Wallet = () => {
     return address;
   };
 
-  const fetchWalletData = async () => {
+  const fetchWalletData = useCallback(async () => {
     setRefreshing(true);
-
+    if (ethWalletAddress && solWalletAddress) {
+      const assets = await getWalletTokens(ethWalletAddress, solWalletAddress);
+      setsetUserAssets({
+        ethTokens: assets.ethTokens || [],
+        heliusTokens: assets.heliusTokens || [],
+        solInfo: assets.solInfo || { balance: "0", price: "0", value: "0" },
+      });
+    }
     setTimeout(() => {
       setWalletData({
         eth: {
@@ -318,7 +340,7 @@ const Wallet = () => {
       });
       setRefreshing(false);
     }, 1000);
-  };
+  }, [ethWalletAddress, solWalletAddress]);
 
   const getSwapFee = (chain, fromToken, toToken) => {
     if (chain === "ETH") {
@@ -470,17 +492,31 @@ const Wallet = () => {
   };
 
   const calculateTotalAssets = useMemo(() => {
-    const ethToken = userAssets?.ethTokens?.find(
-      (token) => token.symbol === "ETH"
-    );
+    if (currentChain === "ETH") {
+      const ethToken = userAssets?.ethTokens?.find(
+        (token) => token.symbol === "ETH"
+      );
 
-    if (!ethToken) return "0.00";
+      if (!ethToken) return "0.00";
 
-    const balance = parseFloat(String(ethToken.balance_formatted || "0"));
-    const price = ethToken.usd_price || 0;
+      const balance = parseFloat(String(ethToken.balance_formatted || "0"));
+      const price = ethToken.usd_price || 0;
 
-    return (balance * price).toFixed(2);
-  }, [userAssets]);
+      return (balance * price).toFixed(2);
+    } else {
+      const total =
+        Number(userAssets.solInfo.value) +
+        Number(
+          userAssets.heliusTokens.reduce(
+            (acc, token) =>
+              acc + (token.token_info.price_info?.total_price || 0),
+            0
+          )
+        );
+
+      return Number(total).toFixed(2);
+    }
+  }, [userAssets, currentChain]);
 
   const ActionButton = ({ icon, label, onPress, primary = false }) => (
     <TouchableOpacity
@@ -565,15 +601,20 @@ const Wallet = () => {
 
         <View style={styles.balanceContainer}>
           <Text style={styles.balanceAmount}>
-            {Number(balance).toFixed(4)} {symbol.toUpperCase()}
+            {Number(balance).toLocaleString()} {symbol.toUpperCase()}
           </Text>
           <Text style={styles.balanceUsd}>
-            ${(Number(balance) * Number(price)).toFixed(2)}
+            ${(Number(balance) * Number(price)).toLocaleString()}
           </Text>
         </View>
 
         <View style={styles.priceInfo}>
-          <Text style={styles.priceText}>${Number(price).toFixed(6)}</Text>
+          <Text style={styles.priceText}>
+            $
+            {Number(price) > 1
+              ? Number(price).toLocaleString()
+              : Number(price).toFixed(6)}
+          </Text>
           <Text
             style={[
               styles.changeText,
@@ -983,6 +1024,55 @@ const Wallet = () => {
       };
     }, [searchQuery]);
 
+    const fetchAndAddMissingToken = async (tokenAddress) => {
+      setLoadingExtra(true);
+      try {
+        setExtraTokens((prev) => {
+          if (!Array.isArray(prev)) return [];
+          return prev;
+        });
+
+        if (currentChain === "ETH") {
+          const priceResponse =
+            await extractTokenInfoFromDexscreener(tokenAddress);
+          setExtraTokens((prev) => [...prev, priceResponse]);
+          setSearchQuery(tokenAddress);
+        } else {
+          const cachedTokenData = await AsyncStorage.getItem(
+            `token_${tokenAddress}`
+          );
+
+          if (cachedTokenData) {
+            const parsedToken = JSON.parse(cachedTokenData);
+            const priceResponse = await axios.get(
+              `https://lite-api.jup.ag/price/v2?ids=${tokenAddress},So11111111111111111111111111111111111111112`
+            );
+
+            const priceData = await priceResponse.data;
+            const tokenPrice = priceData.data[tokenAddress]?.price;
+            setExtraTokens((prev) => [
+              ...prev,
+              { ...parsedToken, price: tokenPrice },
+            ]);
+          } else {
+            const { token } = await getTokenWithPriceInfo(tokenAddress);
+
+            if (token) {
+              await AsyncStorage.setItem(
+                `token_${tokenAddress}`,
+                JSON.stringify(token)
+              );
+              setExtraTokens((prev) => [...prev, token]);
+            }
+          }
+          setSearchQuery(tokenAddress);
+        }
+      } catch (error) {
+        console.error("Error fetching token info:", error);
+      } finally {
+        setLoadingExtra(false);
+      }
+    };
     const filteredTokens = useMemo(() => {
       const tokensArray =
         currentChain === "ETH" ? ethjsonList || [] : soljsonList || [];
@@ -990,26 +1080,49 @@ const Wallet = () => {
       const walletTokensArray =
         (currentChain === "ETH"
           ? userAssets?.ethTokens
-          : userAssets?.solTokens) || [];
+          : userAssets?.heliusTokens) || [];
 
-      // Map wallet tokens first (these should take priority)
-      const mappedWalletTokens = walletTokensArray.map((token) => ({
-        symbol: token.symbol,
-        address: currentChain === "ETH" ? token.token_address : token.mint,
-        logoURI: token.logo ?? getTokenLogo(currentChain, token.symbol),
-        name: token.name || token.symbol,
-        fromWallet: true,
-        // Include any additional wallet-specific data
-        balance:
-          currentChain === "ETH" ? token.balance_formatted : token.amount,
-        value: token.value,
-        price: token.price,
-        decimals: token.decimals,
-      }));
+      const mappedWalletTokens = walletTokensArray.map((token) => {
+        if (currentChain === "ETH") {
+          return {
+            symbol: token.symbol,
+            address: token.token_address,
+            logoURI: token.logo
+              ? token.logo
+              : (token.logoURI ?? getTokenLogo(currentChain, token.symbol)),
+            name: token.name || token.symbol,
+            fromWallet: true,
+            balance: token.balance_formatted,
+            value: token.value,
+            price: token.price,
+            decimals: token.decimals,
+          };
+        } else {
+          const price = token.token_info?.price_info?.price_per_token || 0.0;
+          const balance =
+            token.token_info?.balance /
+              Math.pow(10, token.token_info?.decimals || 0) || 0;
+          return {
+            symbol:
+              token.token_info?.symbol ||
+              token.content?.metadata?.symbol ||
+              token.id ||
+              "N/A",
+            address: token.id,
+            logoURI:
+              token.content?.links?.image ??
+              getTokenLogo(currentChain, token.token_info?.symbol),
+            name: token.content?.metadata?.name || "N/A",
+            fromWallet: true,
+            balance: balance,
+            value: price * balance,
+            price: price,
+            decimals: token.token_info?.decimals || 0,
+          };
+        }
+      });
 
-      const limitedTokensArray = tokensArray.slice(0, 100);
-
-      // ✅ Correct order
+      const limitedTokensArray = tokensArray.slice(0, 50);
       const allTokens = [...mappedWalletTokens, ...limitedTokensArray];
 
       const uniqueTokensMap = new Map();
@@ -1020,17 +1133,16 @@ const Wallet = () => {
       });
       const mergedTokens = Array.from(uniqueTokensMap.values());
 
+      const finalTokens = mergedTokens;
+
       if (debouncedSearchQuery.length === 0) {
-        return mergedTokens;
+        return finalTokens;
       } else {
-        const searchResult = mergedTokens.filter(
+        const searchQueryLower = debouncedSearchQuery.toLowerCase();
+        const searchResult = finalTokens.filter(
           (token) =>
-            token.symbol
-              ?.toLowerCase()
-              .includes(debouncedSearchQuery.toLowerCase()) ||
-            token.address
-              ?.toLowerCase()
-              .includes(debouncedSearchQuery.toLowerCase())
+            token.symbol?.toLowerCase().includes(searchQueryLower) ||
+            token.address?.toLowerCase().includes(searchQueryLower)
         );
         return searchResult;
       }
@@ -1041,6 +1153,15 @@ const Wallet = () => {
       soljsonList,
       userAssets,
     ]);
+
+    useEffect(() => {
+      if (debouncedSearchQuery.length >= 30 && filteredTokens.length === 0) {
+        fetchAndAddMissingToken(debouncedSearchQuery);
+      }
+    }, [debouncedSearchQuery, filteredTokens, currentChain]);
+
+    const tokensToDisplay = [...extraTokens, ...filteredTokens];
+
     return (
       <View style={{ flex: 1 }}>
         <View style={styles.modalHeader}>
@@ -1077,13 +1198,13 @@ const Wallet = () => {
         </Text>
         <ScrollView style={{ flex: 1 }}>
           <>
-            {loading ? (
+            {loading || loadingExtra ? (
               <Text className="text-white font-semibold text-xl mt-4">
                 Loading Token List ...
               </Text>
             ) : (
               <>
-                {currentChain === "SOL" && (
+                {/* {currentChain === "SOL" && (
                   <TouchableOpacity
                     style={styles.tokenItem}
                     onPress={() =>
@@ -1126,8 +1247,8 @@ const Wallet = () => {
                         : "0.0000"}
                     </Text>
                   </TouchableOpacity>
-                )}
-                {filteredTokens.map((token) => (
+                )} */}
+                {tokensToDisplay.map((token) => (
                   <TouchableOpacity
                     key={token.address}
                     style={styles.tokenItem}
@@ -1138,7 +1259,9 @@ const Wallet = () => {
                         source={
                           token.logoURI
                             ? { uri: token.logoURI }
-                            : getTokenLogo(currentChain, token.symbol)
+                            : token.logo
+                              ? { uri: token.logo }
+                              : getTokenLogo(currentChain, token.symbol)
                         }
                         style={styles.tokenItemIcon2}
                       />
@@ -1187,7 +1310,9 @@ const Wallet = () => {
           style={styles.totalAssetsCard}
         >
           <Text style={styles.totalAssetsLabel}>Total Balance</Text>
-          <Text style={styles.totalAssetsAmount}>${calculateTotalAssets}</Text>
+          <Text style={styles.totalAssetsAmount}>
+            ${Number(calculateTotalAssets).toLocaleString()}
+          </Text>
           <View style={styles.walletAddressContainer}>
             <Text style={styles.walletAddressLabel}>
               {currentChain === "SOL" ? "SOL Address" : "ETH Address"}:
@@ -1221,10 +1346,10 @@ const Wallet = () => {
                 crypto="solana"
                 name={"Solana"}
                 logo={images.sol1}
-                price={walletData.sol.price || 0.0}
+                price={userAssets.solInfo.price || 0.0}
                 symbol={"SOL"}
                 change={walletData.sol.change || 0.0}
-                balance={walletData?.sol.balance}
+                balance={userAssets.solInfo.balance}
                 address={"So11111111111111111111111111111111111111112"}
               />
             ) : null}
@@ -1244,17 +1369,27 @@ const Wallet = () => {
                     address={asset?.token_address}
                   />
                 ))
-              : userAssets.solTokens.map((asset) => (
+              : userAssets.heliusTokens.map((asset) => (
                   <CryptoCard
-                    key={asset?.mint}
+                    key={asset?.id}
                     crypto="sol"
-                    name={asset.name}
-                    logo={asset?.logo}
-                    price={asset?.usd_price || 0.0}
-                    symbol={asset?.symbol}
-                    change={asset?.usd_price_24hr_percent_change || 0.0}
-                    balance={asset?.amount}
-                    address={asset?.mint}
+                    name={asset.content.metadata.name || "N/A"}
+                    logo={asset?.content.links.image}
+                    price={asset?.token_info.price_info?.price_per_token || 0.0}
+                    symbol={
+                      asset.token_info.symbol ||
+                      asset.content.metadata.symbol ||
+                      asset.id ||
+                      "N/A"
+                    }
+                    change={0.0}
+                    balance={
+                      (
+                        asset.token_info.balance /
+                        Math.pow(10, asset.token_info.decimals)
+                      ).toFixed(4) || 0.0
+                    }
+                    address={asset?.id}
                   />
                 ))}
           </>

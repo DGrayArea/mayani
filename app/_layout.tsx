@@ -9,7 +9,6 @@ import { queryClient } from "@/utils/query";
 import { AppStateStatus, Platform, StyleSheet, View } from "react-native";
 import { useAppState } from "@/hooks/useAppState";
 import { useOnlineManager } from "@/hooks/useOnlineManager";
-import { Slot } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
@@ -18,6 +17,15 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { useFonts } from "expo-font";
 import { prefetchAppData } from "@/utils/prefetching";
 import NetInfo from "@react-native-community/netinfo";
+import * as Notifications from "expo-notifications";
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+  }),
+});
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -53,6 +61,21 @@ export default function RootLayout() {
     }
 
     prepare();
+  }, []);
+
+  useEffect(() => {
+    async function requestPermissions() {
+      const { status } = await Notifications.getPermissionsAsync();
+      if (status !== "granted") {
+        const { status: newStatus } =
+          await Notifications.requestPermissionsAsync();
+        if (newStatus !== "granted") {
+          console.warn("Notifications permission not granted!");
+        }
+      }
+    }
+
+    requestPermissions();
   }, []);
 
   // Second pass - prefetch data for better UX once the app is visible

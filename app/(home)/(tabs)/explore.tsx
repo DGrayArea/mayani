@@ -38,461 +38,11 @@ import { get0xPermit2Swap } from "@/utils/transaction";
 import { config } from "@/lib/appwrite";
 import { Connection } from "@solana/web3.js";
 import { swapWithJupiter } from "@/utils/trade";
+import * as Notifications from "expo-notifications";
 
 const { width } = Dimensions.get("window");
 
 // BuyModal Component to handle buying with order types
-const BuyModal = ({ visible, onClose, token }) => {
-  const [orderType, setOrderType] = useState("market"); // market, limit, stop
-  const [amount, setAmount] = useState("");
-  const [price, setPrice] = useState("");
-  const [stopLossPrice, setStopLossPrice] = useState("");
-  const [takeProfitPrice, setTakeProfitPrice] = useState("");
-  const [enableStopLoss, setEnableStopLoss] = useState(false);
-  const [enableTakeProfit, setEnableTakeProfit] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [prices, setPrices] = useState<any>({
-    eth: 0,
-    sol: 0,
-  });
-
-  useEffect(() => {
-    const getPrices = async () => {
-      const ethPrice = await axios.get(
-        "https://api.geckoterminal.com/api/v2/networks/eth/tokens/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
-      );
-      const solPrice = await axios.get(
-        "https://api.geckoterminal.com/api/v2/networks/solana/tokens/So11111111111111111111111111111111111111112"
-      );
-      setPrices({
-        eth: ethPrice.data.data.attributes.price_usd,
-        sol: solPrice.data.data.attributes.price_usd,
-      });
-    };
-    getPrices();
-  }, []);
-
-  useEffect(() => {
-    if (visible && token) {
-      // Set initial price to current token price when modal opens
-      setPrice(token.attributes?.base_token_price_usd?.toString() || "0");
-    }
-  }, [visible, token]);
-
-  const {
-    getBalance,
-    solPrivateKey,
-    privateKey,
-    ethWalletAddress,
-    solWalletAddress,
-  } = useWalletStore();
-  const resetForm = () => {
-    setOrderType("market");
-    setAmount("");
-    setPrice("");
-    setStopLossPrice("");
-    setTakeProfitPrice("");
-    setEnableStopLoss(false);
-    setEnableTakeProfit(false);
-  };
-
-  const renderOrderTypeSelector = () => (
-    <View style={styles.orderTypeContainer}>
-      <TouchableOpacity
-        style={[
-          styles.orderTypeButton,
-          orderType === "market" && styles.activeOrderType,
-        ]}
-        onPress={() => setOrderType("market")}
-      >
-        <Text
-          style={[
-            styles.orderTypeText,
-            orderType === "market" && styles.activeOrderTypeText,
-          ]}
-        >
-          Market
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[
-          styles.orderTypeButton,
-          orderType === "limit" && styles.activeOrderType,
-        ]}
-        onPress={() => setOrderType("limit")}
-        disabled
-      >
-        <Text
-          style={[
-            styles.orderTypeText,
-            orderType === "limit" && styles.activeOrderTypeText,
-          ]}
-        >
-          Limit
-        </Text>
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={[
-          styles.orderTypeButton,
-          orderType === "stop" && styles.activeOrderType,
-        ]}
-        onPress={() => setOrderType("stop")}
-        disabled
-      >
-        <Text
-          style={[
-            styles.orderTypeText,
-            orderType === "stop" && styles.activeOrderTypeText,
-          ]}
-        >
-          Stop
-        </Text>
-      </TouchableOpacity>
-    </View>
-  );
-
-  const getProtocolText = (chain, fromToken, toToken) => {
-    if (chain === "ETH") {
-      return `Using Uniswap protocol for ${fromToken} ↔ ${toToken}`;
-    } else if (chain === "SOL") {
-      return `Using Jupiter protocol for ${fromToken} ↔ ${toToken}`;
-    }
-    return "Using optimal DEX routing";
-  };
-
-  const nativeEquivalent = useMemo(() => {
-    if (!token) return { native: 0, usd: 0 };
-
-    const tokenPriceInUsd = Number(price) || 0;
-    const tokenAmount = Number(amount) || 0;
-
-    const totalUsd = tokenPriceInUsd * tokenAmount;
-
-    const ethPriceInUsd = Number(prices.eth) || 1;
-    const solPriceInUsd = Number(prices.sol) || 1;
-    const native = token.isEth
-      ? (totalUsd / ethPriceInUsd).toFixed(4)
-      : (totalUsd / solPriceInUsd).toFixed(4);
-
-    return {
-      native: Number(native),
-      usd: Number(totalUsd.toFixed(2)),
-    };
-  }, [token, amount, price, prices]);
-
-  const handleSubmitOrder = useCallback(async () => {
-    const tokenAddress = token.relationships.base_token.data.id.startsWith(
-      "solana_"
-    )
-      ? token.relationships.base_token.data.id.slice(7)
-      : token.relationships.base_token.data.id.startsWith("eth_")
-        ? token.relationships.base_token.data.id.slice(4)
-        : token.relationships.base_token.data.id;
-
-    if (!amount || parseFloat(amount) <= 0) {
-      Alert.alert("Error", "Please enter a valid amount");
-      return;
-    }
-    // if (orderType !== "market" && (!price || parseFloat(price) <= 0)) {
-    //   Alert.alert("Error", "Please enter a valid price");
-    //   return;
-    // }
-    // if (enableStopLoss && (!stopLossPrice || parseFloat(stopLossPrice) <= 0)) {
-    //   Alert.alert("Error", "Please enter a valid stop loss price");
-    //   return;
-    // }
-    // if (
-    //   enableTakeProfit &&
-    //   (!takeProfitPrice || parseFloat(takeProfitPrice) <= 0)
-    // ) {
-    //   Alert.alert("Error", "Please enter a valid take profit price");
-    //   return;
-    // }
-    // if (
-    //   enableTakeProfit &&
-    //   (!takeProfitPrice || parseFloat(takeProfitPrice) <= 0)
-    // ) {
-    //   Alert.alert("Error", "Please enter a valid take profit price");
-    //   return;
-    // }
-
-    setLoading(true);
-    try {
-      if (token.isEth) {
-        if (Number(getBalance("eth")) > Number(nativeEquivalent.native)) {
-          const txid = await get0xPermit2Swap(
-            "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
-            tokenAddress,
-            Number(amount) * 10 ** Number(token.decimals),
-            ethWalletAddress,
-            privateKey!
-          );
-          // Show success message
-          Alert.alert(
-            "Success",
-            `Swap completed successfully: https://etherscan.io/tx/${txid?.hash}`
-          );
-        } else {
-          Alert.alert(
-            "Error",
-            "Insufficient balance for the swap amount or no swap route found"
-          );
-        }
-      } else {
-        if (Number(getBalance("sol")) > Number(nativeEquivalent.native)) {
-          const txid = await swapWithJupiter(
-            new Connection(config.heliusUrl),
-            "So11111111111111111111111111111111111111112",
-            tokenAddress,
-            String(Number(amount) * 10 ** Number(token.decimals)),
-            solPrivateKey!
-          );
-          Alert.alert(
-            `Success", "Swap completed successfully https://solscan.io/tx/${txid}`
-          );
-        } else {
-          Alert.alert(
-            "Error",
-            "Insufficient balance for the swap amount or no swap route found"
-          );
-        }
-      }
-    } catch (error) {
-      console.error("Swap error:", error);
-      Alert.alert(
-        "Error",
-        "Failed to complete swap due to insufficient gas or allowance"
-      );
-    } finally {
-      setLoading(false);
-      resetForm();
-      onClose();
-    }
-    // setTimeout(() => {
-    // setLoading(false);
-
-    //   // Format order details for the alert
-    //   let orderDetails = `Order Type: ${orderType.toUpperCase()}\nAmount: ${amount}`;
-
-    //   if (orderType !== "market") {
-    //     orderDetails += `\nPrice: $${price}`;
-    //   }
-
-    //   if (enableStopLoss) {
-    //     orderDetails += `\nStop Loss: $${stopLossPrice}`;
-    //   }
-
-    //   if (enableTakeProfit) {
-    //     orderDetails += `\nTake Profit: $${takeProfitPrice}`;
-    //   }
-
-    //   Alert.alert(
-    //     "Order Submitted",
-    //     `Your order has been submitted successfully!\n\n${orderDetails}`,
-    //     [
-    //       {
-    //         text: "OK",
-    //         onPress: () => {
-    //           // Reset form and close modal
-    //           resetForm();
-    //           onClose();
-    //         },
-    //       },
-    //     ]
-    //   );
-    // }, 1500);
-  }, [
-    amount,
-    privateKey,
-    solPrivateKey,
-    solWalletAddress,
-    ethWalletAddress,
-    nativeEquivalent,
-    config,
-    price,
-    orderType,
-    token,
-    enableStopLoss,
-    enableTakeProfit,
-    stopLossPrice,
-    takeProfitPrice,
-  ]);
-
-  return (
-    <Modal
-      visible={visible}
-      transparent={true}
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <View style={styles.modalOverlay}>
-        <View style={styles.modalContainer}>
-          <View style={styles.modalHeader}>
-            <Text style={styles.modalTitle}>
-              {orderType === "market"
-                ? "Market Order"
-                : orderType === "limit"
-                  ? "Limit Order"
-                  : "Stop Order"}
-            </Text>
-            <TouchableOpacity style={styles.closeButton} onPress={onClose}>
-              <MaterialIcons name="close" size={22} color="#E0E0E0" />
-            </TouchableOpacity>
-          </View>
-
-          {token && (
-            <View style={styles.tokenInfoContainer}>
-              <Image
-                source={{
-                  uri: token.relationships?.base_token?.data?.id?.startsWith(
-                    "eth_"
-                  )
-                    ? token.tokenInfo?.tokenLogo
-                    : token.tokenInfo?.type === "jupiter"
-                      ? token.tokenInfo?.data?.logoURI
-                      : token.tokenInfo?.data?.logo || "/api/image/24",
-                }}
-                style={styles.modalTokenImage}
-              />
-              <View>
-                <Text style={styles.modalTokenName}>
-                  {token.relationships?.base_token?.data?.id?.startsWith("eth_")
-                    ? token.tokenInfo?.tokenName
-                    : token.tokenInfo?.data?.name || ""}
-                </Text>
-                <Text style={styles.modalTokenPrice}>
-                  ${formatPrice(Number(token.attributes?.base_token_price_usd))}
-                </Text>
-              </View>
-            </View>
-          )}
-
-          <ScrollView style={styles.modalContent}>
-            {renderOrderTypeSelector()}
-
-            <Text style={styles.inputLabel}>Amount</Text>
-            <View style={styles.inputContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter amount"
-                placeholderTextColor="#9B86B3"
-                keyboardType="numeric"
-                value={amount}
-                onChangeText={setAmount}
-              />
-            </View>
-
-            {orderType !== "market" && (
-              <>
-                <Text style={styles.inputLabel}>
-                  {orderType === "limit" ? "Limit Price" : "Stop Price"}
-                </Text>
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder={`Enter ${orderType === "limit" ? "limit" : "stop"} price`}
-                    placeholderTextColor="#9B86B3"
-                    keyboardType="numeric"
-                    value={price}
-                    onChangeText={setPrice}
-                  />
-                  <Text style={styles.inputPrefix}>$</Text>
-                </View>
-              </>
-            )}
-            <>
-              <Text style={styles.inputLabel}>Total Amount</Text>
-              <View style={styles.inputContainer}>
-                <Text style={styles.inputPrefix}>$</Text>
-                <View style={styles.swapOutputContainer}>
-                  <Text style={styles.estimatedAmountText}>
-                    {nativeEquivalent.native} {token?.isEth ? "ETH" : "SOL"}
-                  </Text>
-                </View>
-              </View>
-              <Text style={{ color: "#E0E0E0", fontSize: 18 }}>
-                ≃${nativeEquivalent.usd.toFixed(2)}
-              </Text>
-            </>
-            <View style={styles.divider} />
-
-            <View style={styles.toggleContainer}>
-              <View style={styles.toggleRow}>
-                <Text style={styles.toggleLabel}>Stop Loss</Text>
-                <Switch
-                  value={enableStopLoss}
-                  onValueChange={setEnableStopLoss}
-                  trackColor={{ false: "#2E1A40", true: "#8C5BE6" }}
-                  thumbColor={enableStopLoss ? "#FFFFFF" : "#9B86B3"}
-                  disabled={true}
-                />
-              </View>
-
-              {enableStopLoss && (
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Enter stop loss price"
-                    placeholderTextColor="#9B86B3"
-                    keyboardType="numeric"
-                    value={stopLossPrice}
-                    onChangeText={setStopLossPrice}
-                  />
-                  <Text style={styles.inputPrefix}>$</Text>
-                </View>
-              )}
-            </View>
-
-            <View style={styles.toggleContainer}>
-              <View style={styles.toggleRow}>
-                <Text style={styles.toggleLabel}>Take Profit</Text>
-                <Switch
-                  value={enableTakeProfit}
-                  onValueChange={setEnableTakeProfit}
-                  trackColor={{ false: "#2E1A40", true: "#8C5BE6" }}
-                  thumbColor={enableTakeProfit ? "#FFFFFF" : "#9B86B3"}
-                  disabled={true}
-                />
-              </View>
-
-              {enableTakeProfit && (
-                <View style={styles.inputContainer}>
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Enter take profit price"
-                    placeholderTextColor="#9B86B3"
-                    keyboardType="numeric"
-                    value={takeProfitPrice}
-                    onChangeText={setTakeProfitPrice}
-                  />
-                  <Text style={styles.inputPrefix}>$</Text>
-                </View>
-              )}
-            </View>
-            <View style={styles.swapProtocolContainer}>
-              <Text style={styles.swapProtocolText}>
-                {getProtocolText(
-                  token?.isEth ? "ETH" : "SOL",
-                  token?.isEth ? "ETH" : "SOL",
-                  token?.symbol!
-                )}
-              </Text>
-            </View>
-            <TouchableOpacity
-              style={[styles.submitButton, loading && styles.loadingButton]}
-              onPress={handleSubmitOrder}
-              disabled={loading}
-            >
-              <Text style={styles.submitButtonText}>
-                {loading ? "Processing..." : "Place Order"}
-              </Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
-      </View>
-    </Modal>
-  );
-};
 
 const AutoScrollingTrendingBar = ({ data }: { data: TrendingToken2[] }) => {
   const scrollX = useSharedValue(0);
@@ -611,14 +161,35 @@ const AutoScrollingTrendingBar = ({ data }: { data: TrendingToken2[] }) => {
 };
 
 const Explore = () => {
-  const [selectedFilter, setSelectedFilter] = useState("all");
-  const { generateSolWallet, generateEthWallet, solWallet, ethWallet } =
-    useWalletStore();
-  const [showBuyModal, setShowBuyModal] = useState(false);
-  const [selectedToken, setSelectedToken] = useState<any>(null);
-  const [sortedData, setSortedData] = useState<any>([]);
+  useEffect(() => {
+    const registerForPushNotifications = async () => {
+      const { status } = await Notifications.requestPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Notification permissions not granted!");
+      }
+    };
 
-  const { isPending, error, data, refetch } = useQuery<
+    registerForPushNotifications();
+  }, []);
+
+  const [selectedFilter, setSelectedFilter] = useState("all");
+  const {
+    generateSolWallet,
+    generateEthWallet,
+    solWalletAddress,
+    ethWalletAddress,
+  } = useWalletStore();
+  const [showBuyModal, setShowBuyModal] = useState(false);
+  const [stopLoss, setStopLoss] = useState<any>({
+    token: "",
+    price: 0,
+    chain: "SOL",
+  });
+
+  const [sortedData, setSortedData] = useState<any>([]);
+  const currentPrice = 0.01;
+
+  const { isPending, data, refetch } = useQuery<
     { data: TrendingToken2[] } | undefined
   >({
     queryKey: ["trending"],
@@ -628,6 +199,15 @@ const Explore = () => {
   });
   const { isRefetchingByUser, refetchByUser } = useRefreshByUser(refetch);
   useRefreshOnFocus(refetch);
+
+  useEffect(() => {
+    if (!solWalletAddress) {
+      generateSolWallet();
+    }
+    if (!ethWalletAddress) {
+      generateEthWallet();
+    }
+  }, [solWalletAddress, ethWalletAddress]);
 
   const handleBuyPress = async (token: any, isEth: boolean) => {
     setSelectedToken({ ...token, isEth });
@@ -685,25 +265,483 @@ const Explore = () => {
           ETH
         </Text>
       </TouchableOpacity>
-      <TouchableOpacity
-        style={[
-          styles.filterButton,
-          selectedFilter === "usdt" && styles.filterButtonActive,
-        ]}
-        onPress={() => setSelectedFilter("usdt")}
-      >
-        <Text
-          style={[
-            styles.filterText,
-            selectedFilter === "usdt" && styles.filterTextActive,
-          ]}
-        >
-          USDT
-        </Text>
-      </TouchableOpacity>
     </View>
   );
+  const BuyModal = ({ visible, onClose, token }) => {
+    const [orderType, setOrderType] = useState("market"); // market, limit, stop
+    const [amount, setAmount] = useState("");
+    const [price, setPrice] = useState("");
+    const [stopLossPrice, setStopLossPrice] = useState("");
+    const [takeProfitPrice, setTakeProfitPrice] = useState("");
+    const [enableStopLoss, setEnableStopLoss] = useState(false);
+    const [enableTakeProfit, setEnableTakeProfit] = useState(false);
+    const [loading, setLoading] = useState(false);
+    const [prices, setPrices] = useState<any>({
+      eth: 0,
+      sol: 0,
+    });
 
+    useEffect(() => {
+      const getPrices = async () => {
+        const ethPrice = await axios.get(
+          "https://api.geckoterminal.com/api/v2/networks/eth/tokens/0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2"
+        );
+        const solPrice = await axios.get(
+          "https://api.geckoterminal.com/api/v2/networks/solana/tokens/So11111111111111111111111111111111111111112"
+        );
+        setPrices({
+          eth: ethPrice.data.data.attributes.price_usd,
+          sol: solPrice.data.data.attributes.price_usd,
+        });
+      };
+      getPrices();
+    }, []);
+
+    useEffect(() => {
+      if (visible && token) {
+        // Set initial price to current token price when modal opens
+        setPrice(token.attributes?.base_token_price_usd?.toString() || "0");
+      }
+    }, [visible, token]);
+
+    const {
+      getBalance,
+      solPrivateKey,
+      privateKey,
+      ethWalletAddress,
+      solWalletAddress,
+    } = useWalletStore();
+    const resetForm = () => {
+      setOrderType("market");
+      setAmount("");
+      setPrice("");
+      setStopLossPrice("");
+      setTakeProfitPrice("");
+      setEnableStopLoss(false);
+      setEnableTakeProfit(false);
+    };
+
+    const renderOrderTypeSelector = () => (
+      <View style={styles.orderTypeContainer}>
+        <TouchableOpacity
+          style={[
+            styles.orderTypeButton,
+            orderType === "market" && styles.activeOrderType,
+          ]}
+          onPress={() => setOrderType("market")}
+        >
+          <Text
+            style={[
+              styles.orderTypeText,
+              orderType === "market" && styles.activeOrderTypeText,
+            ]}
+          >
+            Market
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.orderTypeButton,
+            orderType === "limit" && styles.activeOrderType,
+          ]}
+          onPress={() => setOrderType("limit")}
+          disabled
+        >
+          <Text
+            style={[
+              styles.orderTypeText,
+              orderType === "limit" && styles.activeOrderTypeText,
+            ]}
+          >
+            Limit
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[
+            styles.orderTypeButton,
+            orderType === "stop" && styles.activeOrderType,
+          ]}
+          onPress={() => setOrderType("stop")}
+          disabled
+        >
+          <Text
+            style={[
+              styles.orderTypeText,
+              orderType === "stop" && styles.activeOrderTypeText,
+            ]}
+          >
+            Stop
+          </Text>
+        </TouchableOpacity>
+      </View>
+    );
+
+    const getProtocolText = (chain, fromToken, toToken) => {
+      if (chain === "ETH") {
+        return `Using Uniswap protocol for ${fromToken} ↔ ${toToken}`;
+      } else if (chain === "SOL") {
+        return `Using Jupiter protocol for ${fromToken} ↔ ${toToken}`;
+      }
+      return "Using optimal DEX routing";
+    };
+
+    const nativeEquivalent = useMemo(() => {
+      if (!token) return { native: 0, usd: 0 };
+
+      const tokenPriceInUsd = Number(price) || 0;
+      const tokenAmount = Number(amount) || 0;
+
+      const totalUsd = tokenPriceInUsd * tokenAmount;
+
+      const ethPriceInUsd = Number(prices.eth) || 1;
+      const solPriceInUsd = Number(prices.sol) || 1;
+      const native = token.isEth
+        ? (totalUsd / ethPriceInUsd).toFixed(4)
+        : (totalUsd / solPriceInUsd).toFixed(4);
+
+      return {
+        native: Number(native),
+        usd: Number(totalUsd.toFixed(2)),
+      };
+    }, [token, amount, price, prices]);
+
+    const handleSubmitOrder = useCallback(async () => {
+      const tokenAddress = token.relationships.base_token.data.id.startsWith(
+        "solana_"
+      )
+        ? token.relationships.base_token.data.id.slice(7)
+        : token.relationships.base_token.data.id.startsWith("eth_")
+          ? token.relationships.base_token.data.id.slice(4)
+          : token.relationships.base_token.data.id;
+
+      if (!amount || parseFloat(amount) <= 0) {
+        Alert.alert("Error", "Please enter a valid amount");
+        return;
+      }
+      // if (orderType !== "market" && (!price || parseFloat(price) <= 0)) {
+      //   Alert.alert("Error", "Please enter a valid price");
+      //   return;
+      // }
+      // if (enableStopLoss && (!stopLossPrice || parseFloat(stopLossPrice) <= 0)) {
+      //   Alert.alert("Error", "Please enter a valid stop loss price");
+      //   return;
+      // }
+      // if (
+      //   enableTakeProfit &&
+      //   (!takeProfitPrice || parseFloat(takeProfitPrice) <= 0)
+      // ) {
+      //   Alert.alert("Error", "Please enter a valid take profit price");
+      //   return;
+      // }
+      // if (
+      //   enableTakeProfit &&
+      //   (!takeProfitPrice || parseFloat(takeProfitPrice) <= 0)
+      // ) {
+      //   Alert.alert("Error", "Please enter a valid take profit price");
+      //   return;
+      // }
+
+      setLoading(true);
+      try {
+        if (token?.isEth) {
+          if (Number(getBalance("eth")) > Number(nativeEquivalent.native)) {
+            const txid = await get0xPermit2Swap(
+              "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+              tokenAddress,
+              Number(amount) * 10 ** Number(token.decimals),
+              ethWalletAddress,
+              privateKey!
+            );
+            // Show success message
+            Alert.alert(
+              "Success",
+              `Swap completed successfully: https://etherscan.io/tx/${txid?.hash}`
+            );
+          } else {
+            Alert.alert(
+              "Error",
+              "Insufficient balance for the swap amount or no swap route found"
+            );
+          }
+        } else {
+          if (Number(getBalance("sol")) > Number(nativeEquivalent.native)) {
+            const txid = await swapWithJupiter(
+              new Connection(config.heliusUrl),
+              "So11111111111111111111111111111111111111112",
+              tokenAddress,
+              String(Number(amount) * 10 ** Number(token.decimals)),
+              solPrivateKey!
+            );
+            Alert.alert(
+              `Success", "Swap completed successfully https://solscan.io/tx/${txid}`
+            );
+          } else {
+            Alert.alert(
+              "Error",
+              "Insufficient balance for the swap amount or no swap route found"
+            );
+          }
+        }
+        setStopLoss({
+          token: tokenAddress,
+          price: stopLossPrice,
+          chain: token?.isEth ? "ETH" : "SOL",
+        });
+      } catch (error) {
+        console.error("Swap error:", error);
+        Alert.alert(
+          "Error",
+          "Failed to complete swap due to insufficient gas or allowance"
+        );
+      } finally {
+        setLoading(false);
+        resetForm();
+        onClose();
+      }
+      // setTimeout(() => {
+      // setLoading(false);
+
+      //   // Format order details for the alert
+      //   let orderDetails = `Order Type: ${orderType.toUpperCase()}\nAmount: ${amount}`;
+
+      //   if (orderType !== "market") {
+      //     orderDetails += `\nPrice: $${price}`;
+      //   }
+
+      //   if (enableStopLoss) {
+      //     orderDetails += `\nStop Loss: $${stopLossPrice}`;
+      //   }
+
+      //   if (enableTakeProfit) {
+      //     orderDetails += `\nTake Profit: $${takeProfitPrice}`;
+      //   }
+
+      //   Alert.alert(
+      //     "Order Submitted",
+      //     `Your order has been submitted successfully!\n\n${orderDetails}`,
+      //     [
+      //       {
+      //         text: "OK",
+      //         onPress: () => {
+      //           // Reset form and close modal
+      //           resetForm();
+      //           onClose();
+      //         },
+      //       },
+      //     ]
+      //   );
+      // }, 1500);
+    }, [
+      amount,
+      privateKey,
+      solPrivateKey,
+      solWalletAddress,
+      ethWalletAddress,
+      nativeEquivalent,
+      config,
+      price,
+      orderType,
+      token,
+      enableStopLoss,
+      enableTakeProfit,
+      stopLossPrice,
+      takeProfitPrice,
+    ]);
+
+    const handleStopLossChange = (value) => {
+      const numericValue = parseFloat(value);
+      const price = Number(token.attributes?.base_token_price_usd) || 0;
+      if (!isNaN(numericValue) && numericValue <= price) {
+        setStopLossPrice(value);
+      } else if (numericValue > price) {
+        alert(`Stop loss cannot be higher than the token price of ${price}`);
+        // setStopLossPrice(price.toString());
+      }
+    };
+
+    return (
+      <Modal
+        visible={visible}
+        transparent={true}
+        animationType="slide"
+        onRequestClose={onClose}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContainer}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>
+                {orderType === "market"
+                  ? "Market Order"
+                  : orderType === "limit"
+                    ? "Limit Order"
+                    : "Stop Order"}
+              </Text>
+              <TouchableOpacity style={styles.closeButton} onPress={onClose}>
+                <MaterialIcons name="close" size={22} color="#E0E0E0" />
+              </TouchableOpacity>
+            </View>
+
+            {token && (
+              <View style={styles.tokenInfoContainer}>
+                <Image
+                  source={{
+                    uri: token.relationships?.base_token?.data?.id?.startsWith(
+                      "eth_"
+                    )
+                      ? token.tokenInfo?.tokenLogo
+                      : token.tokenInfo?.type === "jupiter"
+                        ? token.tokenInfo?.data?.logoURI
+                        : token.tokenInfo?.data?.logo || "/api/image/24",
+                  }}
+                  style={styles.modalTokenImage}
+                />
+                <View>
+                  <Text style={styles.modalTokenName}>
+                    {token.relationships?.base_token?.data?.id?.startsWith(
+                      "eth_"
+                    )
+                      ? token.tokenInfo?.tokenName
+                      : token.tokenInfo?.data?.name || "N/A"}
+                  </Text>
+                  <Text style={styles.modalTokenPrice}>
+                    $
+                    {formatPrice(
+                      Number(token.attributes?.base_token_price_usd)
+                    )}
+                  </Text>
+                </View>
+              </View>
+            )}
+
+            <ScrollView style={styles.modalContent}>
+              {renderOrderTypeSelector()}
+
+              <Text style={styles.inputLabel}>Amount</Text>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter token amount"
+                  placeholderTextColor="#9B86B3"
+                  keyboardType="numeric"
+                  value={amount}
+                  onChangeText={setAmount}
+                />
+              </View>
+
+              {orderType !== "market" && (
+                <>
+                  <Text style={styles.inputLabel}>
+                    {orderType === "limit" ? "Limit Price" : "Stop Price"}
+                  </Text>
+                  <View style={styles.inputContainer}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder={`Enter ${orderType === "limit" ? "limit" : "stop"} price`}
+                      placeholderTextColor="#9B86B3"
+                      keyboardType="numeric"
+                      value={price}
+                      onChangeText={setPrice}
+                    />
+                    <Text style={styles.inputPrefix}>$</Text>
+                  </View>
+                </>
+              )}
+              <>
+                <Text style={styles.inputLabel}>Total Amount</Text>
+                <View style={styles.inputContainer}>
+                  <Text style={styles.inputPrefix}>$</Text>
+                  <View style={styles.swapOutputContainer}>
+                    <Text style={styles.estimatedAmountText}>
+                      {nativeEquivalent.native} {token?.isEth ? "ETH" : "SOL"}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={{ color: "#E0E0E0", fontSize: 18 }}>
+                  ≃${nativeEquivalent.usd.toFixed(2)}
+                </Text>
+              </>
+              <View style={styles.divider} />
+
+              <View style={styles.toggleContainer}>
+                <View style={styles.toggleRow}>
+                  <Text style={styles.toggleLabel}>Stop Loss</Text>
+                  <Switch
+                    value={enableStopLoss}
+                    onValueChange={setEnableStopLoss}
+                    trackColor={{ false: "#2E1A40", true: "#8C5BE6" }}
+                    thumbColor={enableStopLoss ? "#FFFFFF" : "#9B86B3"}
+                  />
+                </View>
+
+                {enableStopLoss && (
+                  <View style={styles.inputContainer}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter stop loss price"
+                      placeholderTextColor="#9B86B3"
+                      keyboardType="numeric"
+                      value={stopLossPrice}
+                      onChangeText={handleStopLossChange}
+                    />
+                    <Text style={styles.inputPrefix}>$</Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.toggleContainer}>
+                <View style={styles.toggleRow}>
+                  <Text style={styles.toggleLabel}>Take Profit</Text>
+                  <Switch
+                    value={enableTakeProfit}
+                    onValueChange={setEnableTakeProfit}
+                    trackColor={{ false: "#2E1A40", true: "#8C5BE6" }}
+                    thumbColor={enableTakeProfit ? "#FFFFFF" : "#9B86B3"}
+                    disabled={true}
+                  />
+                </View>
+
+                {enableTakeProfit && (
+                  <View style={styles.inputContainer}>
+                    <TextInput
+                      style={styles.input}
+                      placeholder="Enter take profit price"
+                      placeholderTextColor="#9B86B3"
+                      keyboardType="numeric"
+                      value={takeProfitPrice}
+                      onChangeText={setTakeProfitPrice}
+                    />
+                    <Text style={styles.inputPrefix}>$</Text>
+                  </View>
+                )}
+              </View>
+              <View style={styles.swapProtocolContainer}>
+                <Text style={styles.swapProtocolText}>
+                  {getProtocolText(
+                    token?.isEth ? "ETH" : "SOL",
+                    token?.isEth ? "ETH" : "SOL",
+                    token?.relationships?.base_token?.data?.id?.startsWith(
+                      "eth_"
+                    )
+                      ? token?.tokenInfo?.tokenName
+                      : token?.tokenInfo?.data?.name || "N/A"
+                  )}
+                </Text>
+              </View>
+              <TouchableOpacity
+                style={[styles.submitButton, loading && styles.loadingButton]}
+                onPress={handleSubmitOrder}
+                disabled={loading}
+              >
+                <Text style={styles.submitButtonText}>
+                  {loading ? "Processing..." : "Place Order"}
+                </Text>
+              </TouchableOpacity>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
+    );
+  };
   const mergedData = useMemo(() => {
     if (!data || !data.data) return [];
 
@@ -762,7 +800,7 @@ const Explore = () => {
 
     // Sort the data
     return filtered.sort((a, b) => {
-      const sortDir = filters.sortDirection === "asc" ? 1 : -1;
+      const sortDir = filters.sortDirection === "desc" ? 1 : -1;
 
       switch (filters.sortBy) {
         case "priceChange":
@@ -798,9 +836,15 @@ const Explore = () => {
   }, [data, selectedFilter]);
 
   const filteredTopGainers = useMemo(() => {
-    return mergedData?.filter(
-      (item) => parseFloat(item.attributes.price_change_percentage.h24) > 0
-    );
+    return mergedData
+      ?.filter(
+        (item) => parseFloat(item.attributes.price_change_percentage.h24) > 0
+      )
+      .sort((a, b) => {
+        const marketCapA = parseFloat(a.attributes.fdv_usd);
+        const marketCapB = parseFloat(b.attributes.fdv_usd);
+        return marketCapB - marketCapA; // bigger market cap first
+      });
   }, [mergedData]);
 
   useEffect(() => {
@@ -814,15 +858,66 @@ const Explore = () => {
     }
   }, [mergedData]);
 
-  const TopGainer = ({ item }: any) => {
-    const isEth = item.relationships.base_token.data.id.startsWith("eth_");
-    const tokenAddress = item.relationships.base_token.data.id.startsWith(
+  const [selectedToken, setSelectedToken] = useState<any>({ ...mergedData[0] });
+  useEffect(() => {
+    const sendPush = () => {
+      const token = mergedData.find((token: any) => {
+        const tokenAddress =
+          token?.relationships?.base_token?.data?.id?.startsWith("solana_")
+            ? token.relationships.base_token.data.id.slice(7)
+            : token.relationships.base_token.data.id.startsWith("eth_")
+              ? token.relationships.base_token.data.id.slice(4)
+              : token.relationships.base_token.data.id;
+        return tokenAddress === stopLoss.token;
+      });
+      //@ts-expect-error error
+      const price = token?.tokenInfo?.usdPriceFormatted
+        ? //@ts-expect-error error
+          Number(token.tokenInfo.usdPriceFormatted)
+        : token?.attributes?.base_token_price_usd
+          ? Number(token.attributes.base_token_price_usd)
+          : null;
+      if (price !== null && stopLoss.price >= price) {
+        sendLocalNotification(token);
+      }
+    };
+    sendPush();
+  }, [selectedToken, mergedData, currentPrice]);
+
+  const sendLocalNotification = async (token: any) => {
+    const tokenAddress = token?.relationships.base_token.data.id.startsWith(
       "solana_"
     )
-      ? item.relationships.base_token.data.id.slice(7)
-      : item.relationships.base_token.data.id.startsWith("eth_")
-        ? item.relationships.base_token.data.id.slice(4)
-        : item.relationships.base_token.data.id;
+      ? token.relationships.base_token.data.id.slice(7)
+      : token.relationships.base_token.data.id.startsWith("eth_")
+        ? token.relationships.base_token.data.id.slice(4)
+        : token.relationships.base_token.data.id;
+
+    const symbol = token.relationships?.base_token?.data?.id?.startsWith("eth_")
+      ? token.tokenInfo?.tokenName
+      : token.tokenInfo?.data?.name || "N/A";
+
+    const price = token?.tokenInfo?.usdPriceFormatted
+      ? Number(token.tokenInfo.usdPriceFormatted).toFixed(8)
+      : Number(token.attributes?.base_token_price_usd).toFixed(8);
+
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title: "⚠️ Stop Loss Triggered!",
+        body: `${symbol} fell to $${price}\nAddress: ${tokenAddress.substring(0, 6)}...${tokenAddress.slice(-4)}`,
+        data: {
+          type: "stop-loss",
+          tokenAddress,
+          symbol,
+          price: price,
+        },
+      },
+      trigger: null,
+    });
+  };
+
+  const TopGainer = ({ item }: any) => {
+    const isEth = item.relationships.base_token.data.id.startsWith("eth_");
 
     return (
       <TouchableOpacity
@@ -851,10 +946,12 @@ const Explore = () => {
               <Text style={styles.gainerText}>
                 {isEth
                   ? //@ts-ignore
-                    item.tokenInfo?.tokenName
+                    item.tokenInfo?.tokenName.length > 12
+                    ? item.tokenInfo?.tokenName.slice(0, 12)
+                    : item.tokenInfo?.tokenName
                   : item.tokenInfo?.data?.name.length > 12
                     ? item.tokenInfo?.data?.name.slice(0, 12)
-                    : item.tokenInfo?.data?.name || "Unkown"}
+                    : item.tokenInfo?.data?.name || "N/A"}
               </Text>
             )}
             <Text
@@ -906,8 +1003,12 @@ const Explore = () => {
               <Text style={styles.trendingName}>
                 {item.relationships.base_token.data.id.startsWith("eth_")
                   ? //@ts-ignore
-                    item.tokenInfo?.tokenName
-                  : item.tokenInfo?.data.name || ""}
+                    item.tokenInfo?.tokenName.length > 17
+                    ? item.tokenInfo?.tokenName.slice(0, 17)
+                    : item.tokenInfo?.tokenName
+                  : item.tokenInfo?.data.name.length > 17
+                    ? item.tokenInfo?.data.name.slice(0, 17)
+                    : item.tokenInfo?.data.name || ""}
               </Text>
             )}
             <Text style={styles.marketCap}>
@@ -916,7 +1017,10 @@ const Explore = () => {
           </View>
           <View style={styles.trendingPriceInfo}>
             <Text style={styles.trendingPrice}>
-              ${formatPrice(Number(item.attributes.base_token_price_usd))}
+              $
+              {Number(item.tokenInfo.usdPriceFormatted)
+                ? Number(item.tokenInfo.usdPriceFormatted).toFixed(8)
+                : Number(item.attributes.base_token_price_usd).toFixed(8)}
             </Text>
             <View
               style={[
@@ -945,73 +1049,73 @@ const Explore = () => {
       </TouchableOpacity>
     );
   };
-  const renderTrendingItem = ({ item }: { item: TrendingToken2 }) => {
-    const isEth = item.relationships.base_token.data.id.startsWith("eth_");
-    const tokenAddress = item.relationships.base_token.data.id.startsWith(
-      "solana_"
-    )
-      ? item.relationships.base_token.data.id.slice(7)
-      : item.relationships.base_token.data.id.startsWith("eth_")
-        ? item.relationships.base_token.data.id.slice(4)
-        : item.relationships.base_token.data.id;
+  // const renderTrendingItem = ({ item }: { item: TrendingToken2 }) => {
+  //   const isEth = item.relationships.base_token.data.id.startsWith("eth_");
+  //   const tokenAddress = item.relationships.base_token.data.id.startsWith(
+  //     "solana_"
+  //   )
+  //     ? item.relationships.base_token.data.id.slice(7)
+  //     : item.relationships.base_token.data.id.startsWith("eth_")
+  //       ? item.relationships.base_token.data.id.slice(4)
+  //       : item.relationships.base_token.data.id;
 
-    // const tokenInfo = tokenInfoMap[tokenAddress];
+  //   // const tokenInfo = tokenInfoMap[tokenAddress];
 
-    return (
-      <TouchableOpacity style={styles.touchableTrendingItem}>
-        <Link
-          href={{
-            pathname: "/tokens/[id]",
-            params: { id: tokenAddress, token: JSON.stringify(item) },
-          }}
-        >
-          <View style={styles.trendingItem}>
-            <Image
-              source={{
-                uri: isEth
-                  ? //@ts-ignore
-                    item.tokenInfo?.tokenLogo
-                  : item.tokenInfo?.type === "jupiter"
-                    ? item.tokenInfo?.data.logoURI
-                    : item.tokenInfo?.data.logo || "/api/image/24",
-              }}
-              style={styles.avatar}
-            />
-            <View style={styles.trendingInfo}>
-              {isPending ? (
-                <SkeletonLoader />
-              ) : (
-                <Text style={styles.trendingName}>
-                  {isEth
-                    ? //@ts-ignore
-                      item.tokenInfo?.tokenName
-                    : item.tokenInfo?.data.name || ""}
-                </Text>
-              )}
-              <Text style={styles.marketCap}>
-                ${formatNumber(Number(item.attributes.fdv_usd))} MKT CAP
-              </Text>
-            </View>
-            <View style={styles.trendingPriceInfo}>
-              <Text style={styles.trendingPrice}>
-                ${formatPrice(Number(item.attributes.base_token_price_usd))}
-              </Text>
-              <Text
-                style={[
-                  styles.trendingChange,
-                  item.attributes.price_change_percentage.h24.includes("-")
-                    ? styles.negative
-                    : styles.positive,
-                ]}
-              >
-                {item.attributes.price_change_percentage.h24}%
-              </Text>
-            </View>
-          </View>
-        </Link>
-      </TouchableOpacity>
-    );
-  };
+  //   return (
+  //     <TouchableOpacity style={styles.touchableTrendingItem}>
+  //       <Link
+  //         href={{
+  //           pathname: "/tokens/[id]",
+  //           params: { id: tokenAddress, token: JSON.stringify(item) },
+  //         }}
+  //       >
+  //         <View style={styles.trendingItem}>
+  //           <Image
+  //             source={{
+  //               uri: isEth
+  //                 ? //@ts-ignore
+  //                   item.tokenInfo?.tokenLogo
+  //                 : item.tokenInfo?.type === "jupiter"
+  //                   ? item.tokenInfo?.data.logoURI
+  //                   : item.tokenInfo?.data.logo || "/api/image/24",
+  //             }}
+  //             style={styles.avatar}
+  //           />
+  //           <View style={styles.trendingInfo}>
+  //             {isPending ? (
+  //               <SkeletonLoader />
+  //             ) : (
+  //               <Text style={styles.trendingName}>
+  //                 {isEth
+  //                   ? //@ts-ignore
+  //                     item.tokenInfo?.tokenName
+  //                   : item.tokenInfo?.data.name || ""}
+  //               </Text>
+  //             )}
+  //             <Text style={styles.marketCap}>
+  //               ${formatNumber(Number(item.attributes.fdv_usd))} MKT CAP
+  //             </Text>
+  //           </View>
+  //           <View style={styles.trendingPriceInfo}>
+  //             <Text style={styles.trendingPrice}>
+  //               ${formatPrice(Number(item.attributes.base_token_price_usd))}
+  //             </Text>
+  //             <Text
+  //               style={[
+  //                 styles.trendingChange,
+  //                 item.attributes.price_change_percentage.h24.includes("-")
+  //                   ? styles.negative
+  //                   : styles.positive,
+  //               ]}
+  //             >
+  //               {item.attributes.price_change_percentage.h24}%
+  //             </Text>
+  //           </View>
+  //         </View>
+  //       </Link>
+  //     </TouchableOpacity>
+  //   );
+  // };
 
   if (isPending || isRefetchingByUser) return <LoadingIndicator />;
 
@@ -1043,7 +1147,6 @@ const Explore = () => {
 
           {renderFilterButtons()}
         </View>
-
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{ paddingBottom: 20 }}
@@ -1091,13 +1194,14 @@ const Explore = () => {
             <View style={styles.sectionWrapper}>
               <View style={styles.sectionTitleContainer}>
                 <FontAwesome
-                  name="arrow-up"
+                  name="star"
                   size={18}
-                  color="#4CAF50"
+                  color="#F9A825"
                   style={styles.sectionIcon}
                 />
-                <Text style={styles.sectionTitle}>Top Gainers</Text>
+                <Text style={styles.sectionTitle}>Spotlight</Text>
               </View>
+
               <FlatList
                 data={filteredTopGainers}
                 renderItem={TopGainer}
@@ -1117,12 +1221,12 @@ const Explore = () => {
             <View style={styles.sectionWrapper}>
               <View style={styles.sectionTitleContainer}>
                 <FontAwesome
-                  name="star"
+                  name="arrow-up"
                   size={18}
-                  color="#F9A825"
+                  color="#4CAF50"
                   style={styles.sectionIcon}
                 />
-                <Text style={styles.sectionTitle}>Spotlight</Text>
+                <Text style={styles.sectionTitle}>Tokens & Top Gainers</Text>
               </View>
 
               {mergedData.map((item) => (
@@ -1166,6 +1270,7 @@ const styles = StyleSheet.create({
   },
   safeArea: {
     flex: 1,
+    backgroundColor: "#1A0E26",
   },
   gradientBackground: {
     flex: 1,
@@ -1581,13 +1686,13 @@ const styles = StyleSheet.create({
   },
   input: {
     color: "#E0E0E0",
-    padding: 12,
+    padding: 14,
     fontSize: 16,
   },
   inputPrefix: {
     position: "absolute",
-    left: 12,
-    top: 12,
+    left: 2.3,
+    top: 14,
     color: "#9B86B3",
     fontSize: 16,
   },

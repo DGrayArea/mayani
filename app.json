@@ -16,7 +16,8 @@
         "foregroundImage": "./assets/images/adaptive-icon.jpg",
         "backgroundColor": "#ffffff"
       },
-      "package": "com.dgrayarea.apeit"
+      "package": "com.dgrayarea.apeit",
+      "permissions": ["NOTIFICATIONS"]
     },
     "web": {
       "bundler": "metro",

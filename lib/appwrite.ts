@@ -18,4 +18,5 @@ export const config = {
   jupiterRelay: process.env.EXPO_PUBLIC_JUPITER_RELAY,
   zeroExRelay: process.env.EXPO_PUBLIC_ZEROEX_RELAY,
   heliusUrl: process.env.EXPO_PUBLIC_HELIUS_URL,
+  helius2Url: process.env.EXPO_PUBLIC_HELIUS2_URL,
 };
