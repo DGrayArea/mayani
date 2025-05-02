@@ -1,5 +1,5 @@
 // @ts-nocheck
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import {
   FlatList,
   RefreshControl,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import images from "@/constants/images";
@@ -23,7 +24,7 @@ import useWalletStore from "@/hooks/walletStore";
 import { useQuery } from "@tanstack/react-query";
 import { fetchTrending } from "@/utils/query";
 import { TrendingToken2 } from "@/types";
-import { Ionicons, FontAwesome } from "@expo/vector-icons";
+import { Ionicons, FontAwesome, MaterialIcons } from "@expo/vector-icons";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
 import { formatNumber, formatPrice } from "@/utils/numbers";
 import useFilterStore from "@/hooks/filterStore";
@@ -39,6 +40,7 @@ const SpotlightTokens = () => {
   const [modalVisible, setModalVisible] = useState(false);
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
+  const [connectionError, setConnectionError] = useState(false);
   
   const { currentChain } = useWalletStore();
   const { filters } = useFilterStore();
@@ -51,6 +53,14 @@ const SpotlightTokens = () => {
     queryFn: fetchTrending,
     refetchInterval: 20000,
     refetchIntervalInBackground: false,
+    retry: 2,
+    onError: (err) => {
+      console.error("Error fetching trending tokens:", err);
+      setConnectionError(true);
+    },
+    onSuccess: () => {
+      setConnectionError(false);
+    }
   });
   
   const { isRefetchingByUser, refetchByUser } = useRefreshByUser(refetch);
@@ -99,7 +109,41 @@ const SpotlightTokens = () => {
     return filtered;
   }, [data, activeTab]);
 
-  const renderTokenCard = (item) => {
+  const renderEmptyState = useCallback(() => {
+    if (connectionError) {
+      return (
+        <View style={styles.emptyStateContainer}>
+          <MaterialIcons name="error-outline" size={50} color="#FF5252" />
+          <Text style={styles.emptyStateTitle}>Connection Error</Text>
+          <Text style={styles.emptyStateMessage}>
+            We couldn't fetch the latest token data. Please check your internet connection and try again.
+          </Text>
+          <TouchableOpacity style={styles.retryButton} onPress={refetch}>
+            <Text style={styles.retryButtonText}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    
+    if (filteredTokens.length === 0 && !isPending && !isRefetchingByUser) {
+      return (
+        <View style={styles.emptyStateContainer}>
+          <FontAwesome name="search" size={50} color="#8C5BE6" />
+          <Text style={styles.emptyStateTitle}>No Tokens Found</Text>
+          <Text style={styles.emptyStateMessage}>
+            There are no spotlight tokens matching your current filter.
+          </Text>
+          <TouchableOpacity style={styles.retryButton} onPress={() => setActiveTab("trending")}>
+            <Text style={styles.retryButtonText}>View All Tokens</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+    
+    return null;
+  }, [connectionError, filteredTokens, isPending, isRefetchingByUser, refetch]);
+
+  const renderTokenCard = useCallback((item) => {
     const isEth = item.relationships.base_token.data.id.startsWith("eth_");
     const tokenAddress = item.relationships.base_token.data.id.startsWith("solana_")
       ? item.relationships.base_token.data.id.slice(7)
@@ -129,11 +173,13 @@ const SpotlightTokens = () => {
           setSelectedToken(item);
           setModalVisible(true);
         }}
+        activeOpacity={0.7}
       >
         <View style={styles.tokenHeader}>
           <Image
             source={{ uri: tokenImage }}
             style={styles.tokenImage}
+            defaultSource={require('@/assets/images/token-placeholder.png')}
           />
           <View style={styles.tokenTitleContainer}>
             <Text style={styles.tokenName}>{tokenName}</Text>
@@ -158,10 +204,10 @@ const SpotlightTokens = () => {
           <View style={styles.metric}>
             <Text style={styles.metricLabel}>24h Change</Text>
             <Text style={[styles.metricValue, isPriceUp ? styles.positive : styles.negative]}>
-              {priceChange}%
+              {isPriceUp ? '+' : ''}{priceChange}%
             </Text>
           </View>
-          
+        
           <View style={styles.metric}>
             <Text style={styles.metricLabel}>Market Cap</Text>
             <Text style={styles.metricValue}>${marketCap}</Text>
@@ -174,27 +220,30 @@ const SpotlightTokens = () => {
             setSelectedToken(item);
             setModalVisible(true);
           }}
+          activeOpacity={0.8}
         >
           <Text style={styles.buyButtonText}>Buy Token</Text>
         </TouchableOpacity>
       </TouchableOpacity>
     );
-  };
+  }, []);
 
   const renderTabButtons = () => (
     <View style={styles.tabContainer}>
       <TouchableOpacity
         style={[styles.tabButton, activeTab === "trending" && styles.activeTab]}
         onPress={() => setActiveTab("trending")}
+        activeOpacity={0.8}
       >
         <Text style={[styles.tabText, activeTab === "trending" && styles.activeTabText]}>
           All Tokens
         </Text>
       </TouchableOpacity>
-      
+
       <TouchableOpacity
         style={[styles.tabButton, activeTab === "sol" && styles.activeTab]}
         onPress={() => setActiveTab("sol")}
+        activeOpacity={0.8}
       >
         <Text style={[styles.tabText, activeTab === "sol" && styles.activeTabText]}>
           Solana
@@ -204,6 +253,7 @@ const SpotlightTokens = () => {
       <TouchableOpacity
         style={[styles.tabButton, activeTab === "eth" && styles.activeTab]}
         onPress={() => setActiveTab("eth")}
+        activeOpacity={0.8}
       >
         <Text style={[styles.tabText, activeTab === "eth" && styles.activeTabText]}>
           Ethereum
@@ -218,6 +268,7 @@ const SpotlightTokens = () => {
       transparent={true}
       animationType="slide"
       onRequestClose={() => setModalVisible(false)}
+      statusBarTranslucent
     >
       <View style={styles.modalOverlay}>
         <View style={styles.modalContainer}>
@@ -226,16 +277,17 @@ const SpotlightTokens = () => {
             <TouchableOpacity
               style={styles.closeButton}
               onPress={() => setModalVisible(false)}
+              hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
             >
               <Text style={styles.closeButtonText}>✕</Text>
             </TouchableOpacity>
           </View>
-          
+
           {selectedToken && (
             <View style={styles.modalContent}>
               <View style={styles.tokenInfoContainer}>
                 <Image
-                  source={{ 
+                  source={{
                     uri: selectedToken.relationships.base_token.data.id.startsWith("eth_")
                       ? selectedToken.tokenInfo?.tokenLogo
                       : selectedToken.tokenInfo?.type === "jupiter"
@@ -243,6 +295,7 @@ const SpotlightTokens = () => {
                         : selectedToken.tokenInfo?.data?.logo || "/api/image/24"
                   }}
                   style={styles.modalTokenImage}
+                  defaultSource={require('@/assets/images/token-placeholder.png')}
                 />
                 <View>
                   <Text style={styles.modalTokenName}>
@@ -255,7 +308,7 @@ const SpotlightTokens = () => {
                   </Text>
                 </View>
               </View>
-              
+                
               <Text style={styles.inputLabel}>Amount to Buy</Text>
               <View style={styles.inputContainer}>
                 <TextInput
@@ -267,15 +320,21 @@ const SpotlightTokens = () => {
                   onChangeText={setAmount}
                 />
               </View>
-              
+
               <TouchableOpacity
                 style={[styles.buyButtonLarge, loading && styles.loadingButton]}
                 onPress={handleBuyToken}
                 disabled={loading}
+                activeOpacity={0.8}
               >
-                <Text style={styles.buyButtonLargeText}>
-                  {loading ? "Processing..." : "Buy Now"}
-                </Text>
+                {loading ? (
+                  <View style={styles.loadingContainer}>
+                    <ActivityIndicator color="#FFFFFF" size="small" />
+                    <Text style={styles.buyButtonLargeText}>Processing...</Text>
+                  </View>
+                ) : (
+                  <Text style={styles.buyButtonLargeText}>Buy Now</Text>
+                )}
               </TouchableOpacity>
             </View>
           )}
@@ -284,9 +343,18 @@ const SpotlightTokens = () => {
     </Modal>
   );
 
-  if (isPending || isRefetchingByUser) {
-    return <LoadingIndicator />;
-  }
+  const renderListHeader = useCallback(() => {
+    if (isPending && !isRefetchingByUser) {
+      return (
+        <View style={styles.loadingView}>
+          <ActivityIndicator size="large" color="#8C5BE6" />
+          <Text style={styles.loadingText}>Loading spotlight tokens...</Text>
+        </View>
+      );
+    }
+    
+    return null;
+  }, [isPending, isRefetchingByUser]);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -300,11 +368,13 @@ const SpotlightTokens = () => {
             <TouchableOpacity 
               style={styles.iconButton}
               onPress={() => router.push("/(home)/search")}
+              activeOpacity={0.8}
             >
               <Ionicons name="search-outline" size={22} color="#F0F0F0" />
             </TouchableOpacity>
             <TouchableOpacity 
               style={styles.iconButton}
+              activeOpacity={0.8}
             >
               <Ionicons name="notifications-outline" size={22} color="#F0F0F0" />
             </TouchableOpacity>
@@ -327,6 +397,8 @@ const SpotlightTokens = () => {
               tintColor="#8C5BE6"
             />
           }
+          ListHeaderComponent={renderListHeader}
+          ListEmptyComponent={renderEmptyState}
         />
         
         {renderBuyModal()}
@@ -386,9 +458,15 @@ const styles = StyleSheet.create({
     marginHorizontal: 4,
     borderWidth: 1,
     borderColor: "rgba(140, 91, 230, 0.5)",
+    elevation: 2,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 3,
   },
   activeTab: {
     backgroundColor: '#5A2DA0',
+    borderColor: "rgba(140, 91, 230, 0.8)",
   },
   tabText: {
     fontSize: 14,
@@ -481,6 +559,11 @@ const styles = StyleSheet.create({
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
   },
   buyButtonText: {
     color: '#FFFFFF',
@@ -500,6 +583,11 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     borderWidth: 1,
     borderColor: 'rgba(140, 91, 230, 0.3)',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.3,
+    shadowRadius: 15,
+    elevation: 10,
   },
   modalHeader: {
     flexDirection: 'row',
@@ -573,6 +661,11 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
+    elevation: 3,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
   },
   buyButtonLargeText: {
     color: '#FFFFFF',
@@ -581,6 +674,52 @@ const styles = StyleSheet.create({
   },
   loadingButton: {
     opacity: 0.7,
+  },
+  loadingContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  loadingView: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  loadingText: {
+    color: '#E0E0E0',
+    marginTop: 12,
+    fontSize: 14,
+  },
+  emptyStateContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 30,
+    marginTop: 30,
+  },
+  emptyStateTitle: {
+    color: '#E0E0E0',
+    fontSize: 18,
+    fontWeight: 'bold',
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  emptyStateMessage: {
+    color: '#9B86B3',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 20,
+  },
+  retryButton: {
+    backgroundColor: '#8C5BE6',
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  retryButtonText: {
+    color: '#FFFFFF',
+    fontWeight: 'bold',
+    fontSize: 16,
   },
 });
 

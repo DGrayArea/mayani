@@ -36,6 +36,7 @@ export interface WalletState {
   transactions: Transaction[];
   error: string | null;
   isLoading: boolean;
+  lastUpdated: number; // Timestamp of last update for cache invalidation
 }
 
 export interface WalletStore extends WalletState {
@@ -47,12 +48,17 @@ export interface WalletStore extends WalletState {
   getSolKeypair: () => Keypair | null;
   getEthWallet: () => ethers.HDNodeWallet | null | string;
   updateBalance: (token: keyof TokenBalance, amount: number) => void;
+  updateBalances: (balances: Partial<TokenBalance>) => void; // Batch update balances
   getBalance: (token: keyof TokenBalance) => number;
   addTransaction: (transaction: Omit<Transaction, "id" | "timestamp">) => void;
+  addTransactions: (transactions: Omit<Transaction, "id" | "timestamp">[]) => void; // Batch add transactions
   getTransactions: (token?: keyof TokenBalance) => Transaction[];
   clearError: () => void;
   setIsLoading: (loading: boolean) => void;
 }
+
+// Create a cache for keypairs to avoid recreating them
+const keypairCache = new Map<string, Keypair>();
 
 const useWalletStore = create<WalletStore>()(
   persist(
@@ -72,17 +78,23 @@ const useWalletStore = create<WalletStore>()(
       transactions: [],
       error: null,
       isLoading: false,
+      lastUpdated: Date.now(),
 
       generateSolWallet: async () => {
         try {
           set({ isLoading: true, error: null });
           const wallet = web3.Keypair.generate();
           const privateKey = Buffer.from(wallet.secretKey).toString("base64");
+          
+          // Store in cache
+          keypairCache.set(privateKey, wallet);
+          
           set({
             solWallet: wallet,
             solWalletAddress: wallet.publicKey.toBase58(),
             solPrivateKey: privateKey,
             isLoading: false,
+            lastUpdated: Date.now(),
           });
         } catch (error) {
           console.error("Error generating Solana wallet:", error);
@@ -105,6 +117,7 @@ const useWalletStore = create<WalletStore>()(
             ethWalletAddress: wallet.address,
             privateKey: wallet.privateKey,
             isLoading: false,
+            lastUpdated: Date.now(),
           });
         } catch (error) {
           console.error("Error generating Ethereum wallet:", error);
@@ -127,6 +140,7 @@ const useWalletStore = create<WalletStore>()(
             ...get().balances,
             sol: 0,
           },
+          lastUpdated: Date.now(),
         }),
 
       clearEthWallet: () =>
@@ -138,6 +152,7 @@ const useWalletStore = create<WalletStore>()(
             ...get().balances,
             eth: 0,
           },
+          lastUpdated: Date.now(),
         }),
 
       switchChain: (chain) => set({ currentChain: chain }),
@@ -147,9 +162,17 @@ const useWalletStore = create<WalletStore>()(
         if (!solPrivateKey) return null;
 
         try {
-          return web3.Keypair.fromSecretKey(
+          // Check cache first
+          if (keypairCache.has(solPrivateKey)) {
+            return keypairCache.get(solPrivateKey)!;
+          }
+          
+          // Otherwise create and cache
+          const keypair = web3.Keypair.fromSecretKey(
             Buffer.from(solPrivateKey, "base64")
           );
+          keypairCache.set(solPrivateKey, keypair);
+          return keypair;
         } catch (error) {
           console.error("Error creating Solana keypair:", error);
           set({ error: "Invalid Solana private key" });
@@ -169,6 +192,17 @@ const useWalletStore = create<WalletStore>()(
             ...state.balances,
             [token]: amount,
           },
+          lastUpdated: Date.now(),
+        }));
+      },
+      
+      updateBalances: (balances) => {
+        set((state) => ({
+          balances: {
+            ...state.balances,
+            ...balances,
+          },
+          lastUpdated: Date.now(),
         }));
       },
 
@@ -185,6 +219,21 @@ const useWalletStore = create<WalletStore>()(
 
         set((state) => ({
           transactions: [newTransaction, ...state.transactions].slice(0, 50), // Keep last 50 transactions
+          lastUpdated: Date.now(),
+        }));
+      },
+      
+      addTransactions: (transactions) => {
+        const timestamp = Date.now();
+        const newTransactions: Transaction[] = transactions.map(tx => ({
+          ...tx,
+          id: Math.random().toString(36).substring(2, 15),
+          timestamp,
+        }));
+        
+        set((state) => ({
+          transactions: [...newTransactions, ...state.transactions].slice(0, 100), // Keep last 100 transactions
+          lastUpdated: timestamp,
         }));
       },
 
@@ -209,6 +258,7 @@ const useWalletStore = create<WalletStore>()(
         currentChain: state.currentChain,
         balances: state.balances,
         transactions: state.transactions,
+        lastUpdated: state.lastUpdated,
       }),
     }
   )

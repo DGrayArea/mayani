@@ -6,7 +6,7 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
 import { QueryClientProvider, focusManager } from "@tanstack/react-query";
 import { queryClient } from "@/utils/query";
-import { AppStateStatus, Platform, StyleSheet, View } from "react-native";
+import { AppStateStatus, Platform, StyleSheet, View, ActivityIndicator, Text } from "react-native";
 import { useAppState } from "@/hooks/useAppState";
 import { useOnlineManager } from "@/hooks/useOnlineManager";
 import { StatusBar } from "expo-status-bar";
@@ -18,6 +18,7 @@ import { useFonts } from "expo-font";
 import { prefetchAppData } from "@/utils/prefetching";
 import NetInfo from "@react-native-community/netinfo";
 import * as Notifications from "expo-notifications";
+import { LinearGradient } from "expo-linear-gradient";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -42,6 +43,7 @@ function onAppStateChange(status: AppStateStatus) {
 export default function RootLayout() {
   const [appIsReady, setAppIsReady] = useState(false);
   const [initialDataFetched, setInitialDataFetched] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState("Initializing...");
   const [fontsLoaded, fontError] = useFonts({
     SpaceMono: require("../assets/fonts/SpaceMono-Regular.ttf"),
   });
@@ -51,6 +53,7 @@ export default function RootLayout() {
     async function prepare() {
       try {
         // Pre-load fonts, make any API calls you need to do here
+        setLoadingMessage("Loading resources...");
         await Promise.all([]);
       } catch (e) {
         console.warn(e);
@@ -84,10 +87,12 @@ export default function RootLayout() {
       if (appIsReady && fontsLoaded) {
         try {
           // Check for internet connectivity before prefetching
+          setLoadingMessage("Checking connection...");
           const netInfo = await NetInfo.fetch();
 
           if (netInfo.isConnected) {
             // Hide splash screen before prefetching to show the UI faster
+            setLoadingMessage("Loading market data...");
             await SplashScreen.hideAsync().catch(() => {
               /* ignore error */
             });
@@ -96,9 +101,11 @@ export default function RootLayout() {
             await prefetchAppData(queryClient);
           } else {
             console.warn("No internet connection, skipping prefetch");
+            setLoadingMessage("No internet connection");
           }
         } catch (e) {
           console.warn("Error prefetching data:", e);
+          setLoadingMessage("Error loading data");
         } finally {
           setInitialDataFetched(true);
 
@@ -117,7 +124,15 @@ export default function RootLayout() {
   useAppState(onAppStateChange);
 
   if (!appIsReady || !fontsLoaded) {
-    return null;
+    return (
+      <LinearGradient
+        colors={["#1A0E26", "#2A1240"]}
+        style={styles.loadingContainer}
+      >
+        <ActivityIndicator size="large" color="#8C5BE6" />
+        <Text style={styles.loadingText}>{loadingMessage}</Text>
+      </LinearGradient>
+    );
   }
 
   if (fontError) {
@@ -160,5 +175,16 @@ const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
     backgroundColor: "#1A0E26", // Match the LinearGradient background
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: '#E0E0E0',
+    marginTop: 16,
+    fontSize: 16,
+    fontWeight: '500',
   },
 });
