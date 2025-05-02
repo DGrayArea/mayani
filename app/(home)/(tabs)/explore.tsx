@@ -1191,34 +1191,6 @@ const Explore = () => {
               <FilterModal />
             </View>
 
-            <View style={styles.sectionWrapper}>
-              <View style={styles.sectionTitleContainer}>
-                <FontAwesome
-                  name="star"
-                  size={18}
-                  color="#F9A825"
-                  style={styles.sectionIcon}
-                />
-                <Text style={styles.sectionTitle}>Spotlight</Text>
-              </View>
-
-              <FlatList
-                data={filteredTopGainers}
-                renderItem={TopGainer}
-                keyExtractor={(item) => item.attributes.address}
-                horizontal={true}
-                scrollEnabled={true}
-                showsHorizontalScrollIndicator={false}
-                nestedScrollEnabled={true}
-                contentContainerStyle={{
-                  paddingHorizontal: 2,
-                  paddingVertical: 8,
-                }}
-                style={{ flexGrow: 0, width: "100%" }}
-              />
-            </View>
-
-            <View style={styles.sectionWrapper}>
               <View style={styles.sectionTitleContainer}>
                 <FontAwesome
                   name="arrow-up"

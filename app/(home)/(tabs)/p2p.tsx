@@ -13,89 +13,52 @@ import {
   Dimensions,
   Platform,
   StatusBar,
+  FlatList,
+  RefreshControl,
+  Alert,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import images from "@/constants/images";
 import useWalletStore from "@/hooks/walletStore";
+import { useQuery } from "@tanstack/react-query";
+import { fetchTrending } from "@/utils/query";
+import { TrendingToken2 } from "@/types";
+import { Ionicons, FontAwesome } from "@expo/vector-icons";
+import { LoadingIndicator } from "@/components/LoadingIndicator";
+import { formatNumber, formatPrice } from "@/utils/numbers";
+import useFilterStore from "@/hooks/filterStore";
+import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
+import { useRefreshByUser } from "@/hooks/useRefreshByUser";
+import { router } from "expo-router";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
-const Presale = () => {
-  const [activeTab, setActiveTab] = useState("upcoming");
-  const [selected, setSelected] = useState(null);
+const SpotlightTokens = () => {
+  const [activeTab, setActiveTab] = useState("trending");
+  const [selectedToken, setSelectedToken] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  const [createModalVisible, setCreateModalVisible] = useState(false);
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
   
-  // Create presale form states
-  const [formData, setFormData] = useState({
-    name: "",
-    symbol: "",
-    description: "",
-    price: "",
-    saleStart: "",
-    saleEnd: "",
-    hardCap: "",
-    softCap: ""
+  const { currentChain } = useWalletStore();
+  const { filters } = useFilterStore();
+
+  // Fetch trending tokens data
+  const { isPending, error, data, refetch } = useQuery<
+    { data: TrendingToken2[] } | undefined
+  >({
+    queryKey: ["trending"],
+    queryFn: fetchTrending,
+    refetchInterval: 20000,
+    refetchIntervalInBackground: false,
   });
   
-  const { currentChain } = useWalletStore();
-
-  const upcomingProjects = [
-    {
-      id: "1",
-      name: "AI Oracle Network",
-      symbol: "AION",
-      image: "https://via.placeholder.com/64",
-      description: "Decentralized AI-powered oracle solution for smart contracts",
-      price: 0.025,
-      startDate: "2023-10-05",
-      category: "AI & Oracle",
-      chainSupport: ["ETH", "SOL"],
-      whitelistDeadline: "2023-10-01"
-    },
-    {
-      id: "2",
-      name: "Biodiversity NFT",
-      symbol: "BNFT",
-      image: "https://via.placeholder.com/64",
-      description: "NFT collection funding rainforest preservation",
-      price: 0.03,
-      startDate: "2023-09-28",
-      category: "NFT & Impact",
-      chainSupport: ["ETH"],
-      whitelistDeadline: "2023-09-25"
-    },
-    {
-      id: "3",
-      name: "MetaVerse Lands",
-      symbol: "MVL",
-      image: "https://via.placeholder.com/64",
-      description: "Virtual real estate in the expanded metaverse ecosystem",
-      price: 0.015,
-      startDate: "2023-11-15",
-      category: "Metaverse",
-      chainSupport: ["ETH"],
-      whitelistDeadline: "2023-11-10"
-    },
-    {
-      id: "4",
-      name: "SolRacer",
-      symbol: "RACE",
-      image: "https://via.placeholder.com/64",
-      description: "Play-to-earn racing game on Solana with NFT vehicles",
-      price: 0.008,
-      startDate: "2023-10-30",
-      category: "Gaming",
-      chainSupport: ["SOL"],
-      whitelistDeadline: "2023-10-25"
-    }
-  ];
+  const { isRefetchingByUser, refetchByUser } = useRefreshByUser(refetch);
+  useRefreshOnFocus(refetch);
 
   const handleBuyToken = () => {
     if (!amount || isNaN(parseFloat(amount)) || parseFloat(amount) <= 0) {
-      alert("Please enter a valid amount");
+      Alert.alert("Error", "Please enter a valid amount");
       return;
     }
 
@@ -106,399 +69,323 @@ const Presale = () => {
       setLoading(false);
       setModalVisible(false);
       setAmount("");
-      alert("This feature will be available in upcoming versions. Stay tuned!");
+      Alert.alert("Transaction", "This feature will be available in upcoming versions. Stay tuned!");
     }, 1500);
   };
 
-  const handleJoinWhitelist = (project) => {
-    alert(`Whitelist registration for ${project.name} will be available in upcoming versions!`);
-  };
-  
-  const handleCreatePresale = () => {
-    // Validate the form
-    if (!formData.name || !formData.symbol || !formData.price) {
-      alert("Please fill in all required fields");
-      return;
-    }
-
-    setLoading(true);
+  const filteredTokens = React.useMemo(() => {
+    if (!data || !data.data) return [];
     
-    // Simulate API call
-    setTimeout(() => {
-      setLoading(false);
-      setCreateModalVisible(false);
-      setFormData({
-        name: "",
-        symbol: "",
-        description: "",
-      price: "",
-        saleStart: "",
-        saleEnd: "",
-        hardCap: "",
-        softCap: ""
-      });
-      alert("Presale creation will be available in upcoming versions. Stay tuned!");
-    }, 1500);
-  };
+    let filtered = [...data.data];
+    
+    // Apply chain filter
+    if (activeTab === "sol") {
+      filtered = filtered.filter(token => 
+        token.relationships.base_token.data.id.startsWith("solana_")
+      );
+    } else if (activeTab === "eth") {
+      filtered = filtered.filter(token => 
+        token.relationships.base_token.data.id.startsWith("eth_")
+      );
+    }
+    
+    // Sort by market cap (largest first)
+    filtered = filtered.sort((a, b) => {
+      const marketCapA = parseFloat(a.attributes.fdv_usd);
+      const marketCapB = parseFloat(b.attributes.fdv_usd);
+      return marketCapB - marketCapA;
+    });
+    
+    return filtered;
+  }, [data, activeTab]);
 
-  const renderProjectCard = (project) => {
-    const isSupported = project.chainSupport.includes(currentChain);
+  const renderTokenCard = (item) => {
+    const isEth = item.relationships.base_token.data.id.startsWith("eth_");
+    const tokenAddress = item.relationships.base_token.data.id.startsWith("solana_")
+      ? item.relationships.base_token.data.id.slice(7)
+      : item.relationships.base_token.data.id.startsWith("eth_")
+        ? item.relationships.base_token.data.id.slice(4)
+        : item.relationships.base_token.data.id;
+    
+    const tokenName = isEth
+      ? item.tokenInfo?.tokenName
+      : item.tokenInfo?.data?.name || "";
+    
+    const tokenImage = isEth
+      ? item.tokenInfo?.tokenLogo
+      : item.tokenInfo?.type === "jupiter"
+        ? item.tokenInfo?.data?.logoURI
+        : item.tokenInfo?.data?.logo || "/api/image/24";
+    
+    const marketCap = formatNumber(Number(item.attributes.fdv_usd));
+    const price = formatPrice(Number(item.attributes.base_token_price_usd));
+    const priceChange = item.attributes.price_change_percentage.h24;
+    const isPriceUp = !priceChange.includes("-");
     
     return (
-    <TouchableOpacity
-        key={project.id}
-        style={[
-          styles.projectCard,
-          !isSupported && styles.unsupportedProjectCard
-        ]}
-        disabled={!isSupported}
+      <TouchableOpacity
+        style={styles.tokenCard}
+        onPress={() => {
+          setSelectedToken(item);
+          setModalVisible(true);
+        }}
       >
-        <View style={styles.projectHeader}>
+        <View style={styles.tokenHeader}>
           <Image
-            source={{ uri: project.image }}
-            style={styles.projectImage}
+            source={{ uri: tokenImage }}
+            style={styles.tokenImage}
           />
-          <View style={styles.projectTitleContainer}>
-            <Text style={styles.projectName}>{project.name}</Text>
+          <View style={styles.tokenTitleContainer}>
+            <Text style={styles.tokenName}>{tokenName}</Text>
             <View style={styles.symbolChainContainer}>
-              <Text style={styles.projectSymbol}>${project.symbol}</Text>
+              <Text style={styles.tokenSymbol}>#{tokenAddress.substring(0, 6)}...</Text>
               <View style={styles.chainSupportContainer}>
-                {project.chainSupport.map(chain => (
-                  <Image
-                    key={chain}
-                    source={chain === "ETH" ? images.eth1 : images.sol1}
-                    style={styles.chainIcon}
-                  />
-                ))}
+                <Image
+                  source={isEth ? images.eth1 : images.sol1}
+                  style={styles.chainIcon}
+                />
               </View>
-        </View>
+            </View>
           </View>
         </View>
         
-        <Text style={styles.projectDescription} numberOfLines={2}>
-          {project.description}
-          </Text>
-        
-        <View style={styles.presaleInfo}>
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Price</Text>
-            <Text style={styles.infoValue}>${project.price}</Text>
+        <View style={styles.tokenMetrics}>
+          <View style={styles.metric}>
+            <Text style={styles.metricLabel}>Price</Text>
+            <Text style={styles.metricValue}>${price}</Text>
+          </View>
+          
+          <View style={styles.metric}>
+            <Text style={styles.metricLabel}>24h Change</Text>
+            <Text style={[styles.metricValue, isPriceUp ? styles.positive : styles.negative]}>
+              {priceChange}%
+            </Text>
+          </View>
+          
+          <View style={styles.metric}>
+            <Text style={styles.metricLabel}>Market Cap</Text>
+            <Text style={styles.metricValue}>${marketCap}</Text>
+          </View>
         </View>
-          <View style={styles.infoItem}>
-            <Text style={styles.infoLabel}>Starts</Text>
-            <Text style={styles.infoValue}>{project.startDate}</Text>
-      </View>
-        </View>
         
-            <TouchableOpacity
-              style={[
-            styles.whitelistButton,
-            !isSupported && styles.disabledButton
-          ]}
-          onPress={() => isSupported && handleJoinWhitelist(project)}
-          disabled={!isSupported}
+        <TouchableOpacity
+          style={styles.buyButton}
+          onPress={() => {
+            setSelectedToken(item);
+            setModalVisible(true);
+          }}
         >
-          <Text style={styles.whitelistButtonText}>Join Whitelist</Text>
+          <Text style={styles.buyButtonText}>Buy Token</Text>
         </TouchableOpacity>
-            </TouchableOpacity>
+      </TouchableOpacity>
     );
   };
 
-  const renderCreateButton = () => (
-            <TouchableOpacity
-      style={styles.createPresaleButton}
-      onPress={() => setCreateModalVisible(true)}
-    >
-      <Text style={styles.createPresaleButtonText}>Create New Presale</Text>
-            </TouchableOpacity>
-  );
-  
-  const renderCreatePresaleView = () => (
-    <View style={styles.createContainer}>
-      <Text style={styles.createDescription}>
-        Launch your own token presale on Ape It Wallet. Create a presale to raise funds for your project and build your community.
-      </Text>
+  const renderTabButtons = () => (
+    <View style={styles.tabContainer}>
+      <TouchableOpacity
+        style={[styles.tabButton, activeTab === "trending" && styles.activeTab]}
+        onPress={() => setActiveTab("trending")}
+      >
+        <Text style={[styles.tabText, activeTab === "trending" && styles.activeTabText]}>
+          All Tokens
+        </Text>
+      </TouchableOpacity>
       
-      {renderCreateButton()}
+      <TouchableOpacity
+        style={[styles.tabButton, activeTab === "sol" && styles.activeTab]}
+        onPress={() => setActiveTab("sol")}
+      >
+        <Text style={[styles.tabText, activeTab === "sol" && styles.activeTabText]}>
+          Solana
+        </Text>
+      </TouchableOpacity>
       
-      <View style={styles.createInfoContainer}>
-        <View style={styles.createInfoItem}>
-          <Text style={styles.createInfoTitle}>Community-Powered</Text>
-          <Text style={styles.createInfoText}>Connect directly with your investors</Text>
-        </View>
-        
-        <View style={styles.createInfoItem}>
-          <Text style={styles.createInfoTitle}>Secure Fundraising</Text>
-          <Text style={styles.createInfoText}>Smart contracts ensure fair distribution</Text>
-        </View>
-        
-        <View style={styles.createInfoItem}>
-          <Text style={styles.createInfoTitle}>Cross-Chain</Text>
-          <Text style={styles.createInfoText}>Launch on Ethereum or Solana</Text>
-        </View>
-      </View>
+      <TouchableOpacity
+        style={[styles.tabButton, activeTab === "eth" && styles.activeTab]}
+        onPress={() => setActiveTab("eth")}
+      >
+        <Text style={[styles.tabText, activeTab === "eth" && styles.activeTabText]}>
+          Ethereum
+        </Text>
+      </TouchableOpacity>
     </View>
   );
 
-  return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.title}>Token Presale</Text>
-        </View>
-        
-        <LinearGradient
-          colors={['#8C5BE6', '#5A2DA0']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.banner}
-        >
-          <Text style={styles.bannerTitle}>Ape It Wallet Presales</Text>
-          <Text style={styles.bannerDescription}>
-            Get early access to promising crypto projects before they launch
-          </Text>
-        </LinearGradient>
-        
-        <View style={styles.tabContainer}>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === "upcoming" && styles.activeTab]}
-            onPress={() => setActiveTab("upcoming")}
-          >
-            <Text style={[styles.tabText, activeTab === "upcoming" && styles.activeTabText]}>
-              Upcoming
-            </Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.tab, activeTab === "create" && styles.activeTab]}
-            onPress={() => setActiveTab("create")}
-          >
-            <Text style={[styles.tabText, activeTab === "create" && styles.activeTabText]}>
-              Create Presale
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.projectsContainer}>
-          {activeTab === "upcoming" && upcomingProjects.map(project => renderProjectCard(project))}
-          {activeTab === "create" && renderCreatePresaleView()}
-        </View>
-      </ScrollView>
-      
-      {/* Create Presale Modal */}
-      <Modal
-        visible={createModalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setCreateModalVisible(false)}
-      >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Create Presale</Text>
+  const renderBuyModal = () => (
+    <Modal
+      visible={modalVisible}
+      transparent={true}
+      animationType="slide"
+      onRequestClose={() => setModalVisible(false)}
+    >
+      <View style={styles.modalOverlay}>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalHeader}>
+            <Text style={styles.modalTitle}>Buy Token</Text>
+            <TouchableOpacity
+              style={styles.closeButton}
+              onPress={() => setModalVisible(false)}
+            >
+              <Text style={styles.closeButtonText}>✕</Text>
+            </TouchableOpacity>
+          </View>
+          
+          {selectedToken && (
+            <View style={styles.modalContent}>
+              <View style={styles.tokenInfoContainer}>
+                <Image
+                  source={{ 
+                    uri: selectedToken.relationships.base_token.data.id.startsWith("eth_")
+                      ? selectedToken.tokenInfo?.tokenLogo
+                      : selectedToken.tokenInfo?.type === "jupiter"
+                        ? selectedToken.tokenInfo?.data?.logoURI
+                        : selectedToken.tokenInfo?.data?.logo || "/api/image/24"
+                  }}
+                  style={styles.modalTokenImage}
+                />
+                <View>
+                  <Text style={styles.modalTokenName}>
+                    {selectedToken.relationships.base_token.data.id.startsWith("eth_")
+                      ? selectedToken.tokenInfo?.tokenName
+                      : selectedToken.tokenInfo?.data?.name || ""}
+                  </Text>
+                  <Text style={styles.modalTokenPrice}>
+                    ${formatPrice(Number(selectedToken.attributes.base_token_price_usd))}
+                  </Text>
+                </View>
+              </View>
+              
+              <Text style={styles.inputLabel}>Amount to Buy</Text>
+              <View style={styles.inputContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Enter amount"
+                  placeholderTextColor="#9B86B3"
+                  keyboardType="numeric"
+                  value={amount}
+                  onChangeText={setAmount}
+                />
+              </View>
+              
               <TouchableOpacity
-                style={styles.closeButton}
-                onPress={() => setCreateModalVisible(false)}
+                style={[styles.buyButtonLarge, loading && styles.loadingButton]}
+                onPress={handleBuyToken}
+                disabled={loading}
               >
-                <Text style={styles.closeButtonText}>✕</Text>
+                <Text style={styles.buyButtonLargeText}>
+                  {loading ? "Processing..." : "Buy Now"}
+                </Text>
               </TouchableOpacity>
             </View>
-            
-            <ScrollView style={styles.modalContent}>
-              <Text style={styles.inputLabel}>Token Name*</Text>
-              <TextInput
-                style={styles.amountInput}
-                placeholder="Enter token name"
-                value={formData.name}
-                onChangeText={(text) => setFormData({...formData, name: text})}
-                placeholderTextColor="#9B86B3"
-              />
-              
-              <Text style={styles.inputLabel}>Token Symbol*</Text>
-              <TextInput
-                style={styles.amountInput}
-                placeholder="Enter token symbol (e.g., BTC)"
-                value={formData.symbol}
-                onChangeText={(text) => setFormData({...formData, symbol: text})}
-                placeholderTextColor="#9B86B3"
-              />
-              
-              <Text style={styles.inputLabel}>Description</Text>
-              <TextInput
-                style={[styles.amountInput, {height: 80, textAlignVertical: 'top'}]}
-                placeholder="Enter token description"
-                value={formData.description}
-                onChangeText={(text) => setFormData({...formData, description: text})}
-                placeholderTextColor="#9B86B3"
-                multiline={true}
-                numberOfLines={3}
-              />
-              
-              <Text style={styles.inputLabel}>Token Price (USD)*</Text>
-              <TextInput
-                style={styles.amountInput}
-                placeholder="Enter token price"
-                value={formData.price}
-                onChangeText={(text) => setFormData({...formData, price: text})}
-                placeholderTextColor="#9B86B3"
-                keyboardType="numeric"
-              />
-              
-              <View style={styles.modalButtonsContainer}>
-            <TouchableOpacity
-                  style={[
-                    styles.createButton,
-                    loading && styles.loadingButton
-                  ]}
-                  onPress={handleCreatePresale}
-                  disabled={loading}
-                >
-                  <Text style={styles.createButtonText}>
-                    {loading ? "Processing..." : "Create Presale"}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              
-              <Text style={styles.noticeText}>
-                * Required fields. More features will be available in upcoming versions.
-              </Text>
-            </ScrollView>
+          )}
+        </View>
+      </View>
+    </Modal>
+  );
+
+  if (isPending || isRefetchingByUser) {
+    return <LoadingIndicator />;
+  }
+
+  return (
+    <SafeAreaView style={styles.safeArea}>
+      <LinearGradient
+        colors={["#1A0E26", "#2A1240"]}
+        style={styles.gradientBackground}
+      >
+        <View style={styles.headerContainer}>
+          <Text style={styles.header}>Spotlight Tokens</Text>
+          <View style={styles.headerButtons}>
+            <TouchableOpacity 
+              style={styles.iconButton}
+              onPress={() => router.push("/(home)/search")}
+            >
+              <Ionicons name="search-outline" size={22} color="#F0F0F0" />
+            </TouchableOpacity>
+            <TouchableOpacity 
+              style={styles.iconButton}
+            >
+              <Ionicons name="notifications-outline" size={22} color="#F0F0F0" />
+            </TouchableOpacity>
           </View>
         </View>
-      </Modal>
-      
-      {/* Join Whitelist Modal */}
-      {selected && (
-        <Modal
-          visible={modalVisible}
-          transparent={true}
-          animationType="slide"
-          onRequestClose={() => setModalVisible(false)}
-        >
-          <View style={styles.modalOverlay}>
-            <View style={styles.modalContainer}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Join Whitelist: {selected.symbol}</Text>
-                <TouchableOpacity
-                  style={styles.closeButton}
-                  onPress={() => setModalVisible(false)}
-                >
-                  <Text style={styles.closeButtonText}>✕</Text>
-                </TouchableOpacity>
-              </View>
 
-              <View style={styles.modalContent}>
-                <View style={styles.tokenInfoContainer}>
-                  <Image
-                    source={{ uri: selected.image }}
-                    style={styles.modalTokenImage}
-                  />
-                  <View>
-                    <Text style={styles.modalTokenName}>{selected.name}</Text>
-                    <Text style={styles.modalTokenSymbol}>${selected.symbol}</Text>
-                  </View>
-                </View>
-                
-                <View style={styles.divider} />
-                
-                <View style={styles.modalInfoRow}>
-                  <Text style={styles.modalInfoLabel}>Token Price:</Text>
-                  <Text style={styles.modalInfoValue}>${selected.price}</Text>
-                </View>
-                
-                <View style={styles.modalInfoRow}>
-                  <Text style={styles.modalInfoLabel}>Sale Starts:</Text>
-                  <Text style={styles.modalInfoValue}>{selected.startDate}</Text>
-              </View>
-                
-                <View style={styles.modalInfoRow}>
-                  <Text style={styles.modalInfoLabel}>Category:</Text>
-                  <Text style={styles.modalInfoValue}>{selected.category}</Text>
-          </View>
-                
-                <View style={styles.divider} />
-                
-                <Text style={styles.modalInfoLabel}>Email Address:</Text>
-                <TextInput
-                  style={styles.amountInput}
-                  placeholder="Enter your email for updates"
-                  placeholderTextColor="#9B86B3"
-                />
-
-        <TouchableOpacity
-                  style={[
-                    styles.buyButton,
-                    loading && styles.loadingButton
-                  ]}
-                  onPress={() => handleJoinWhitelist(selected)}
-                  disabled={loading}
-                >
-                  <Text style={styles.buyButtonText}>
-                    {loading ? "Processing..." : "Join Whitelist"}
-                  </Text>
-        </TouchableOpacity>
-
-                <Text style={styles.noticeText}>
-                  You&apos;ll receive updates about this presale and be notified when it launches.
-                </Text>
-              </View>
-            </View>
-      </View>
-        </Modal>
-      )}
+        {renderTabButtons()}
+        
+        <FlatList
+          data={filteredTokens}
+          renderItem={({ item }) => renderTokenCard(item)}
+          keyExtractor={(item) => item.id}
+          contentContainerStyle={styles.tokenList}
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefetchingByUser}
+              onRefresh={refetchByUser}
+              colors={["#8C5BE6"]}
+              tintColor="#8C5BE6"
+            />
+          }
+        />
+        
+        {renderBuyModal()}
+      </LinearGradient>
     </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
-    backgroundColor: "#1A0E26",
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight : 0,
   },
-  scrollContent: {
-    paddingBottom: 20,
+  gradientBackground: {
+    flex: 1,
+    paddingHorizontal: 16,
+  },
+  headerContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 24,
+    marginTop: 8,
+  },
+  headerButtons: {
+    flexDirection: "row",
+    alignItems: "center",
   },
   header: {
-    padding: 16,
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    color: "#F0F0F0",
+    fontSize: 32,
+    fontWeight: "bold",
+    marginTop: 10,
+    fontFamily: "System",
+    letterSpacing: 0.5,
+  },
+  iconButton: {
+    backgroundColor: "rgba(140, 91, 230, 0.2)",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     alignItems: 'center',
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    color: "#E0E0E0",
-  },
-  banner: {
-    marginHorizontal: 16,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-  },
-  bannerTitle: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#FFFFFF',
-    marginBottom: 8,
-  },
-  bannerDescription: {
-    fontSize: 14,
-    color: 'rgba(255, 255, 255, 0.8)',
+    justifyContent: 'center',
+    marginLeft: 10,
+    borderWidth: 1,
+    borderColor: "rgba(140, 91, 230, 0.5)",
   },
   tabContainer: {
-    flexDirection: 'row',
-    marginHorizontal: 16,
-    marginBottom: 16,
-    backgroundColor: '#2E1A40',
-    borderRadius: 12,
-    padding: 4,
+    flexDirection: "row",
+    marginBottom: 24,
   },
-  tab: {
+  tabButton: {
     flex: 1,
     paddingVertical: 12,
     alignItems: 'center',
     borderRadius: 10,
+    backgroundColor: "rgba(46, 26, 64, 0.8)",
+    marginHorizontal: 4,
+    borderWidth: 1,
+    borderColor: "rgba(140, 91, 230, 0.5)",
   },
   activeTab: {
     backgroundColor: '#5A2DA0',
@@ -511,36 +398,38 @@ const styles = StyleSheet.create({
   activeTabText: {
     color: '#FFFFFF',
   },
-  projectsContainer: {
-    paddingHorizontal: 16,
+  tokenList: {
+    paddingBottom: 20,
   },
-  projectCard: {
+  tokenCard: {
     backgroundColor: '#2E1A40',
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
     borderWidth: 1,
     borderColor: 'rgba(140, 91, 230, 0.3)',
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.2,
+    shadowRadius: 5,
+    elevation: 5,
   },
-  unsupportedProjectCard: {
-    opacity: 0.7,
-  },
-  projectHeader: {
+  tokenHeader: {
     flexDirection: 'row',
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  projectImage: {
+  tokenImage: {
     width: 48,
     height: 48,
     borderRadius: 24,
     marginRight: 12,
     backgroundColor: '#1A0E26',
   },
-  projectTitleContainer: {
+  tokenTitleContainer: {
     flex: 1,
     justifyContent: 'center',
   },
-  projectName: {
+  tokenName: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#E0E0E0',
@@ -551,7 +440,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
-  projectSymbol: {
+  tokenSymbol: {
     fontSize: 14,
     color: '#9B86B3',
   },
@@ -563,85 +452,39 @@ const styles = StyleSheet.create({
     height: 16,
     marginLeft: 4,
   },
-  projectDescription: {
-    fontSize: 14,
-    color: '#A9A9A9',
-    marginBottom: 16,
-    lineHeight: 20,
-  },
-  presaleInfo: {
+  tokenMetrics: {
     flexDirection: 'row',
+    marginBottom: 16,
     justifyContent: 'space-between',
-    marginBottom: 12,
   },
-  infoItem: {
+  metric: {
     flex: 1,
   },
-  infoLabel: {
+  metricLabel: {
     fontSize: 12,
     color: '#9B86B3',
     marginBottom: 4,
   },
-  infoValue: {
+  metricValue: {
     fontSize: 16,
     fontWeight: 'bold',
     color: '#E0E0E0',
   },
-  progressContainer: {
-    marginBottom: 16,
+  positive: {
+    color: '#4CAF50',
   },
-  progressBarBackground: {
-    height: 8,
-    backgroundColor: 'rgba(140, 91, 230, 0.2)',
-    borderRadius: 4,
-    overflow: 'hidden',
+  negative: {
+    color: '#FF5252',
   },
-  progressBar: {
-    height: '100%',
-    backgroundColor: '#8C5BE6',
-  },
-  progressText: {
-    fontSize: 12,
-    color: '#9B86B3',
-    marginTop: 4,
-    textAlign: 'right',
-  },
-  actionButton: {
+  buyButton: {
     backgroundColor: '#8C5BE6',
     paddingVertical: 12,
     borderRadius: 8,
     alignItems: 'center',
   },
-  actionButtonText: {
+  buyButtonText: {
     color: '#FFFFFF',
     fontWeight: 'bold',
-    fontSize: 16,
-  },
-  disabledButton: {
-    backgroundColor: '#5A2DA0',
-    opacity: 0.7,
-  },
-  whitelistButton: {
-    backgroundColor: '#2E1A40',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#8C5BE6',
-  },
-  whitelistButtonText: {
-    color: '#8C5BE6',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  completedButton: {
-    backgroundColor: '#2E1A40',
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  completedButtonText: {
-    color: '#9B86B3',
     fontSize: 16,
   },
   modalOverlay: {
@@ -655,6 +498,8 @@ const styles = StyleSheet.create({
     backgroundColor: '#2E1A40',
     borderRadius: 16,
     overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: 'rgba(140, 91, 230, 0.3)',
   },
   modalHeader: {
     flexDirection: 'row',
@@ -697,62 +542,39 @@ const styles = StyleSheet.create({
     backgroundColor: '#1A0E26',
   },
   modalTokenName: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#E0E0E0',
+    marginBottom: 4,
   },
-  modalTokenSymbol: {
-    fontSize: 14,
+  modalTokenPrice: {
+    fontSize: 16,
     color: '#9B86B3',
   },
-  divider: {
-    height: 1,
-    backgroundColor: 'rgba(140, 91, 230, 0.3)',
-    marginVertical: 16,
-  },
-  modalInfoRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  inputLabel: {
+    color: '#E0E0E0',
+    fontSize: 16,
     marginBottom: 8,
   },
-  modalInfoLabel: {
-    fontSize: 14,
-    color: '#9B86B3',
-  },
-  modalInfoValue: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#E0E0E0',
-  },
-  amountInput: {
-    backgroundColor: 'rgba(26, 14, 38, 0.7)',
+  inputContainer: {
+    backgroundColor: 'rgba(26, 14, 38, 0.6)',
     borderRadius: 8,
-    padding: 12,
-    marginTop: 8,
-    marginBottom: 16,
-    color: '#E0E0E0',
     borderWidth: 1,
     borderColor: 'rgba(140, 91, 230, 0.3)',
-  },
-  modalCalculation: {
-    backgroundColor: 'rgba(26, 14, 38, 0.7)',
-    padding: 12,
-    borderRadius: 8,
     marginBottom: 16,
   },
-  calculationText: {
+  input: {
     color: '#E0E0E0',
+    padding: 12,
     fontSize: 16,
-    textAlign: 'center',
   },
-  buyButton: {
+  buyButtonLarge: {
     backgroundColor: '#8C5BE6',
     paddingVertical: 14,
     borderRadius: 8,
     alignItems: 'center',
-    marginBottom: 12,
   },
-  buyButtonText: {
+  buyButtonLargeText: {
     color: '#FFFFFF',
     fontWeight: 'bold',
     fontSize: 16,
@@ -760,81 +582,7 @@ const styles = StyleSheet.create({
   loadingButton: {
     opacity: 0.7,
   },
-  noticeText: {
-    fontSize: 12,
-    color: '#9B86B3',
-    textAlign: 'center',
-    fontStyle: 'italic',
-  },
-  createPresaleButton: {
-    backgroundColor: '#8C5BE6',
-    paddingVertical: 16,
-    paddingHorizontal: 20,
-    borderRadius: 12,
-    alignItems: 'center',
-    marginVertical: 24,
-  },
-  createPresaleButtonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    fontSize: 18,
-  },
-  createContainer: {
-    backgroundColor: '#2E1A40',
-    borderRadius: 16,
-    padding: 16,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: 'rgba(140, 91, 230, 0.3)',
-  },
-  createDescription: {
-    fontSize: 16,
-    color: '#E0E0E0',
-    lineHeight: 24,
-    marginBottom: 16,
-    textAlign: 'center',
-  },
-  createInfoContainer: {
-    marginTop: 20,
-  },
-  createInfoItem: {
-    marginBottom: 16,
-    padding: 12,
-    backgroundColor: 'rgba(26, 14, 38, 0.7)',
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: 'rgba(140, 91, 230, 0.2)',
-  },
-  createInfoTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#E0E0E0',
-    marginBottom: 4,
-  },
-  createInfoText: {
-    fontSize: 14,
-    color: '#9B86B3',
-  },
-  createButton: {
-    backgroundColor: '#8C5BE6',
-    paddingVertical: 14,
-    borderRadius: 8,
-    alignItems: 'center',
-    marginBottom: 12,
-  },
-  createButtonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
-    fontSize: 16,
-  },
-  modalButtonsContainer: {
-    marginVertical: 8,
-  },
-  inputLabel: {
-    fontSize: 14,
-    color: '#9B86B3',
-    marginBottom: 4,
-  }
 });
 
-export default Presale;
+export default SpotlightTokens;
+
