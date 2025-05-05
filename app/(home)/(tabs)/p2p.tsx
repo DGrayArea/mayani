@@ -116,7 +116,7 @@ const SpotlightTokens = () => {
           <MaterialIcons name="error-outline" size={50} color="#FF5252" />
           <Text style={styles.emptyStateTitle}>Connection Error</Text>
           <Text style={styles.emptyStateMessage}>
-            We couldn't fetch the latest token data. Please check your internet connection and try again.
+            We couldn&apos;t fetch the latest token data. Please check your internet connection and try again.
           </Text>
           <TouchableOpacity style={styles.retryButton} onPress={refetch}>
             <Text style={styles.retryButtonText}>Retry</Text>
@@ -176,11 +176,13 @@ const SpotlightTokens = () => {
         activeOpacity={0.7}
       >
         <View style={styles.tokenHeader}>
-          <Image
-            source={{ uri: tokenImage }}
-            style={styles.tokenImage}
-            defaultSource={require('@/assets/images/token-placeholder.png')}
-          />
+          <View style={styles.tokenImageContainer}>
+            <Image
+              source={{ uri: tokenImage }}
+              style={styles.tokenImage}
+              defaultSource={require('@/assets/images/token-placeholder.png')}
+            />
+          </View>
           <View style={styles.tokenTitleContainer}>
             <Text style={styles.tokenName}>{tokenName}</Text>
             <View style={styles.symbolChainContainer}>
@@ -353,7 +355,14 @@ const SpotlightTokens = () => {
       );
     }
     
-    return null;
+    return (
+      <View style={styles.spotlightHeaderContainer}>
+        <Text style={styles.spotlightTitle}>Featured Tokens</Text>
+        <Text style={styles.spotlightDescription}>
+          Discover trending tokens with high potential and significant market presence
+        </Text>
+      </View>
+    );
   }, [isPending, isRefetchingByUser]);
 
   return (
@@ -363,7 +372,7 @@ const SpotlightTokens = () => {
         style={styles.gradientBackground}
       >
         <View style={styles.headerContainer}>
-          <Text style={styles.header}>Spotlight Tokens</Text>
+          <Text style={styles.header}>Spotlight</Text>
           <View style={styles.headerButtons}>
             <TouchableOpacity 
               style={styles.iconButton}
@@ -413,14 +422,15 @@ const styles = StyleSheet.create({
   },
   gradientBackground: {
     flex: 1,
-    paddingHorizontal: 16,
+    paddingHorizontal: 0,
   },
   headerContainer: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: 24,
-    marginTop: 8,
+    marginBottom: 20,
+    paddingHorizontal: 16,
+    paddingTop: 10,
   },
   headerButtons: {
     flexDirection: "row",
@@ -428,9 +438,8 @@ const styles = StyleSheet.create({
   },
   header: {
     color: "#F0F0F0",
-    fontSize: 32,
+    fontSize: 34,
     fontWeight: "bold",
-    marginTop: 10,
     fontFamily: "System",
     letterSpacing: 0.5,
   },
@@ -447,7 +456,8 @@ const styles = StyleSheet.create({
   },
   tabContainer: {
     flexDirection: "row",
-    marginBottom: 24,
+    marginBottom: 20,
+    paddingHorizontal: 16,
   },
   tabButton: {
     flex: 1,
@@ -478,11 +488,12 @@ const styles = StyleSheet.create({
   },
   tokenList: {
     paddingBottom: 20,
+    paddingHorizontal: 16,
   },
   tokenCard: {
     backgroundColor: '#2E1A40',
     borderRadius: 16,
-    padding: 16,
+    padding: 20,
     marginBottom: 16,
     borderWidth: 1,
     borderColor: 'rgba(140, 91, 230, 0.3)',
@@ -495,20 +506,28 @@ const styles = StyleSheet.create({
   tokenHeader: {
     flexDirection: 'row',
     marginBottom: 16,
+    alignItems: 'center',
+  },
+  tokenImageContainer: {
+    borderRadius: 30,
+    padding: 2,
+    backgroundColor: 'rgba(140, 91, 230, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(140, 91, 230, 0.3)',
   },
   tokenImage: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    marginRight: 12,
+    width: 56,
+    height: 56,
+    borderRadius: 28,
     backgroundColor: '#1A0E26',
   },
   tokenTitleContainer: {
     flex: 1,
     justifyContent: 'center',
+    marginLeft: 16,
   },
   tokenName: {
-    fontSize: 18,
+    fontSize: 20,
     fontWeight: 'bold',
     color: '#E0E0E0',
     marginBottom: 4,
@@ -519,32 +538,38 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   tokenSymbol: {
-    fontSize: 14,
+    fontSize: 15,
     color: '#9B86B3',
   },
   chainSupportContainer: {
     flexDirection: 'row',
   },
   chainIcon: {
-    width: 16,
-    height: 16,
+    width: 18,
+    height: 18,
     marginLeft: 4,
   },
   tokenMetrics: {
     flexDirection: 'row',
-    marginBottom: 16,
+    marginBottom: 20,
     justifyContent: 'space-between',
+    backgroundColor: 'rgba(46, 26, 64, 0.6)',
+    borderRadius: 12,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: 'rgba(140, 91, 230, 0.2)',
   },
   metric: {
     flex: 1,
+    alignItems: 'center',
   },
   metricLabel: {
-    fontSize: 12,
+    fontSize: 13,
     color: '#9B86B3',
-    marginBottom: 4,
+    marginBottom: 6,
   },
   metricValue: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
     color: '#E0E0E0',
   },
@@ -556,8 +581,8 @@ const styles = StyleSheet.create({
   },
   buyButton: {
     backgroundColor: '#8C5BE6',
-    paddingVertical: 12,
-    borderRadius: 8,
+    paddingVertical: 14,
+    borderRadius: 12,
     alignItems: 'center',
     elevation: 3,
     shadowColor: "#000",
@@ -720,6 +745,27 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: 'bold',
     fontSize: 16,
+  },
+  spotlightHeaderContainer: {
+    marginBottom: 20,
+    backgroundColor: "rgba(46, 26, 64, 0.5)",
+    borderRadius: 16,
+    padding: 20,
+    borderWidth: 1,
+    borderColor: "rgba(140, 91, 230, 0.3)",
+  },
+  spotlightTitle: {
+    color: "#FFFFFF",
+    fontSize: 22,
+    fontWeight: "700",
+    marginBottom: 8,
+    textAlign: "center",
+  },
+  spotlightDescription: {
+    color: "#E0E0E0",
+    fontSize: 14,
+    lineHeight: 20,
+    textAlign: "center",
   },
 });
 

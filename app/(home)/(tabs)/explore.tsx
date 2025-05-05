@@ -1152,10 +1152,6 @@ const Explore = () => {
           contentContainerStyle={{ paddingBottom: 20 }}
           scrollEventThrottle={16}
           showsVerticalScrollIndicator={false}
-          // bounces={false}
-          // directionalLockEnabled={true}
-          // alwaysBounceVertical={false}
-          // keyboardShouldPersistTaps="handled"
           refreshControl={
             <RefreshControl
               refreshing={isRefetchingByUser}
@@ -1191,20 +1187,19 @@ const Explore = () => {
               <FilterModal />
             </View>
 
-              <View style={styles.sectionTitleContainer}>
-                <FontAwesome
-                  name="arrow-up"
-                  size={18}
-                  color="#4CAF50"
-                  style={styles.sectionIcon}
-                />
-                <Text style={styles.sectionTitle}>Tokens & Top Gainers</Text>
-              </View>
-
-              {mergedData.map((item) => (
-                <MergedItem key={item.attributes.address} item={item} />
-              ))}
+            <View style={styles.sectionTitleContainer}>
+              <FontAwesome
+                name="arrow-up"
+                size={18}
+                color="#4CAF50"
+                style={styles.sectionIcon}
+              />
+              <Text style={styles.sectionTitle}>Tokens & Top Gainers</Text>
             </View>
+
+            {mergedData.map((item) => (
+              <MergedItem key={item.attributes.address} item={item} />
+            ))}
           </View>
         </ScrollView>
 
