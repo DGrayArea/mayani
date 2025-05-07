@@ -39,12 +39,13 @@ import { config } from "@/lib/appwrite";
 import { Connection } from "@solana/web3.js";
 import { swapWithJupiter } from "@/utils/trade";
 import * as Notifications from "expo-notifications";
+import images from "@/constants/images";
 
 const { width } = Dimensions.get("window");
 
 // BuyModal Component to handle buying with order types
 
-const AutoScrollingTrendingBar = ({ data }: { data: TrendingToken2[] }) => {
+const AutoScrollingTrendingBar = ({ data }: { data: BirdEyeTopTokens[] }) => {
   const scrollX = useSharedValue(0);
   const [contentWidth, setContentWidth] = useState(0);
   const flatListRef = useRef<FlatList>(null);
@@ -83,17 +84,11 @@ const AutoScrollingTrendingBar = ({ data }: { data: TrendingToken2[] }) => {
     item,
     index,
   }: {
-    item: TrendingToken2;
+    item: BirdEyeTopTokens;
     index: number;
   }) => {
-    const isEth = item.relationships.base_token.data.id.startsWith("eth_");
-    const tokenAddress = item.relationships.base_token.data.id.startsWith(
-      "solana_"
-    )
-      ? item.relationships.base_token.data.id.slice(7)
-      : item.relationships.base_token.data.id.startsWith("eth_")
-        ? item.relationships.base_token.data.id.slice(4)
-        : item.relationships.base_token.data.id;
+    const isEth = false; //item.relationships.base_token.data.id.startsWith("eth_");
+    const tokenAddress = item.address;
 
     return (
       <TouchableOpacity>
@@ -109,10 +104,7 @@ const AutoScrollingTrendingBar = ({ data }: { data: TrendingToken2[] }) => {
               <Text style={styles.trendingBarIndex}>#{index + 1}</Text>
               <Image
                 source={{
-                  uri:
-                    item.tokenInfo?.type === "jupiter"
-                      ? item.tokenInfo?.data?.logoURI
-                      : item.tokenInfo?.data?.logo || "/api/image/24",
+                  uri: item.logo_uri,
                 }}
                 style={styles.trendingBarAvatar}
               />
@@ -121,17 +113,17 @@ const AutoScrollingTrendingBar = ({ data }: { data: TrendingToken2[] }) => {
                   {isEth
                     ? //@ts-ignore
                       item.tokenInfo?.tokenName
-                    : item.tokenInfo?.data?.name || ""}
+                    : item.name || ""}
                 </Text>
                 <Text
                   style={[
                     styles.trendingBarChange,
-                    item.attributes.price_change_percentage.h24.includes("-")
+                    item.price_change_1h_percent < 0
                       ? styles.negative
                       : styles.positive,
                   ]}
                 >
-                  {item.attributes.price_change_percentage.h24}%
+                  {item.price_change_1h_percent.toFixed(2)}%
                 </Text>
               </View>
             </View>
@@ -155,22 +147,25 @@ const AutoScrollingTrendingBar = ({ data }: { data: TrendingToken2[] }) => {
       style={styles.trendingBarContainer}
       contentContainerStyle={styles.trendingBarContent}
       onContentSizeChange={(width) => setContentWidth(width)}
-      keyExtractor={(item, index) => `${item.attributes.address}-${index}`}
+      keyExtractor={(item, index) => `${item.address}-${index}`}
     />
   );
 };
 
 const Explore = () => {
-  useEffect(() => {
-    const registerForPushNotifications = async () => {
-      const { status } = await Notifications.requestPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert("Notification permissions not granted!");
-      }
-    };
+  // useEffect(() => {
+  //   const registerForPushNotifications = async () => {
+  //     const { status } = await Notifications.requestPermissionsAsync();
+  //     if (status !== "granted") {
+  //       Alert.alert("Notification permissions not granted!");
+  //     }
+  //   };
 
-    registerForPushNotifications();
-  }, []);
+  //   registerForPushNotifications();
+  // }, []);
+  const getTokenLogo = () => {
+    return images.defaultLogo;
+  };
 
   const [selectedFilter, setSelectedFilter] = useState("all");
   const {
@@ -268,7 +263,15 @@ const Explore = () => {
       </TouchableOpacity>
     </View>
   );
-  const BuyModal = ({ visible, onClose, token }) => {
+  const BuyModal = ({
+    visible,
+    onClose,
+    token,
+  }: {
+    visible: boolean;
+    onClose: any;
+    token: BirdEyeTopTokens;
+  }) => {
     const [orderType, setOrderType] = useState("market"); // market, limit, stop
     const [amount, setAmount] = useState("");
     const [price, setPrice] = useState("");
@@ -301,7 +304,7 @@ const Explore = () => {
     useEffect(() => {
       if (visible && token) {
         // Set initial price to current token price when modal opens
-        setPrice(token.attributes?.base_token_price_usd?.toString() || "0");
+        setPrice(token?.price.toString() || "0");
       }
     }, [visible, token]);
 
@@ -396,7 +399,7 @@ const Explore = () => {
 
       const ethPriceInUsd = Number(prices.eth) || 1;
       const solPriceInUsd = Number(prices.sol) || 1;
-      const native = token.isEth
+      const native = false //token.isEth
         ? (totalUsd / ethPriceInUsd).toFixed(4)
         : (totalUsd / solPriceInUsd).toFixed(4);
 
@@ -405,15 +408,16 @@ const Explore = () => {
         usd: Number(totalUsd.toFixed(2)),
       };
     }, [token, amount, price, prices]);
-
+    const isEth = false;
     const handleSubmitOrder = useCallback(async () => {
-      const tokenAddress = token.relationships.base_token.data.id.startsWith(
-        "solana_"
-      )
-        ? token.relationships.base_token.data.id.slice(7)
-        : token.relationships.base_token.data.id.startsWith("eth_")
-          ? token.relationships.base_token.data.id.slice(4)
-          : token.relationships.base_token.data.id;
+      const tokenAddress = token.address;
+      // token.relationships.base_token.data.id.startsWith(
+      //   "solana_"
+      // )
+      //   ? token.relationships.base_token.data.id.slice(7)
+      //   : token.relationships.base_token.data.id.startsWith("eth_")
+      //     ? token.relationships.base_token.data.id.slice(4)
+      //     : token.relationships.base_token.data.id;
 
       if (!amount || parseFloat(amount) <= 0) {
         Alert.alert("Error", "Please enter a valid amount");
@@ -444,7 +448,7 @@ const Explore = () => {
 
       setLoading(true);
       try {
-        if (token?.isEth) {
+        if (isEth) {
           if (Number(getBalance("eth")) > Number(nativeEquivalent.native)) {
             const txid = await get0xPermit2Swap(
               "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
@@ -486,7 +490,7 @@ const Explore = () => {
         setStopLoss({
           token: tokenAddress,
           price: stopLossPrice,
-          chain: token?.isEth ? "ETH" : "SOL",
+          chain: isEth ? "ETH" : "SOL",
         });
       } catch (error) {
         console.error("Swap error:", error);
@@ -551,7 +555,7 @@ const Explore = () => {
 
     const handleStopLossChange = (value) => {
       const numericValue = parseFloat(value);
-      const price = Number(token.attributes?.base_token_price_usd) || 0;
+      const price = Number(token?.price) || 0;
       if (!isNaN(numericValue) && numericValue <= price) {
         setStopLossPrice(value);
       } else if (numericValue > price) {
@@ -584,31 +588,32 @@ const Explore = () => {
 
             {token && (
               <View style={styles.tokenInfoContainer}>
-                <Image
-                  source={{
-                    uri: token.relationships?.base_token?.data?.id?.startsWith(
-                      "eth_"
-                    )
-                      ? token.tokenInfo?.tokenLogo
-                      : token.tokenInfo?.type === "jupiter"
-                        ? token.tokenInfo?.data?.logoURI
-                        : token.tokenInfo?.data?.logo || "/api/image/24",
-                  }}
-                  style={styles.modalTokenImage}
-                />
+                {token.logo_uri ? (
+                  <Image
+                    source={{
+                      // uri:  item.relationships.base_token.data.id.startsWith("eth_")
+                      //   ? //@ts-ignore
+                      //     item.tokenInfo?.tokenLogo
+                      //   : item.tokenInfo?.type === "jupiter"
+                      //     ? item.tokenInfo?.data.logoURI
+                      //     : item.tokenInfo?.data.logo || "/api/image/24",
+                      uri: token.logo_uri,
+                    }}
+                    style={styles.modalTokenImage}
+                  />
+                ) : (
+                  <Image
+                    source={getTokenLogo()}
+                    style={styles.modalTokenImage}
+                  />
+                )}
+
                 <View>
                   <Text style={styles.modalTokenName}>
-                    {token.relationships?.base_token?.data?.id?.startsWith(
-                      "eth_"
-                    )
-                      ? token.tokenInfo?.tokenName
-                      : token.tokenInfo?.data?.name || "N/A"}
+                    {token.name || "N/A"}
                   </Text>
                   <Text style={styles.modalTokenPrice}>
-                    $
-                    {formatPrice(
-                      Number(token.attributes?.base_token_price_usd)
-                    )}
+                    ${formatPrice(Number(token.price))}
                   </Text>
                 </View>
               </View>
@@ -653,7 +658,7 @@ const Explore = () => {
                   <Text style={styles.inputPrefix}>$</Text>
                   <View style={styles.swapOutputContainer}>
                     <Text style={styles.estimatedAmountText}>
-                      {nativeEquivalent.native} {token?.isEth ? "ETH" : "SOL"}
+                      {nativeEquivalent.native} {isEth ? "ETH" : "SOL"}
                     </Text>
                   </View>
                 </View>
@@ -718,13 +723,9 @@ const Explore = () => {
               <View style={styles.swapProtocolContainer}>
                 <Text style={styles.swapProtocolText}>
                   {getProtocolText(
-                    token?.isEth ? "ETH" : "SOL",
-                    token?.isEth ? "ETH" : "SOL",
-                    token?.relationships?.base_token?.data?.id?.startsWith(
-                      "eth_"
-                    )
-                      ? token?.tokenInfo?.tokenName
-                      : token?.tokenInfo?.data?.name || "N/A"
+                    isEth ? "ETH" : "SOL",
+                    isEth ? "ETH" : "SOL",
+                    token?.name || "N/A"
                   )}
                 </Text>
               </View>
@@ -844,8 +845,8 @@ const Explore = () => {
           parseFloat(String(item.price_change_1h_percent)) > 0
       )
       .sort((a, b) => {
-        const marketCapA = parseFloat(a.price_change_1h_percent);
-        const marketCapB = parseFloat(b.price_change_1h_percent);
+        const marketCapA = parseFloat(String(a.price_change_1h_percent));
+        const marketCapB = parseFloat(String(b.price_change_1h_percent));
         return marketCapB - marketCapA; // bigger change cap first
       });
   }, [mergedData]);
@@ -861,53 +862,55 @@ const Explore = () => {
     }
   }, [mergedData]);
 
-  const [selectedToken, setSelectedToken] = useState<any>({ ...mergedData[0] });
-  useEffect(() => {
-    const sendPush = () => {
-      const token = mergedData.find((token: BirdEyeTopTokens) => {
-        const tokenAddress = token.address;
-        return tokenAddress === stopLoss.token;
-      });
+  const [selectedToken, setSelectedToken] = useState<BirdEyeTopTokens>({
+    ...mergedData[0],
+  });
+  // useEffect(() => {
+  //   const sendPush = () => {
+  //     const token = mergedData.find((token: BirdEyeTopTokens) => {
+  //       const tokenAddress = token.address;
+  //       return tokenAddress === stopLoss.token;
+  //     });
 
-      const price = token?.price || 0;
-      if (price !== null && stopLoss.price >= price) {
-        sendLocalNotification(token);
-      }
-    };
-    sendPush();
-  }, [selectedToken, mergedData, currentPrice]);
+  //     const price = token?.price || 0;
+  //     if (price !== null && stopLoss.price >= price) {
+  //       sendLocalNotification(token);
+  //     }
+  //   };
+  //   sendPush();
+  // }, [selectedToken, mergedData, currentPrice]);
 
-  const sendLocalNotification = async (token: any) => {
-    const tokenAddress = token?.relationships.base_token.data.id.startsWith(
-      "solana_"
-    )
-      ? token.relationships.base_token.data.id.slice(7)
-      : token.relationships.base_token.data.id.startsWith("eth_")
-        ? token.relationships.base_token.data.id.slice(4)
-        : token.relationships.base_token.data.id;
+  // const sendLocalNotification = async (token: any) => {
+  //   const tokenAddress = token?.relationships.base_token.data.id.startsWith(
+  //     "solana_"
+  //   )
+  //     ? token.relationships.base_token.data.id.slice(7)
+  //     : token.relationships.base_token.data.id.startsWith("eth_")
+  //       ? token.relationships.base_token.data.id.slice(4)
+  //       : token.relationships.base_token.data.id;
 
-    const symbol = token.relationships?.base_token?.data?.id?.startsWith("eth_")
-      ? token.tokenInfo?.tokenName
-      : token.tokenInfo?.data?.name || "N/A";
+  //   const symbol = token.relationships?.base_token?.data?.id?.startsWith("eth_")
+  //     ? token.tokenInfo?.tokenName
+  //     : token.tokenInfo?.data?.name || "N/A";
 
-    const price = token?.tokenInfo?.usdPriceFormatted
-      ? Number(token.tokenInfo.usdPriceFormatted).toFixed(8)
-      : Number(token.attributes?.base_token_price_usd).toFixed(8);
+  //   const price = token?.tokenInfo?.usdPriceFormatted
+  //     ? Number(token.tokenInfo.usdPriceFormatted).toFixed(8)
+  //     : Number(token.attributes?.base_token_price_usd).toFixed(8);
 
-    await Notifications.scheduleNotificationAsync({
-      content: {
-        title: "⚠️ Stop Loss Triggered!",
-        body: `${symbol} fell to $${price}\nAddress: ${tokenAddress.substring(0, 6)}...${tokenAddress.slice(-4)}`,
-        data: {
-          type: "stop-loss",
-          tokenAddress,
-          symbol,
-          price: price,
-        },
-      },
-      trigger: null,
-    });
-  };
+  //   await Notifications.scheduleNotificationAsync({
+  //     content: {
+  //       title: "⚠️ Stop Loss Triggered!",
+  //       body: `${symbol} fell to $${price}\nAddress: ${tokenAddress.substring(0, 6)}...${tokenAddress.slice(-4)}`,
+  //       data: {
+  //         type: "stop-loss",
+  //         tokenAddress,
+  //         symbol,
+  //         price: price,
+  //       },
+  //     },
+  //     trigger: null,
+  //   });
+  // };
 
   const TopGainer = ({ item }: any) => {
     const isEth = item.relationships.base_token.data.id.startsWith("eth_");
@@ -962,63 +965,72 @@ const Explore = () => {
       </TouchableOpacity>
     );
   };
-  const MergedItem = ({ item }: { item: any }) => {
+  const MergedItem = ({ item }: { item: BirdEyeTopTokens }) => {
     return (
       <TouchableOpacity
-        key={item.attributes.address}
+        key={item.address}
         style={styles.touchableTrendingItem}
         activeOpacity={0.2}
         onPress={() =>
           handleBuyPress(
             item,
-            item.relationships.base_token.data.id.startsWith("eth_")
+            false // item.relationships.base_token.data.id.startsWith("eth_")
           )
         }
       >
         <View style={styles.trendingItem}>
           <View style={styles.avatarContainer}>
-            <Image
-              source={{
-                uri: item.relationships.base_token.data.id.startsWith("eth_")
-                  ? //@ts-ignore
-                    item.tokenInfo?.tokenLogo
-                  : item.tokenInfo?.type === "jupiter"
-                    ? item.tokenInfo?.data.logoURI
-                    : item.tokenInfo?.data.logo || "/api/image/24",
-              }}
-              style={styles.avatar}
-            />
+            {item.logo_uri ? (
+              <Image
+                source={{
+                  // uri:  item.relationships.base_token.data.id.startsWith("eth_")
+                  //   ? //@ts-ignore
+                  //     item.tokenInfo?.tokenLogo
+                  //   : item.tokenInfo?.type === "jupiter"
+                  //     ? item.tokenInfo?.data.logoURI
+                  //     : item.tokenInfo?.data.logo || "/api/image/24",
+                  uri: item.logo_uri,
+                }}
+                style={styles.avatar}
+              />
+            ) : (
+              <Image source={getTokenLogo()} style={styles.avatar} />
+            )}
           </View>
           <View style={styles.trendingInfo}>
             {isPending ? (
               <SkeletonLoader />
             ) : (
               <Text style={styles.trendingName}>
-                {item.relationships.base_token.data.id.startsWith("eth_")
+                {/* {item.relationships.base_token.data.id.startsWith("eth_")
                   ? //@ts-ignore
                     item.tokenInfo?.tokenName.length > 17
                     ? item.tokenInfo?.tokenName.slice(0, 17)
                     : item.tokenInfo?.tokenName
                   : item.tokenInfo?.data.name.length > 17
                     ? item.tokenInfo?.data.name.slice(0, 17)
-                    : item.tokenInfo?.data.name || ""}
+                    : item.tokenInfo?.data.name || ""} */}
+                {item.name.length > 17
+                  ? item.name.slice(0, 17)
+                  : item?.name || ""}
               </Text>
             )}
             <Text style={styles.marketCap}>
-              ${formatNumber(Number(item.attributes.fdv_usd))} MKT CAP
+              ${formatNumber(Number(item.fdv))} MKT CAP
             </Text>
           </View>
           <View style={styles.trendingPriceInfo}>
             <Text style={styles.trendingPrice}>
               $
-              {Number(item.tokenInfo.usdPriceFormatted)
+              {/* {Number(item.tokenInfo.usdPriceFormatted)
                 ? Number(item.tokenInfo.usdPriceFormatted).toFixed(8)
-                : Number(item.attributes.base_token_price_usd).toFixed(8)}
+                : Number(item.attributes.base_token_price_usd).toFixed(8)} */}
+              {item.price.toFixed(8)}
             </Text>
             <View
               style={[
                 styles.changeContainer,
-                item.attributes.price_change_percentage.h24.includes("-")
+                item.price_change_1h_percent < 0
                   ? styles.negativeContainer
                   : styles.positiveContainer,
               ]}
@@ -1026,15 +1038,13 @@ const Explore = () => {
               <Text
                 style={[
                   styles.trendingChange,
-                  item.attributes.price_change_percentage.h24.includes("-")
+                  item.price_change_1h_percent < 0
                     ? styles.negative
                     : styles.positive,
                 ]}
               >
-                {item.attributes.price_change_percentage.h24.includes("-")
-                  ? ""
-                  : "+"}
-                {item.attributes.price_change_percentage.h24}%
+                {item.price_change_1h_percent < 0 ? "" : "+"}
+                {item.price_change_1h_percent.toLocaleString()}%
               </Text>
             </View>
           </View>
@@ -1112,13 +1122,13 @@ const Explore = () => {
 
   if (isPending || isRefetchingByUser) return <LoadingIndicator />;
 
-  useEffect(() => {
-    const getDextTrending = async () => {
-      const response = await axios.get(`${config.apiEndpoint}newly-created`);
-      console.log(response.data);
-    };
-    // getNew();
-  }, []);
+  // useEffect(() => {
+  //   const getDextTrending = async () => {
+  //     const response = await axios.get(`${config.apiEndpoint}newly-created`);
+  //     console.log(response.data);
+  //   };
+  //   getNew();
+  // }, []);
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -1183,7 +1193,7 @@ const Explore = () => {
               </View>
 
               <View style={styles.trendingBarWrapper}>
-                {/* <AutoScrollingTrendingBar data={sortedData} /> */}
+                <AutoScrollingTrendingBar data={sortedData} />
               </View>
               <FilterModal />
             </View>
@@ -1198,9 +1208,9 @@ const Explore = () => {
               <Text style={styles.sectionTitle}>Tokens & Top Gainers</Text>
             </View>
 
-            {/* {mergedData.map((item) => (
-              <MergedItem key={item.attributes.address} item={item} />
-            ))} */}
+            {mergedData.map((item) => (
+              <MergedItem key={item.address} item={item} />
+            ))}
           </View>
         </ScrollView>
 

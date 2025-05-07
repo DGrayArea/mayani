@@ -2,7 +2,7 @@ import { QueryClient, DefaultOptions } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
 import { config } from "@/lib/appwrite";
 import { Platform } from "react-native";
-import { BirdEyeTopTokens, TrendingToken2 } from "@/types";
+import { BirdEyeNewListing, BirdEyeTopTokens, TrendingToken2 } from "@/types";
 
 // Define response types
 export interface TrendingToken extends TrendingToken2 {}
@@ -95,8 +95,14 @@ export async function fetchTrending(): Promise<{ data: BirdEyeTopTokens[] }> {
   return apiRequest<{ data: BirdEyeTopTokens[] }>(`${config.apiEndpoint}top`);
 }
 
+export async function fetchNew(): Promise<{ data: BirdEyeNewListing[] }> {
+  return apiRequest<{ data: BirdEyeNewListing[] }>(
+    `${config.apiEndpoint}newly-created`
+  );
+}
+
 export const fetchPumpShots = async () => {
-  return apiRequest<{ data: TrendingToken2[] }>(`${config.apiEndpoint}new`);
+  return apiRequest<{ data: any[] }>(`${config.apiEndpoint}new`);
 };
 
 export async function fetchTokenDetails(
