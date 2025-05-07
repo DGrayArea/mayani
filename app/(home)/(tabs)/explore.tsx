@@ -20,7 +20,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, router } from "expo-router";
-import { TrendingToken2 } from "@/types";
+import { BirdEyeTopTokens, TrendingToken2 } from "@/types";
 import { fetchTrending } from "@/utils/query";
 import { useSharedValue } from "react-native-reanimated";
 import { Ionicons, FontAwesome, MaterialIcons } from "@expo/vector-icons";
@@ -190,13 +190,14 @@ const Explore = () => {
   const currentPrice = 0.01;
 
   const { isPending, data, refetch } = useQuery<
-    { data: TrendingToken2[] } | undefined
+    { data: BirdEyeTopTokens[] } | undefined
   >({
     queryKey: ["trending"],
     queryFn: fetchTrending,
     refetchInterval: 20000,
     refetchIntervalInBackground: false,
   });
+
   const { isRefetchingByUser, refetchByUser } = useRefreshByUser(refetch);
   useRefreshOnFocus(refetch);
 
@@ -749,101 +750,103 @@ const Explore = () => {
     const { filters } = filterState;
 
     // First filter by chain
-    const chainFiltered = data.data.filter((item) => {
-      if (selectedFilter === "all") return true;
-      if (
-        selectedFilter === "sol" &&
-        item.relationships.base_token.data.id.startsWith("solana_")
-      )
-        return true;
-      if (
-        selectedFilter === "eth" &&
-        item.relationships.base_token.data.id.startsWith("eth_")
-      )
-        return true;
-      if (
-        selectedFilter === "usdt" &&
-        item.relationships.base_token.data.id.includes("usdt")
-      )
-        return true;
-      return false;
-    });
+    // const chainFiltered = data.data.filter((item) => {
+    //   if (selectedFilter === "all") return true;
+    //   if (
+    //     selectedFilter === "sol" &&
+    //     item.relationships.base_token.data.id.startsWith("solana_")
+    //   )
+    //     return true;
+    //   if (
+    //     selectedFilter === "eth" &&
+    //     item.relationships.base_token.data.id.startsWith("eth_")
+    //   )
+    //     return true;
+    //   if (
+    //     selectedFilter === "usdt" &&
+    //     item.relationships.base_token.data.id.includes("usdt")
+    //   )
+    //     return true;
+    //   return false;
+    // });
 
     // Apply additional filters
-    const filtered = chainFiltered.filter((item) => {
-      // Skip additional filtering if no filters are active
-      if (filters.withSocial === true && filterState.activeFilterCount <= 1) {
-        return true;
-      }
+    // const filtered = chainFiltered.filter((item) => {
+    //   // Skip additional filtering if no filters are active
+    //   if (filters.withSocial === true && filterState.activeFilterCount <= 1) {
+    //     return true;
+    //   }
 
-      // Market cap filters
-      const marketCap = parseFloat(item.attributes.fdv_usd);
-      if (
-        filters.marketCapFrom &&
-        marketCap < parseFloat(filters.marketCapFrom)
-      ) {
-        return false;
-      }
-      if (filters.marketCapTo && marketCap > parseFloat(filters.marketCapTo)) {
-        return false;
-      }
+    //   // Market cap filters
+    //   const marketCap = parseFloat(item.attributes.fdv_usd);
+    //   if (
+    //     filters.marketCapFrom &&
+    //     marketCap < parseFloat(filters.marketCapFrom)
+    //   ) {
+    //     return false;
+    //   }
+    //   if (filters.marketCapTo && marketCap > parseFloat(filters.marketCapTo)) {
+    //     return false;
+    //   }
 
-      // Volume filters would go here if available in the data
+    //   // Volume filters would go here if available in the data
 
-      // Filter by social presence if required
-      if (filters.withSocial && !item.tokenInfo?.data?.logo) {
-        return false;
-      }
+    //   // Filter by social presence if required
+    //   if (filters.withSocial && !item.tokenInfo?.data?.logo) {
+    //     return false;
+    //   }
 
-      return true;
-    });
+    //   return true;
+    // });
 
     // Sort the data
-    return filtered.sort((a, b) => {
-      const sortDir = filters.sortDirection === "desc" ? 1 : -1;
+    // return filtered.sort((a, b) => {
+    //   const sortDir = filters.sortDirection === "desc" ? 1 : -1;
 
-      switch (filters.sortBy) {
-        case "priceChange":
-          return (
-            sortDir *
-            (parseFloat(b.attributes.price_change_percentage.h24) -
-              parseFloat(a.attributes.price_change_percentage.h24))
-          );
+    //   switch (filters.sortBy) {
+    //     case "priceChange":
+    //       return (
+    //         sortDir *
+    //         (parseFloat(b.attributes.price_change_percentage.h24) -
+    //           parseFloat(a.attributes.price_change_percentage.h24))
+    //       );
 
-        case "marketCap":
-          return (
-            sortDir *
-            (parseFloat(b.attributes.fdv_usd) -
-              parseFloat(a.attributes.fdv_usd))
-          );
+    //     case "marketCap":
+    //       return (
+    //         sortDir *
+    //         (parseFloat(b.attributes.fdv_usd) -
+    //           parseFloat(a.attributes.fdv_usd))
+    //       );
 
-        case "price":
-          return (
-            sortDir *
-            (parseFloat(b.attributes.base_token_price_usd) -
-              parseFloat(a.attributes.base_token_price_usd))
-          );
+    //     case "price":
+    //       return (
+    //         sortDir *
+    //         (parseFloat(b.attributes.base_token_price_usd) -
+    //           parseFloat(a.attributes.base_token_price_usd))
+    //       );
 
-        // Default to volume/trending sort
-        default:
-          return (
-            sortDir *
-            (parseFloat(b.attributes.price_change_percentage.h24) -
-              parseFloat(a.attributes.price_change_percentage.h24))
-          );
-      }
-    });
+    //     // Default to volume/trending sort
+    //     default:
+    //       return (
+    //         sortDir *
+    //         (parseFloat(b.attributes.price_change_percentage.h24) -
+    //           parseFloat(a.attributes.price_change_percentage.h24))
+    //       );
+    //   }
+    // });
+    return [...data.data];
   }, [data, selectedFilter]);
 
   const filteredTopGainers = useMemo(() => {
     return mergedData
       ?.filter(
-        (item) => parseFloat(item.attributes.price_change_percentage.h24) > 0
+        (item: BirdEyeTopTokens) =>
+          parseFloat(String(item.price_change_1h_percent)) > 0
       )
       .sort((a, b) => {
-        const marketCapA = parseFloat(a.attributes.fdv_usd);
-        const marketCapB = parseFloat(b.attributes.fdv_usd);
-        return marketCapB - marketCapA; // bigger market cap first
+        const marketCapA = parseFloat(a.price_change_1h_percent);
+        const marketCapB = parseFloat(b.price_change_1h_percent);
+        return marketCapB - marketCapA; // bigger change cap first
       });
   }, [mergedData]);
 
@@ -861,22 +864,12 @@ const Explore = () => {
   const [selectedToken, setSelectedToken] = useState<any>({ ...mergedData[0] });
   useEffect(() => {
     const sendPush = () => {
-      const token = mergedData.find((token: any) => {
-        const tokenAddress =
-          token?.relationships?.base_token?.data?.id?.startsWith("solana_")
-            ? token.relationships.base_token.data.id.slice(7)
-            : token.relationships.base_token.data.id.startsWith("eth_")
-              ? token.relationships.base_token.data.id.slice(4)
-              : token.relationships.base_token.data.id;
+      const token = mergedData.find((token: BirdEyeTopTokens) => {
+        const tokenAddress = token.address;
         return tokenAddress === stopLoss.token;
       });
-      //@ts-expect-error error
-      const price = token?.tokenInfo?.usdPriceFormatted
-        ? //@ts-expect-error error
-          Number(token.tokenInfo.usdPriceFormatted)
-        : token?.attributes?.base_token_price_usd
-          ? Number(token.attributes.base_token_price_usd)
-          : null;
+
+      const price = token?.price || 0;
       if (price !== null && stopLoss.price >= price) {
         sendLocalNotification(token);
       }
@@ -1119,6 +1112,14 @@ const Explore = () => {
 
   if (isPending || isRefetchingByUser) return <LoadingIndicator />;
 
+  useEffect(() => {
+    const getDextTrending = async () => {
+      const response = await axios.get(`${config.apiEndpoint}newly-created`);
+      console.log(response.data);
+    };
+    // getNew();
+  }, []);
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <LinearGradient
@@ -1182,7 +1183,7 @@ const Explore = () => {
               </View>
 
               <View style={styles.trendingBarWrapper}>
-                <AutoScrollingTrendingBar data={sortedData} />
+                {/* <AutoScrollingTrendingBar data={sortedData} /> */}
               </View>
               <FilterModal />
             </View>
@@ -1197,9 +1198,9 @@ const Explore = () => {
               <Text style={styles.sectionTitle}>Tokens & Top Gainers</Text>
             </View>
 
-            {mergedData.map((item) => (
+            {/* {mergedData.map((item) => (
               <MergedItem key={item.attributes.address} item={item} />
-            ))}
+            ))} */}
           </View>
         </ScrollView>
 

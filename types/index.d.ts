@@ -264,3 +264,55 @@ export interface FungibleToken {
   mint_extensions?: MintExtensions;
   token_info: TokenInfo;
 }
+
+const newListing = {
+  address: "3DY3QCbmd3maUvdDm8mvvcS4z6akiTyhAiYT6nPvCray",
+  symbol: "waffles",
+  name: "waffles",
+  decimals: 6,
+  source: "raydium_launchlab",
+  liquidityAddedAt: "2025-05-06T15:09:58",
+  logoURI:
+    "https://ipfs.io/ipfs/bafkreif4bj2h3gjqt6r6l6em5hytm4m5hrp2xtq2kjyezly7ddqtg5oxyu",
+  liquidity: 14.216456722109454,
+};
+
+const topToken = {
+  address: "7G8uzB472JBNjL83PAtYvCTRL8NAWiHfM5DMRwaEeVfV",
+  logo_uri:
+    "https://ipfs.io/ipfs/QmehLSZJ1GVno1fc2zeS3VNFPsdjkzxXyfFs5KUmebCckX",
+  name: "Jeffy",
+  symbol: "Alive",
+  decimals: 6,
+  extensions: null,
+  market_cap: 853512.5692942592,
+  fdv: 853512.5692942592,
+  liquidity: 42776.613873309805,
+  last_trade_unix_time: 1746543330,
+  volume_1h_usd: 3.5131415547871367,
+  volume_1h_change_percent: -99.04124648866832,
+  volume_2h_usd: 147.52356462732018,
+  volume_2h_change_percent: -90.65900879352962,
+  volume_4h_usd: 2401.2759885923447,
+  volume_4h_change_percent: null,
+  volume_8h_usd: 2401.2759885923447,
+  volume_8h_change_percent: null,
+  volume_24h_usd: 2401.2759885923447,
+  volume_24h_change_percent: null,
+  trade_1h_count: 6,
+  trade_2h_count: 10,
+  trade_4h_count: 20,
+  trade_8h_count: 20,
+  trade_24h_count: 20,
+  price: 0.0008574256374845203,
+  price_change_1h_percent: 10329.282535675666,
+  price_change_2h_percent: 5.071721637277095,
+  price_change_4h_percent: 191.31763738155615,
+  price_change_8h_percent: 191.31763738155615,
+  price_change_24h_percent: 191.31763738155615,
+  holder: 7,
+  recent_listing_time: 1746532642,
+};
+
+export type BirdEyeNewListing = typeof newListing;
+export type BirdEyeTopTokens = typeof topToken;
