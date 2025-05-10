@@ -247,7 +247,7 @@ const NewListings = () => {
                       : styles.changeNegative,
                   ]}
                 >
-                  {item?.dex?.priceChange?.m5 > 0 ? "+" : "-"}
+                  {item?.dex?.priceChange?.m5 > 0 ? "+" : ""}
                   {item?.dex?.priceChange?.m5
                     ? item?.dex?.priceChange.m5.toLocaleString()
                     : "0.00%"}
