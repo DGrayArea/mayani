@@ -20,7 +20,12 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Link, router } from "expo-router";
-import { BirdEyeTopTokens, TrendingToken2 } from "@/types";
+import {
+  BirdEyeTopTokens,
+  DexTrending,
+  DexTrendingType,
+  TrendingToken2,
+} from "@/types";
 import { fetchTrending } from "@/utils/query";
 import { useSharedValue } from "react-native-reanimated";
 import { Ionicons, FontAwesome, MaterialIcons } from "@expo/vector-icons";
@@ -38,14 +43,19 @@ import { get0xPermit2Swap } from "@/utils/transaction";
 import { config } from "@/lib/appwrite";
 import { Connection } from "@solana/web3.js";
 import { swapWithJupiter } from "@/utils/trade";
-import * as Notifications from "expo-notifications";
+// import * as Notifications from "expo-notifications";
 import images from "@/constants/images";
+import { fetchDexData } from "@/utils/token-tools";
 
 const { width } = Dimensions.get("window");
 
+const getTokenLogo = () => {
+  return images.defaultLogo;
+};
+
 // BuyModal Component to handle buying with order types
 
-const AutoScrollingTrendingBar = ({ data }: { data: BirdEyeTopTokens[] }) => {
+const AutoScrollingTrendingBar = ({ data }: { data: DexTrendingType[] }) => {
   const scrollX = useSharedValue(0);
   const [contentWidth, setContentWidth] = useState(0);
   const flatListRef = useRef<FlatList>(null);
@@ -84,11 +94,11 @@ const AutoScrollingTrendingBar = ({ data }: { data: BirdEyeTopTokens[] }) => {
     item,
     index,
   }: {
-    item: BirdEyeTopTokens;
+    item: DexTrendingType;
     index: number;
   }) => {
     const isEth = false; //item.relationships.base_token.data.id.startsWith("eth_");
-    const tokenAddress = item.address;
+    const tokenAddress = item.tokenAddress;
 
     return (
       <TouchableOpacity>
@@ -102,28 +112,48 @@ const AutoScrollingTrendingBar = ({ data }: { data: BirdEyeTopTokens[] }) => {
           <View style={styles.trendingBarItem}>
             <View style={styles.trendingBarLeftContent}>
               <Text style={styles.trendingBarIndex}>#{index + 1}</Text>
-              <Image
-                source={{
-                  uri: item.logo_uri,
-                }}
-                style={styles.trendingBarAvatar}
-              />
+              {item?.icon ? (
+                <Image
+                  // source={{
+                  //   uri: item?.logo_uri?.startsWith("https://ipfs.io/ipfs/")
+                  //     ? item?.logo_uri?.replace(
+                  //         "https://ipfs.io/ipfs/",
+                  //         "https://pump.mypinata.cloud/ipfs/"
+                  //       )
+                  //     : item.logo_uri,
+                  //   cache: "reload",
+                  // }}
+                  source={{
+                    uri: item?.icon,
+                    cache: "reload",
+                  }}
+                  style={styles.trendingBarAvatar}
+                />
+              ) : (
+                <Image source={getTokenLogo()} style={styles.avatar} />
+              )}
+
               <View style={styles.trendingBarInfo}>
                 <Text style={styles.trendingBarSymbol}>
                   {isEth
                     ? //@ts-ignore
-                      item.tokenInfo?.tokenName
-                    : item.name || ""}
+                      item?.tokenInfo?.tokenName
+                    : item?.dex?.baseToken?.address === item?.tokenAddress
+                      ? item?.dex?.baseToken?.name
+                      : item?.dex?.quoteToken?.name || "N/A"}
                 </Text>
                 <Text
                   style={[
                     styles.trendingBarChange,
-                    item.price_change_1h_percent < 0
+                    item?.dex?.priceChange?.m5 < 0
                       ? styles.negative
                       : styles.positive,
                   ]}
                 >
-                  {item.price_change_1h_percent.toFixed(2)}%
+                  {item?.dex?.priceChange?.m5
+                    ? item?.dex?.priceChange?.m5.toFixed(2)
+                    : 0.0}
+                  %
                 </Text>
               </View>
             </View>
@@ -147,7 +177,7 @@ const AutoScrollingTrendingBar = ({ data }: { data: BirdEyeTopTokens[] }) => {
       style={styles.trendingBarContainer}
       contentContainerStyle={styles.trendingBarContent}
       onContentSizeChange={(width) => setContentWidth(width)}
-      keyExtractor={(item, index) => `${item.address}-${index}`}
+      keyExtractor={(item, index) => `${item.tokenAddress}-${index}`}
     />
   );
 };
@@ -163,9 +193,6 @@ const Explore = () => {
 
   //   registerForPushNotifications();
   // }, []);
-  const getTokenLogo = () => {
-    return images.defaultLogo;
-  };
 
   const [selectedFilter, setSelectedFilter] = useState("all");
   const {
@@ -180,9 +207,9 @@ const Explore = () => {
     price: 0,
     chain: "SOL",
   });
-
   const [sortedData, setSortedData] = useState<any>([]);
-  const currentPrice = 0.01;
+  const [trending, setTrending] = useState<DexTrendingType[]>([]);
+  const [loading, setLoading] = useState(false);
 
   const { isPending, data, refetch } = useQuery<
     { data: BirdEyeTopTokens[] } | undefined
@@ -204,6 +231,52 @@ const Explore = () => {
       generateEthWallet();
     }
   }, [solWalletAddress, ethWalletAddress]);
+
+  useEffect(() => {
+    const getTrending = async () => {
+      try {
+        const response = await axios.get(
+          "https://api.dexscreener.com/token-profiles/latest/v1"
+        );
+
+        if (response.data) {
+          setLoading(true);
+          const chainSpecs = await response.data.filter(
+            (order) =>
+              order.chainId === "solana" || order.chainId === "ethereum"
+          );
+          const dexPairs = await fetchDexData(chainSpecs);
+          const dataMap: Record<string, any> = {};
+
+          for (const pair of Object.values(dexPairs)) {
+            const baseAddr = pair?.baseToken?.address;
+            const quoteAddr = pair?.quoteToken?.address;
+
+            if (baseAddr) dataMap[baseAddr] = pair;
+            if (quoteAddr) dataMap[quoteAddr] = pair;
+          }
+
+          const orderedData = chainSpecs.map((t) => ({
+            ...t,
+            dex: dataMap[t.tokenAddress] || null,
+          }));
+          const filt = orderedData.filter((order) => order.dex !== null);
+          setTrending(filt);
+          setLoading(false);
+        }
+      } catch (error) {
+        console.error("Error fetching trending tokens:", error);
+      }
+    };
+
+    getTrending();
+
+    const intervalId = setInterval(() => getTrending(), 90 * 1000);
+
+    return () => {
+      clearInterval(intervalId);
+    };
+  }, []);
 
   const handleBuyPress = async (token: any, isEth: boolean) => {
     setSelectedToken({ ...token, isEth });
@@ -471,7 +544,8 @@ const Explore = () => {
         } else {
           if (Number(getBalance("sol")) > Number(nativeEquivalent.native)) {
             const txid = await swapWithJupiter(
-              new Connection(config.heliusUrl),
+              //new Connection(config.heliusUrl),
+              new Connection("https://api.mainnet-beta.solana.com"),
               "So11111111111111111111111111111111111111112",
               tokenAddress,
               String(Number(amount) * 10 ** Number(token.decimals)),
@@ -590,14 +664,23 @@ const Explore = () => {
               <View style={styles.tokenInfoContainer}>
                 {token.logo_uri ? (
                   <Image
+                    // source={{
+                    // uri:  item.relationships.base_token.data.id.startsWith("eth_")
+                    //   ? //@ts-ignore
+                    //     item.tokenInfo?.tokenLogo
+                    //   : item.tokenInfo?.type === "jupiter"
+                    //     ? item.tokenInfo?.data.logoURI
+                    //     : item.tokenInfo?.data.logo || "/api/image/24",
+                    //   uri: token.logo_uri,
+                    // }}
                     source={{
-                      // uri:  item.relationships.base_token.data.id.startsWith("eth_")
-                      //   ? //@ts-ignore
-                      //     item.tokenInfo?.tokenLogo
-                      //   : item.tokenInfo?.type === "jupiter"
-                      //     ? item.tokenInfo?.data.logoURI
-                      //     : item.tokenInfo?.data.logo || "/api/image/24",
-                      uri: token.logo_uri,
+                      uri: token.logo_uri.startsWith("https://ipfs.io/ipfs/")
+                        ? token.logo_uri.replace(
+                            "https://ipfs.io/ipfs/",
+                            "https://pump.mypinata.cloud/ipfs/"
+                          )
+                        : token.logo_uri,
+                      cache: "reload",
                     }}
                     style={styles.modalTokenImage}
                   />
@@ -982,14 +1065,23 @@ const Explore = () => {
           <View style={styles.avatarContainer}>
             {item.logo_uri ? (
               <Image
+                // source={{
+                // uri:  item.relationships.base_token.data.id.startsWith("eth_")
+                //   ? //@ts-ignore
+                //     item.tokenInfo?.tokenLogo
+                //   : item.tokenInfo?.type === "jupiter"
+                //     ? item.tokenInfo?.data.logoURI
+                //     : item.tokenInfo?.data.logo || "/api/image/24",
+                //   uri: item.logo_uri,
+                // }}
                 source={{
-                  // uri:  item.relationships.base_token.data.id.startsWith("eth_")
-                  //   ? //@ts-ignore
-                  //     item.tokenInfo?.tokenLogo
-                  //   : item.tokenInfo?.type === "jupiter"
-                  //     ? item.tokenInfo?.data.logoURI
-                  //     : item.tokenInfo?.data.logo || "/api/image/24",
-                  uri: item.logo_uri,
+                  uri: item?.logo_uri?.startsWith("https://ipfs.io/ipfs/")
+                    ? item?.logo_uri?.replace(
+                        "https://ipfs.io/ipfs/",
+                        "https://pump.mypinata.cloud/ipfs/"
+                      )
+                    : item.logo_uri,
+                  cache: "reload",
                 }}
                 style={styles.avatar}
               />
@@ -1193,7 +1285,7 @@ const Explore = () => {
               </View>
 
               <View style={styles.trendingBarWrapper}>
-                <AutoScrollingTrendingBar data={sortedData} />
+                <AutoScrollingTrendingBar data={trending} />
               </View>
               <FilterModal />
             </View>
@@ -1208,9 +1300,9 @@ const Explore = () => {
               <Text style={styles.sectionTitle}>Tokens & Top Gainers</Text>
             </View>
 
-            {mergedData.map((item) => (
-              <MergedItem key={item.address} item={item} />
-            ))}
+            {mergedData
+              ?.slice(0, 30)
+              .map((item) => <MergedItem key={item.address} item={item} />)}
           </View>
         </ScrollView>
 

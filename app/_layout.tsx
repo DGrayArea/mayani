@@ -6,7 +6,14 @@ import * as SplashScreen from "expo-splash-screen";
 import { useEffect, useState } from "react";
 import { QueryClientProvider, focusManager } from "@tanstack/react-query";
 import { queryClient } from "@/utils/query";
-import { AppStateStatus, Platform, StyleSheet, View, ActivityIndicator, Text } from "react-native";
+import {
+  AppStateStatus,
+  Platform,
+  StyleSheet,
+  View,
+  ActivityIndicator,
+  Text,
+} from "react-native";
 import { useAppState } from "@/hooks/useAppState";
 import { useOnlineManager } from "@/hooks/useOnlineManager";
 import { StatusBar } from "expo-status-bar";
@@ -17,16 +24,16 @@ import ErrorBoundary from "@/components/ErrorBoundary";
 import { useFonts } from "expo-font";
 import { prefetchAppData } from "@/utils/prefetching";
 import NetInfo from "@react-native-community/netinfo";
-import * as Notifications from "expo-notifications";
+// import * as Notifications from "expo-notifications";
 import { LinearGradient } from "expo-linear-gradient";
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: true,
-  }),
-});
+// Notifications.setNotificationHandler({
+//   handleNotification: async () => ({
+//     shouldShowAlert: true,
+//     shouldPlaySound: true,
+//     shouldSetBadge: true,
+//   }),
+// });
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync().catch(() => {
@@ -66,20 +73,20 @@ export default function RootLayout() {
     prepare();
   }, []);
 
-  useEffect(() => {
-    async function requestPermissions() {
-      const { status } = await Notifications.getPermissionsAsync();
-      if (status !== "granted") {
-        const { status: newStatus } =
-          await Notifications.requestPermissionsAsync();
-        if (newStatus !== "granted") {
-          console.warn("Notifications permission not granted!");
-        }
-      }
-    }
+  // useEffect(() => {
+  //   async function requestPermissions() {
+  //     const { status } = await Notifications.getPermissionsAsync();
+  //     if (status !== "granted") {
+  //       const { status: newStatus } =
+  //         await Notifications.requestPermissionsAsync();
+  //       if (newStatus !== "granted") {
+  //         console.warn("Notifications permission not granted!");
+  //       }
+  //     }
+  //   }
 
-    requestPermissions();
-  }, []);
+  //   requestPermissions();
+  // }, []);
 
   // Second pass - prefetch data for better UX once the app is visible
   useEffect(() => {
@@ -178,13 +185,13 @@ const styles = StyleSheet.create({
   },
   loadingContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
   },
   loadingText: {
-    color: '#E0E0E0',
+    color: "#E0E0E0",
     marginTop: 16,
     fontSize: 16,
-    fontWeight: '500',
+    fontWeight: "500",
   },
 });

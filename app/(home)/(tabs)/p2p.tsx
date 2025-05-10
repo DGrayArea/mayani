@@ -41,7 +41,7 @@ const SpotlightTokens = () => {
   const [amount, setAmount] = useState("");
   const [loading, setLoading] = useState(false);
   const [connectionError, setConnectionError] = useState(false);
-  
+
   const { currentChain } = useWalletStore();
   const { filters } = useFilterStore();
 
@@ -49,7 +49,7 @@ const SpotlightTokens = () => {
   const { isPending, error, data, refetch } = useQuery<
     { data: TrendingToken2[] } | undefined
   >({
-    queryKey: ["trending"],
+    queryKey: ["trendingItem"],
     queryFn: fetchTrending,
     refetchInterval: 20000,
     refetchIntervalInBackground: false,
@@ -60,9 +60,9 @@ const SpotlightTokens = () => {
     },
     onSuccess: () => {
       setConnectionError(false);
-    }
+    },
   });
-  
+
   const { isRefetchingByUser, refetchByUser } = useRefreshByUser(refetch);
   useRefreshOnFocus(refetch);
 
@@ -73,39 +73,42 @@ const SpotlightTokens = () => {
     }
 
     setLoading(true);
-    
+
     // Simulate API call
     setTimeout(() => {
       setLoading(false);
       setModalVisible(false);
       setAmount("");
-      Alert.alert("Transaction", "This feature will be available in upcoming versions. Stay tuned!");
+      Alert.alert(
+        "Transaction",
+        "This feature will be available in upcoming versions. Stay tuned!"
+      );
     }, 1500);
   };
 
   const filteredTokens = React.useMemo(() => {
     if (!data || !data.data) return [];
-    
+
     let filtered = [...data.data];
-    
+
     // Apply chain filter
     if (activeTab === "sol") {
-      filtered = filtered.filter(token => 
-        token.relationships.base_token.data.id.startsWith("solana_")
+      filtered = filtered.filter((token) =>
+        token?.relationships?.base_token?.data?.id?.startsWith("solana_")
       );
     } else if (activeTab === "eth") {
-      filtered = filtered.filter(token => 
-        token.relationships.base_token.data.id.startsWith("eth_")
+      filtered = filtered.filter((token) =>
+        token?.relationships?.base_token?.data?.id?.startsWith("eth_")
       );
     }
-    
+
     // Sort by market cap (largest first)
     filtered = filtered.sort((a, b) => {
-      const marketCapA = parseFloat(a.attributes.fdv_usd);
-      const marketCapB = parseFloat(b.attributes.fdv_usd);
+      const marketCapA = parseFloat(a?.attributes?.fdv_usd);
+      const marketCapB = parseFloat(b?.attributes?.fdv_usd);
       return marketCapB - marketCapA;
     });
-    
+
     return filtered;
   }, [data, activeTab]);
 
@@ -116,7 +119,8 @@ const SpotlightTokens = () => {
           <MaterialIcons name="error-outline" size={50} color="#FF5252" />
           <Text style={styles.emptyStateTitle}>Connection Error</Text>
           <Text style={styles.emptyStateMessage}>
-            We couldn&apos;t fetch the latest token data. Please check your internet connection and try again.
+            We couldn&apos;t fetch the latest token data. Please check your
+            internet connection and try again.
           </Text>
           <TouchableOpacity style={styles.retryButton} onPress={refetch}>
             <Text style={styles.retryButtonText}>Retry</Text>
@@ -124,7 +128,7 @@ const SpotlightTokens = () => {
         </View>
       );
     }
-    
+
     if (filteredTokens.length === 0 && !isPending && !isRefetchingByUser) {
       return (
         <View style={styles.emptyStateContainer}>
@@ -133,39 +137,44 @@ const SpotlightTokens = () => {
           <Text style={styles.emptyStateMessage}>
             There are no spotlight tokens matching your current filter.
           </Text>
-          <TouchableOpacity style={styles.retryButton} onPress={() => setActiveTab("trending")}>
+          <TouchableOpacity
+            style={styles.retryButton}
+            onPress={() => setActiveTab("trending")}
+          >
             <Text style={styles.retryButtonText}>View All Tokens</Text>
           </TouchableOpacity>
         </View>
       );
     }
-    
+
     return null;
   }, [connectionError, filteredTokens, isPending, isRefetchingByUser, refetch]);
 
   const renderTokenCard = useCallback((item) => {
-    const isEth = item.relationships.base_token.data.id.startsWith("eth_");
-    const tokenAddress = item.relationships.base_token.data.id.startsWith("solana_")
-      ? item.relationships.base_token.data.id.slice(7)
-      : item.relationships.base_token.data.id.startsWith("eth_")
-        ? item.relationships.base_token.data.id.slice(4)
-        : item.relationships.base_token.data.id;
-    
+    const isEth = item?.relationships?.base_token?.data?.id?.startsWith("eth_");
+    const tokenAddress = item?.relationships?.base_token?.data?.id?.startsWith(
+      "solana_"
+    )
+      ? item?.relationships?.base_token?.data?.id?.slice(7)
+      : item?.relationships?.base_token?.data?.id?.startsWith("eth_")
+        ? item?.relationships?.base_token?.data?.id?.slice(4)
+        : item?.relationships?.base_token.data?.id;
+
     const tokenName = isEth
       ? item.tokenInfo?.tokenName
       : item.tokenInfo?.data?.name || "";
-    
+
     const tokenImage = isEth
       ? item.tokenInfo?.tokenLogo
       : item.tokenInfo?.type === "jupiter"
         ? item.tokenInfo?.data?.logoURI
         : item.tokenInfo?.data?.logo || "/api/image/24";
-    
-    const marketCap = formatNumber(Number(item.attributes.fdv_usd));
-    const price = formatPrice(Number(item.attributes.base_token_price_usd));
-    const priceChange = item.attributes.price_change_percentage.h24;
-    const isPriceUp = !priceChange.includes("-");
-    
+
+    const marketCap = formatNumber(Number(item?.attributes?.fdv_usd));
+    const price = formatPrice(Number(item?.attributes?.base_token_price_usd));
+    const priceChange = item?.attributes?.price_change_percentage?.h24;
+    const isPriceUp = !priceChange?.includes("-");
+
     return (
       <TouchableOpacity
         style={styles.tokenCard}
@@ -180,13 +189,15 @@ const SpotlightTokens = () => {
             <Image
               source={{ uri: tokenImage }}
               style={styles.tokenImage}
-              defaultSource={require('@/assets/images/token-placeholder.png')}
+              defaultSource={require("@/assets/images/token-placeholder.png")}
             />
           </View>
           <View style={styles.tokenTitleContainer}>
             <Text style={styles.tokenName}>{tokenName}</Text>
             <View style={styles.symbolChainContainer}>
-              <Text style={styles.tokenSymbol}>#{tokenAddress.substring(0, 6)}...</Text>
+              <Text style={styles.tokenSymbol}>
+                #{tokenAddress?.substring(0, 6)}...
+              </Text>
               <View style={styles.chainSupportContainer}>
                 <Image
                   source={isEth ? images.eth1 : images.sol1}
@@ -196,26 +207,32 @@ const SpotlightTokens = () => {
             </View>
           </View>
         </View>
-        
+
         <View style={styles.tokenMetrics}>
           <View style={styles.metric}>
             <Text style={styles.metricLabel}>Price</Text>
             <Text style={styles.metricValue}>${price}</Text>
           </View>
-          
+
           <View style={styles.metric}>
             <Text style={styles.metricLabel}>24h Change</Text>
-            <Text style={[styles.metricValue, isPriceUp ? styles.positive : styles.negative]}>
-              {isPriceUp ? '+' : ''}{priceChange}%
+            <Text
+              style={[
+                styles.metricValue,
+                isPriceUp ? styles.positive : styles.negative,
+              ]}
+            >
+              {isPriceUp ? "+" : ""}
+              {priceChange}%
             </Text>
           </View>
-        
+
           <View style={styles.metric}>
             <Text style={styles.metricLabel}>Market Cap</Text>
             <Text style={styles.metricValue}>${marketCap}</Text>
           </View>
         </View>
-        
+
         <TouchableOpacity
           style={styles.buyButton}
           onPress={() => {
@@ -237,7 +254,12 @@ const SpotlightTokens = () => {
         onPress={() => setActiveTab("trending")}
         activeOpacity={0.8}
       >
-        <Text style={[styles.tabText, activeTab === "trending" && styles.activeTabText]}>
+        <Text
+          style={[
+            styles.tabText,
+            activeTab === "trending" && styles.activeTabText,
+          ]}
+        >
           All Tokens
         </Text>
       </TouchableOpacity>
@@ -247,17 +269,21 @@ const SpotlightTokens = () => {
         onPress={() => setActiveTab("sol")}
         activeOpacity={0.8}
       >
-        <Text style={[styles.tabText, activeTab === "sol" && styles.activeTabText]}>
+        <Text
+          style={[styles.tabText, activeTab === "sol" && styles.activeTabText]}
+        >
           Solana
         </Text>
       </TouchableOpacity>
-      
+
       <TouchableOpacity
         style={[styles.tabButton, activeTab === "eth" && styles.activeTab]}
         onPress={() => setActiveTab("eth")}
         activeOpacity={0.8}
       >
-        <Text style={[styles.tabText, activeTab === "eth" && styles.activeTabText]}>
+        <Text
+          style={[styles.tabText, activeTab === "eth" && styles.activeTabText]}
+        >
           Ethereum
         </Text>
       </TouchableOpacity>
@@ -290,27 +316,35 @@ const SpotlightTokens = () => {
               <View style={styles.tokenInfoContainer}>
                 <Image
                   source={{
-                    uri: selectedToken.relationships.base_token.data.id.startsWith("eth_")
-                      ? selectedToken.tokenInfo?.tokenLogo
-                      : selectedToken.tokenInfo?.type === "jupiter"
-                        ? selectedToken.tokenInfo?.data?.logoURI
-                        : selectedToken.tokenInfo?.data?.logo || "/api/image/24"
+                    uri: selectedToken?.relationships?.base_token?.data?.id?.startsWith(
+                      "eth_"
+                    )
+                      ? selectedToken?.tokenInfo?.tokenLogo
+                      : selectedToken?.tokenInfo?.type === "jupiter"
+                        ? selectedToken?.tokenInfo?.data?.logoURI
+                        : selectedToken?.tokenInfo?.data?.logo ||
+                          "/api/image/24",
                   }}
                   style={styles.modalTokenImage}
-                  defaultSource={require('@/assets/images/token-placeholder.png')}
+                  defaultSource={require("@/assets/images/token-placeholder.png")}
                 />
                 <View>
                   <Text style={styles.modalTokenName}>
-                    {selectedToken.relationships.base_token.data.id.startsWith("eth_")
-                      ? selectedToken.tokenInfo?.tokenName
-                      : selectedToken.tokenInfo?.data?.name || ""}
+                    {selectedToken?.relationships?.base_token?.data?.id?.startsWith(
+                      "eth_"
+                    )
+                      ? selectedToken?.tokenInfo?.tokenName
+                      : selectedToken?.tokenInfo?.data?.name || ""}
                   </Text>
                   <Text style={styles.modalTokenPrice}>
-                    ${formatPrice(Number(selectedToken.attributes.base_token_price_usd))}
+                    $
+                    {formatPrice(
+                      Number(selectedToken?.attributes?.base_token_price_usd)
+                    )}
                   </Text>
                 </View>
               </View>
-                
+
               <Text style={styles.inputLabel}>Amount to Buy</Text>
               <View style={styles.inputContainer}>
                 <TextInput
@@ -354,12 +388,13 @@ const SpotlightTokens = () => {
         </View>
       );
     }
-    
+
     return (
       <View style={styles.spotlightHeaderContainer}>
         <Text style={styles.spotlightTitle}>Featured Tokens</Text>
         <Text style={styles.spotlightDescription}>
-          Discover trending tokens with high potential and significant market presence
+          Discover trending tokens with high potential and significant market
+          presence
         </Text>
       </View>
     );
@@ -374,28 +409,29 @@ const SpotlightTokens = () => {
         <View style={styles.headerContainer}>
           <Text style={styles.header}>Spotlight</Text>
           <View style={styles.headerButtons}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.iconButton}
               onPress={() => router.push("/(home)/search")}
               activeOpacity={0.8}
             >
               <Ionicons name="search-outline" size={22} color="#F0F0F0" />
             </TouchableOpacity>
-            <TouchableOpacity 
-              style={styles.iconButton}
-              activeOpacity={0.8}
-            >
-              <Ionicons name="notifications-outline" size={22} color="#F0F0F0" />
+            <TouchableOpacity style={styles.iconButton} activeOpacity={0.8}>
+              <Ionicons
+                name="notifications-outline"
+                size={22}
+                color="#F0F0F0"
+              />
             </TouchableOpacity>
           </View>
         </View>
 
         {renderTabButtons()}
-        
+
         <FlatList
           data={filteredTokens}
           renderItem={({ item }) => renderTokenCard(item)}
-          keyExtractor={(item) => item.id}
+          keyExtractor={(item) => item.id + Math.random()}
           contentContainerStyle={styles.tokenList}
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -409,7 +445,7 @@ const SpotlightTokens = () => {
           ListHeaderComponent={renderListHeader}
           ListEmptyComponent={renderEmptyState}
         />
-        
+
         {renderBuyModal()}
       </LinearGradient>
     </SafeAreaView>
@@ -448,8 +484,8 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginLeft: 10,
     borderWidth: 1,
     borderColor: "rgba(140, 91, 230, 0.5)",
@@ -462,7 +498,7 @@ const styles = StyleSheet.create({
   tabButton: {
     flex: 1,
     paddingVertical: 12,
-    alignItems: 'center',
+    alignItems: "center",
     borderRadius: 10,
     backgroundColor: "rgba(46, 26, 64, 0.8)",
     marginHorizontal: 4,
@@ -475,28 +511,28 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
   },
   activeTab: {
-    backgroundColor: '#5A2DA0',
+    backgroundColor: "#5A2DA0",
     borderColor: "rgba(140, 91, 230, 0.8)",
   },
   tabText: {
     fontSize: 14,
-    fontWeight: '600',
-    color: '#9B86B3',
+    fontWeight: "600",
+    color: "#9B86B3",
   },
   activeTabText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
   },
   tokenList: {
     paddingBottom: 20,
     paddingHorizontal: 16,
   },
   tokenCard: {
-    backgroundColor: '#2E1A40',
+    backgroundColor: "#2E1A40",
     borderRadius: 16,
     padding: 20,
     marginBottom: 16,
     borderWidth: 1,
-    borderColor: 'rgba(140, 91, 230, 0.3)',
+    borderColor: "rgba(140, 91, 230, 0.3)",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.2,
@@ -504,45 +540,45 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   tokenHeader: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 16,
-    alignItems: 'center',
+    alignItems: "center",
   },
   tokenImageContainer: {
     borderRadius: 30,
     padding: 2,
-    backgroundColor: 'rgba(140, 91, 230, 0.2)',
+    backgroundColor: "rgba(140, 91, 230, 0.2)",
     borderWidth: 1,
-    borderColor: 'rgba(140, 91, 230, 0.3)',
+    borderColor: "rgba(140, 91, 230, 0.3)",
   },
   tokenImage: {
     width: 56,
     height: 56,
     borderRadius: 28,
-    backgroundColor: '#1A0E26',
+    backgroundColor: "#1A0E26",
   },
   tokenTitleContainer: {
     flex: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     marginLeft: 16,
   },
   tokenName: {
     fontSize: 20,
-    fontWeight: 'bold',
-    color: '#E0E0E0',
+    fontWeight: "bold",
+    color: "#E0E0E0",
     marginBottom: 4,
   },
   symbolChainContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
   },
   tokenSymbol: {
     fontSize: 15,
-    color: '#9B86B3',
+    color: "#9B86B3",
   },
   chainSupportContainer: {
-    flexDirection: 'row',
+    flexDirection: "row",
   },
   chainIcon: {
     width: 18,
@@ -550,40 +586,40 @@ const styles = StyleSheet.create({
     marginLeft: 4,
   },
   tokenMetrics: {
-    flexDirection: 'row',
+    flexDirection: "row",
     marginBottom: 20,
-    justifyContent: 'space-between',
-    backgroundColor: 'rgba(46, 26, 64, 0.6)',
+    justifyContent: "space-between",
+    backgroundColor: "rgba(46, 26, 64, 0.6)",
     borderRadius: 12,
     padding: 16,
     borderWidth: 1,
-    borderColor: 'rgba(140, 91, 230, 0.2)',
+    borderColor: "rgba(140, 91, 230, 0.2)",
   },
   metric: {
     flex: 1,
-    alignItems: 'center',
+    alignItems: "center",
   },
   metricLabel: {
     fontSize: 13,
-    color: '#9B86B3',
+    color: "#9B86B3",
     marginBottom: 6,
   },
   metricValue: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#E0E0E0',
+    fontWeight: "bold",
+    color: "#E0E0E0",
   },
   positive: {
-    color: '#4CAF50',
+    color: "#4CAF50",
   },
   negative: {
-    color: '#FF5252',
+    color: "#FF5252",
   },
   buyButton: {
-    backgroundColor: '#8C5BE6',
+    backgroundColor: "#8C5BE6",
     paddingVertical: 14,
     borderRadius: 12,
-    alignItems: 'center',
+    alignItems: "center",
     elevation: 3,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -591,23 +627,23 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
   },
   buyButtonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
+    color: "#FFFFFF",
+    fontWeight: "bold",
     fontSize: 16,
   },
   modalOverlay: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0, 0, 0, 0.7)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   modalContainer: {
     width: SCREEN_WIDTH * 0.9,
-    backgroundColor: '#2E1A40',
+    backgroundColor: "#2E1A40",
     borderRadius: 16,
-    overflow: 'hidden',
+    overflow: "hidden",
     borderWidth: 1,
-    borderColor: 'rgba(140, 91, 230, 0.3)',
+    borderColor: "rgba(140, 91, 230, 0.3)",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.3,
@@ -615,36 +651,36 @@ const styles = StyleSheet.create({
     elevation: 10,
   },
   modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
     padding: 16,
     borderBottomWidth: 1,
-    borderBottomColor: 'rgba(140, 91, 230, 0.3)',
+    borderBottomColor: "rgba(140, 91, 230, 0.3)",
   },
   modalTitle: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#E0E0E0',
+    fontWeight: "bold",
+    color: "#E0E0E0",
   },
   closeButton: {
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: 'rgba(140, 91, 230, 0.3)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(140, 91, 230, 0.3)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   closeButtonText: {
-    color: '#E0E0E0',
+    color: "#E0E0E0",
     fontSize: 14,
   },
   modalContent: {
     padding: 16,
   },
   tokenInfoContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginBottom: 16,
   },
   modalTokenImage: {
@@ -652,40 +688,40 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     marginRight: 12,
-    backgroundColor: '#1A0E26',
+    backgroundColor: "#1A0E26",
   },
   modalTokenName: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#E0E0E0',
+    fontWeight: "bold",
+    color: "#E0E0E0",
     marginBottom: 4,
   },
   modalTokenPrice: {
     fontSize: 16,
-    color: '#9B86B3',
+    color: "#9B86B3",
   },
   inputLabel: {
-    color: '#E0E0E0',
+    color: "#E0E0E0",
     fontSize: 16,
     marginBottom: 8,
   },
   inputContainer: {
-    backgroundColor: 'rgba(26, 14, 38, 0.6)',
+    backgroundColor: "rgba(26, 14, 38, 0.6)",
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: 'rgba(140, 91, 230, 0.3)',
+    borderColor: "rgba(140, 91, 230, 0.3)",
     marginBottom: 16,
   },
   input: {
-    color: '#E0E0E0',
+    color: "#E0E0E0",
     padding: 12,
     fontSize: 16,
   },
   buyButtonLarge: {
-    backgroundColor: '#8C5BE6',
+    backgroundColor: "#8C5BE6",
     paddingVertical: 14,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
     elevation: 3,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 2 },
@@ -693,57 +729,57 @@ const styles = StyleSheet.create({
     shadowRadius: 3,
   },
   buyButtonLargeText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
+    color: "#FFFFFF",
+    fontWeight: "bold",
     fontSize: 16,
   },
   loadingButton: {
     opacity: 0.7,
   },
   loadingContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
   },
   loadingView: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: 20,
   },
   loadingText: {
-    color: '#E0E0E0',
+    color: "#E0E0E0",
     marginTop: 12,
     fontSize: 14,
   },
   emptyStateContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     padding: 30,
     marginTop: 30,
   },
   emptyStateTitle: {
-    color: '#E0E0E0',
+    color: "#E0E0E0",
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: "bold",
     marginTop: 16,
     marginBottom: 8,
   },
   emptyStateMessage: {
-    color: '#9B86B3',
+    color: "#9B86B3",
     fontSize: 14,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 20,
   },
   retryButton: {
-    backgroundColor: '#8C5BE6',
+    backgroundColor: "#8C5BE6",
     paddingVertical: 12,
     paddingHorizontal: 24,
     borderRadius: 8,
-    alignItems: 'center',
+    alignItems: "center",
   },
   retryButtonText: {
-    color: '#FFFFFF',
-    fontWeight: 'bold',
+    color: "#FFFFFF",
+    fontWeight: "bold",
     fontSize: 16,
   },
   spotlightHeaderContainer: {
@@ -770,4 +806,3 @@ const styles = StyleSheet.create({
 });
 
 export default SpotlightTokens;
-

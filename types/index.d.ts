@@ -314,5 +314,103 @@ const topToken = {
   recent_listing_time: 1746532642,
 };
 
+const dexScreenerPair = {
+  chainId: "solana",
+  dexId: "raydium",
+  url: "https://dexscreener.com/solana/8slbnzoa1cfnvmjlpfp98zlanfsycfapfjkmbixnlwxj",
+  pairAddress: "8sLbNZoA1cfnvMJLPfp98ZLAnFSYCFApfJKMbiXNLwxj",
+  labels: ["CLMM"],
+  baseToken: {
+    address: "So11111111111111111111111111111111111111112",
+    name: "Wrapped SOL",
+    symbol: "SOL",
+  },
+  quoteToken: {
+    address: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    name: "USD Coin",
+    symbol: "USDC",
+  },
+  priceNative: "148.5008",
+  priceUsd: "148.50",
+  txns: {
+    m5: {
+      buys: 169,
+      sells: 113,
+    },
+    h1: {
+      buys: 3758,
+      sells: 4129,
+    },
+    h6: {
+      buys: 13208,
+      sells: 14210,
+    },
+    h24: {
+      buys: 58123,
+      sells: 62996,
+    },
+  },
+  volume: {
+    h24: 37814626.06,
+    h6: 8239517.72,
+    h1: 2418307.14,
+    m5: 99380.75,
+  },
+  priceChange: {
+    m5: 0.05,
+    h1: 0.8,
+    h6: 1.71,
+    h24: 0.03,
+  },
+  liquidity: {
+    usd: 4142863.25,
+    base: 23745,
+    quote: 616573,
+  },
+  pairCreatedAt: 1723699294000,
+  fdv: 4116.91,
+  marketCap: 4116.91,
+};
+
+const dexTrending = {
+  url: "https://dexscreener.com/solana/13szjhynmy9uxe8c2twnx1yaxgu8vqisbkzgvjavpmgf",
+  chainId: "solana",
+  tokenAddress: "13szJhynmy9uXe8C2TWNX1yaxGu8vQiSBkzgVJAvPMGF",
+  icon: "https://dd.dexscreener.com/ds-data/tokens/solana/13szJhynmy9uXe8C2TWNX1yaxGu8vQiSBkzgVJAvPMGF.png",
+  header:
+    "https://dd.dexscreener.com/ds-data/tokens/solana/13szJhynmy9uXe8C2TWNX1yaxGu8vQiSBkzgVJAvPMGF/header.png",
+  openGraph:
+    "https://cdn.dexscreener.com/token-images/og/solana/13szJhynmy9uXe8C2TWNX1yaxGu8vQiSBkzgVJAvPMGF?timestamp=1746684000000",
+  description:
+    "Dive into the hilarious and community-driven world of $SHARTFA. We're all about the memes, the laughs, and the journey to the moon (and beyond!).\n\nExpect witty banter, fart-themed emojis, and a community that doesn't take itself too seriously. #SHARTFA #ToTheMoon\n\nEarn rewards in $SHART by purchasing $SHARTFA, and the infinite loop will be there.\n\n13szJhynmy9uXe8C2TWNX1yaxGu8vQiSBkzgVJAvPMGF",
+  links: [
+    {
+      label: "Website",
+      url: "https://apvuprqt.manus.space/",
+    },
+    {
+      label: "HOLDERS",
+      url: "https://solscan.io/token/13szJhynmy9uXe8C2TWNX1yaxGu8vQiSBkzgVJAvPMGF#holders",
+    },
+    {
+      type: "twitter",
+      url: "https://x.com/SHART__FART",
+    },
+    {
+      type: "telegram",
+      url: "https://t.me/shartfacommunity",
+    },
+  ],
+};
+
 export type BirdEyeNewListing = typeof newListing;
 export type BirdEyeTopTokens = typeof topToken;
+export type DexscreenerPair = typeof dexScreenerPair;
+export type DexTrending = typeof dexTrending;
+export type DexTrendingType = DexTrending & {
+  dex: DexscreenerPair;
+};
+
+export type DexBirdeye = BirdEyeNewListing & {
+  dex: DexscreenerPair;
+};

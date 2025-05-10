@@ -399,7 +399,8 @@ const Wallet = () => {
       } else if (currentChain === "SOL") {
         if (Number(swapAmount) <= Number(swapFromData.balance)) {
           const txid = await swapWithJupiter(
-            new Connection(config.heliusUrl),
+            //new Connection(config.heliusUrl),
+            new Connection("https://api.mainnet-beta.solana.com"),
             swapFromCrypto,
             swapToCrypto,
             String(Number(swapAmount) * 10 ** Number(swapFromData.decimals)),
@@ -417,7 +418,7 @@ const Wallet = () => {
           // Show success message
           Alert.alert(
             "Success",
-            `Swap completed successfully: https://solscan.io/tx/${txid?.hash}`
+            `Swap completed successfully: https://solscan.io/tx/${txid}`
           );
         } else {
           Alert.alert(
@@ -578,7 +579,15 @@ const Wallet = () => {
                 />
               ) : (
                 <Image
-                  source={{ uri: logo }}
+                  source={{
+                    uri: logo?.startsWith("https://ipfs.io/ipfs/")
+                      ? logo?.replace(
+                          "https://ipfs.io/ipfs/",
+                          "https://pump.mypinata.cloud/ipfs/"
+                        )
+                      : logo,
+                    cache: "reload",
+                  }}
                   style={styles.cryptoIcon}
                   className="rounded-full"
                 />
@@ -760,9 +769,15 @@ const Wallet = () => {
                     <View style={styles.tokenSelectorInner}>
                       <Image
                         source={
-                          swapFromData.logo
-                            ? swapFromData.logo
-                            : getTokenLogo(currentChain, swapFromCrypto)
+                          typeof swapFromData?.logo === "string" &&
+                          swapFromData?.logo.startsWith("https://ipfs.io/ipfs/")
+                            ? swapFromData?.logo.replace(
+                                "https://ipfs.io/ipfs/",
+                                "https://pump.mypinata.cloud/ipfs/"
+                              )
+                            : swapFromData?.logo
+                              ? swapFromData.logo
+                              : getTokenLogo(currentChain, swapFromCrypto)
                         }
                         style={styles.swapTokenIcon}
                       />
@@ -832,9 +847,15 @@ const Wallet = () => {
                     <View style={styles.tokenSelectorInner}>
                       <Image
                         source={
-                          swapToData.logo
-                            ? swapToData.logo
-                            : getTokenLogo(currentChain, swapToCrypto)
+                          typeof swapFromData?.logo === "string" &&
+                          swapFromData.logo.startsWith("https://ipfs.io/ipfs/")
+                            ? swapFromData.logo.replace(
+                                "https://ipfs.io/ipfs/",
+                                "https://pump.mypinata.cloud/ipfs/"
+                              )
+                            : swapFromData?.logo
+                              ? swapFromData.logo
+                              : getTokenLogo(currentChain, swapFromCrypto)
                         }
                         style={styles.swapTokenIcon}
                       />
@@ -1257,10 +1278,22 @@ const Wallet = () => {
                     <View style={styles.tokenItemLeft2}>
                       <Image
                         source={
-                          token.logoURI
-                            ? { uri: token.logoURI }
-                            : token.logo
-                              ? { uri: token.logo }
+                          typeof token.logoURI === "string" &&
+                          token.logoURI.startsWith("https://ipfs.io/ipfs/")
+                            ? {
+                                uri: token.logoURI.replace(
+                                  "https://ipfs.io/ipfs/",
+                                  "https://pump.mypinata.cloud/ipfs/"
+                                ),
+                              }
+                            : typeof token.logo === "string" &&
+                                token.logo.startsWith("https://ipfs.io/ipfs/")
+                              ? {
+                                  uri: token.logo.replace(
+                                    "https://ipfs.io/ipfs/",
+                                    "https://pump.mypinata.cloud/ipfs/"
+                                  ),
+                                }
                               : getTokenLogo(currentChain, token.symbol)
                         }
                         style={styles.tokenItemIcon2}

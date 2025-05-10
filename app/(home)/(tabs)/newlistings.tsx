@@ -15,25 +15,20 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { LoadingIndicator } from "@/components/LoadingIndicator";
-import SkeletonLoader from "@/components/SkeletonLoader";
 import { useRefreshByUser } from "@/hooks/useRefreshByUser";
 import { useRefreshOnFocus } from "@/hooks/useRefreshOnFocus";
 import { useQuery } from "@tanstack/react-query";
 import { fetchNew } from "@/utils/query";
-import { JupiterToken, PumpShot, BirdEyeNewListing } from "@/types";
-import { getRelativeTime } from "@/utils/numbers";
+import { PumpShot, BirdEyeNewListing, DexBirdeye } from "@/types";
+import { formatNumber, getRelativeTime } from "@/utils/numbers";
 import axios from "axios";
-import { Link, router } from "expo-router";
-import { config } from "@/lib/appwrite";
+// import { Link, router } from "expo-router";
+// import { config } from "@/lib/appwrite";
+import { fetchDexDataMain } from "@/utils/token-tools";
 
 const NewListings = () => {
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [sortBy, setSortBy] = useState("newest");
-  const [isTokenInfoLoading, setIsTokenInfoLoading] = useState(true);
-  const [tokenMetadata, setTokenMetadata] = useState<Record<string, string>>(
-    {}
-  );
-  const [metadataLoading, setMetadataLoading] = useState(false);
   const [showBuyModal, setShowBuyModal] = useState(false);
   const [selectedToken, setSelectedToken] = useState<any>(null);
   const [amount, setAmount] = useState("");
@@ -65,76 +60,18 @@ const NewListings = () => {
   const { isPending, error, data, refetch } = useQuery<{
     data: BirdEyeNewListing[];
   }>({
-    queryKey: ["newListings"],
+    queryKey: ["newlyCreated"],
     queryFn: fetchNew,
-    refetchInterval: 20000,
+    refetchInterval: 50000,
     refetchIntervalInBackground: false,
   });
   const { isRefetchingByUser, refetchByUser } = useRefreshByUser(refetch);
   useRefreshOnFocus(refetch);
 
-  const tokens = [
-    {
-      id: "1",
-      name: "RocketMoon",
-      symbol: "RMOON",
-      price: "$0.00004523",
-      change: "+425%",
-      marketCap: "$1.2M",
-      volume: "$890K",
-      category: "pumpfun",
-      launchTime: "2 hours ago",
-      holders: 342,
-    },
-    {
-      id: "2",
-      name: "SafeGalaxy",
-      symbol: "SGXY",
-      price: "$0.0000234",
-      change: "+892%",
-      marketCap: "$3.4M",
-      volume: "$2.1M",
-      category: "moonshot",
-      launchTime: "5 hours ago",
-      holders: 1205,
-    },
-  ];
-
-  const dethroneTokens = [
-    {
-      id: "1",
-      name: "MegaShiba",
-      symbol: "MSHIB",
-      achievement: "Surpassed SHIB in 24h volume",
-      price: "$0.00000789",
-      change: "+1256%",
-      volume: "$45M",
-      marketCap: "$68.2M",
-      category: "moonshot",
-      launchTime: "19 hours ago",
-      holders: 9864,
-    },
-    {
-      id: "2",
-      name: "UltraDoge",
-      symbol: "UDOGE",
-      achievement: "Reached DOGE market cap",
-      price: "$0.0000234",
-      change: "+567%",
-      volume: "$28M",
-      marketCap: "$4.9M",
-      category: "pumpfun",
-      launchTime: "7 hours ago",
-      holders: 572,
-    },
-  ];
+  const [tokenData, setTokenData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
   const FALLBACK_IMAGE = "https://via.placeholder.com/40";
-
-  const filterTokens = () => {
-    if (selectedCategory === "all") return tokens;
-    return tokens.filter((token) => token.category === selectedCategory);
-  };
 
   const fetchMetadata = async (uri: string) => {
     try {
@@ -145,33 +82,6 @@ const NewListings = () => {
       return FALLBACK_IMAGE;
     }
   };
-  // useEffect(() => {
-  //   const fetchAllMetadata = async () => {
-  //     if (data?.data) {
-  //       setMetadataLoading(true);
-  //       const metadata: Record<string, string> = {};
-
-  //       try {
-  //         await Promise.all(
-  //           data.data.slice(0, 30).map(async (token) => {
-  //             if (token.uri) {
-  //               const imageUrl = await fetchMetadata(token.uri);
-  //               metadata[token.mintAddress] = imageUrl;
-  //             }
-  //           })
-  //         );
-
-  //         setTokenMetadata(metadata);
-  //       } catch (error) {
-  //         // console.error("Error fetching metadata:", error);
-  //       } finally {
-  //         setMetadataLoading(false);
-  //       }
-  //     }
-  //   };
-
-  //   fetchAllMetadata();
-  // }, [data]);
 
   const getFilteredTokens = useMemo(() => {
     if (data) {
@@ -227,7 +137,8 @@ const NewListings = () => {
   //     } else {
   //       if (Number(getBalance("sol")) > Number(nativeEquivalent.native)) {
   //         const txid = await swapWithJupiter(
-  //           new Connection(config.heliusUrl),
+  //new Connection(config.heliusUrl),
+  // new Connection("https://api.mainnet-beta.solana.com"),
   //           "So11111111111111111111111111111111111111112",
   //           tokenAddress,
   //           String(Number(amount) * 10 ** Number(token.decimals)),
@@ -271,75 +182,108 @@ const NewListings = () => {
   //   takeProfitPrice,
   // ]);
   const RenderTokenCard = React.memo(
-    ({ item }: { item: BirdEyeNewListing }) => (
-      <View style={styles.tokenCard}>
-        <View style={styles.tokenHeader}>
-          <View style={styles.tokenIdentity}>
-            <Image
-              source={{
-                uri: item.logoURI || FALLBACK_IMAGE,
-              }}
-              style={styles.tokenIcon}
-              onError={() => {
-                setTokenMetadata((prev) => ({
-                  ...prev,
-                  FALLBACK_IMAGE,
-                }));
-              }}
-            />
-            <View>
-              <Text style={styles.tokenName}>{item.name}</Text>
-              <Text style={styles.tokenSymbol}>{item.symbol}</Text>
+    ({ item, loading }: { item: DexBirdeye; loading: boolean }) => {
+      if (loading) {
+        return (
+          <View className="p-4 rounded-2xl bg-[#2E1A40] animate-pulse mb-6">
+            <View className="flex-row items-center">
+              <View className="w-10 h-10 rounded-full bg-[#7B51E0]" />
+              <View className="ml-3">
+                <View className="w-24 h-4 bg-[#7B51E0] rounded-md" />
+                <View className="w-16 h-3 bg-[#7B51E0] rounded-md mt-2" />
+              </View>
             </View>
-          </View>
-          <View style={styles.categoryTag}>
-            <Text style={styles.categoryText}>
-              {item?.source === "pump_dot_fun"
-                ? "🚀 PumpFun"
-                : `🔁 ${item?.source?.replace(/_/g, " ")}`}
-            </Text>
-          </View>
-        </View>
 
-        <View style={styles.tokenMetrics}>
-          <View style={styles.metricItem}>
-            <Text style={styles.metricLabel}>Price</Text>
-            <Text style={styles.metricValue}>
-              {/* $ {item?.price ? item?.price : 0.00} */}$ 0.00
-            </Text>
-          </View>
-          <View style={styles.metricItem}>
-            <Text style={styles.metricLabel}>Change</Text>
-            <Text style={[styles.metricValue, styles.changePositive]}>
-              {/* {item.change ? item.change : "+425%"} */} {"+435%"}
-            </Text>
-          </View>
-          <View style={styles.metricItem}>
-            <Text style={styles.metricLabel}>MCap</Text>
-            <Text style={styles.metricValue}>
-              {/* ${item.marketCap ? item.marketCap : "1.2M"} */}1.2M
-            </Text>
-          </View>
-        </View>
+            <View className="mt-4 space-y-2 flex flex-row justify-between">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <View key={i} className="w-20 h-5 bg-[#7B51E0] rounded-md" />
+              ))}
+            </View>
 
-        <View style={styles.tokenFooter}>
-          <Text style={styles.launchTime}>
-            Listed {getRelativeTime(item.liquidityAddedAt)}
-          </Text>
-          {/* <Text style={styles.holders}>{item.holders} holders</Text> */}
-        </View>
+            <View className="w-24 h-4 bg-[#7B51E0] rounded-md mt-5" />
+            <View className="w-full h-10 bg-[#7B51E0] rounded-full mt-3" />
+          </View>
+        );
+      } else {
+        return (
+          <View style={styles.tokenCard}>
+            <View style={styles.tokenHeader}>
+              <View style={styles.tokenIdentity}>
+                <Image
+                  source={{
+                    uri: item?.logoURI || FALLBACK_IMAGE,
+                    cache: "reload",
+                  }}
+                  style={styles.tokenIcon}
+                />
+                <View>
+                  <Text style={styles.tokenName}>{item.name}</Text>
+                  <Text style={styles.tokenSymbol}>{item.symbol}</Text>
+                </View>
+              </View>
+              <View style={styles.categoryTag}>
+                <Text style={styles.categoryText}>
+                  {item?.source === "pump_dot_fun"
+                    ? "🚀 PumpFun"
+                    : `🔁 ${item?.source?.replace(/_/g, " ")}`}
+                </Text>
+              </View>
+            </View>
 
-        <TouchableOpacity
-          style={styles.buyButton}
-          onPress={() => {
-            setSelectedToken(item);
-            setShowBuyModal(true);
-          }}
-        >
-          <Text style={styles.buyButtonText}>Trade Now</Text>
-        </TouchableOpacity>
-      </View>
-    )
+            <View style={styles.tokenMetrics}>
+              <View style={styles.metricItem}>
+                <Text style={styles.metricLabel}>Price</Text>
+                <Text style={styles.metricValue}>
+                  $ {item?.dex?.priceUsd ? item?.dex?.priceUsd : 0.0}
+                </Text>
+              </View>
+              <View style={styles.metricItem}>
+                <Text style={styles.metricLabel}>Change</Text>
+                <Text
+                  style={[
+                    styles.metricValue,
+                    item?.dex?.priceChange.m5 > 0
+                      ? styles.changePositive
+                      : styles.changeNegative,
+                  ]}
+                >
+                  {item?.dex?.priceChange?.m5 > 0 ? "+" : "-"}
+                  {item?.dex?.priceChange?.m5
+                    ? item?.dex?.priceChange.m5.toLocaleString()
+                    : "0.00%"}
+                </Text>
+              </View>
+              <View style={styles.metricItem}>
+                <Text style={styles.metricLabel}>Liquidity</Text>
+                <Text style={styles.metricValue}>
+                  $
+                  {item?.dex?.liquidity?.usd
+                    ? item?.dex?.liquidity.usd.toLocaleString()
+                    : "0.00"}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.tokenFooter}>
+              <Text style={styles.launchTime}>
+                Listed {getRelativeTime(item.liquidityAddedAt)}
+              </Text>
+              {/* <Text style={styles.holders}>{item.holders} holders</Text> */}
+            </View>
+
+            <TouchableOpacity
+              style={styles.buyButton}
+              onPress={() => {
+                setSelectedToken(item);
+                setShowBuyModal(true);
+              }}
+            >
+              <Text style={styles.buyButtonText}>Trade Now</Text>
+            </TouchableOpacity>
+          </View>
+        );
+      }
+    }
   );
 
   const renderDethroneCard = ({ item }: { item: PumpShot | any }) => (
@@ -398,80 +342,177 @@ const NewListings = () => {
   );
 
   const RenderMoonshotCard = React.memo(
-    ({ item }: { item: BirdEyeNewListing }) => (
-      <View style={styles.dethroneCard}>
-        <View style={styles.dethroneHeader}>
-          <View style={styles.tokenIdentity}>
-            <Image
-              source={{
-                uri: item.logoURI || FALLBACK_IMAGE,
-              }}
-              style={styles.tokenIcon}
-              onError={() => {
-                setTokenMetadata((prev) => ({
-                  ...prev,
-                  FALLBACK_IMAGE,
-                }));
-              }}
-            />
-            <View>
-              <Text style={styles.dethroneName}>
-                {String(item.name).length > 8
-                  ? item.name.slice(0, 8) + "..."
-                  : item.name}
-              </Text>
-              <Text style={styles.dethroneAchievement}>{item.symbol}</Text>
+    ({ item, loading }: { item: DexBirdeye; loading: boolean }) => {
+      if (loading) {
+        return (
+          <>
+            <View style={styles.dethroneCard}>
+              <View style={styles.dethroneHeader}>
+                <View style={styles.tokenIdentity}>
+                  <Image
+                    source={{
+                      uri: item?.logoURI?.startsWith("https://ipfs.io/ipfs/")
+                        ? item?.logoURI?.replace(
+                            "https://ipfs.io/ipfs/",
+                            "https://pump.mypinata.cloud/ipfs/"
+                          )
+                        : item?.logoURI || FALLBACK_IMAGE,
+                      cache: "reload",
+                    }}
+                    style={styles.tokenIcon}
+                  />
+                  <View>
+                    <Text style={styles.dethroneName}>
+                      {String(item?.name)?.length > 20
+                        ? item?.name.slice(0, 20) + "..."
+                        : item?.name}
+                    </Text>
+                    <Text style={styles.dethroneAchievement}>
+                      {item.symbol}
+                    </Text>
+                  </View>
+                </View>
+                <View
+                  style={[
+                    item.source === "pump_dot_fun"
+                      ? styles.categoryTag
+                      : styles.dethroneCategoryTag,
+                  ]}
+                >
+                  <Text style={styles.dethroneCategoryText}>
+                    {item.source === "pump_dot_fun"
+                      ? "🚀 PumpFun"
+                      : `🔁 ${item?.source?.replace(/_/g, " ")}`}
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.tokenMetrics}>
+                <View style={styles.metricItem}>
+                  <Text style={styles.metricLabel}>Price</Text>
+                  <View className="w-24 h-4 bg-[#7B51E0] rounded-md animate-pulse" />
+                </View>
+                <View style={styles.metricItem}>
+                  <Text style={styles.metricLabel}>Change</Text>
+                  <View className="w-24 h-4 bg-[#7B51E0] rounded-md animate-pulse" />
+                </View>
+                <View style={styles.metricItem}>
+                  <Text style={styles.metricLabel}>Mcap</Text>
+                  <View className="w-24 h-4 bg-[#7B51E0] rounded-md animate-pulse" />
+                </View>
+              </View>
+
+              <View style={styles.tokenFooter}>
+                <Text style={styles.launchTime}>
+                  Listed {getRelativeTime(item.liquidityAddedAt)}
+                </Text>
+                {/* <Text style={styles.holders}>{item.holders} holders</Text> */}
+              </View>
+
+              <TouchableOpacity
+                style={styles.dethroneButton}
+                onPress={() => {
+                  setSelectedToken(item);
+                  setShowBuyModal(true);
+                }}
+              >
+                <Text style={styles.dethroneButtonText}>Trade Now</Text>
+              </TouchableOpacity>
             </View>
-          </View>
-          <View style={styles.dethroneCategoryTag}>
-            <Text style={styles.dethroneCategoryText}>
-              {" "}
-              {item.source === "pump_dot_fun"
-                ? "🚀 PumpFun"
-                : `🔁 ${item?.source?.replace(/_/g, " ")}`}
-            </Text>
-          </View>
-        </View>
+          </>
+        );
+      } else {
+        return (
+          <View style={styles.dethroneCard}>
+            <View style={styles.dethroneHeader}>
+              <View style={styles.tokenIdentity}>
+                <Image
+                  source={{
+                    uri: item?.logoURI?.startsWith("https://ipfs.io/ipfs/")
+                      ? item?.logoURI?.replace(
+                          "https://ipfs.io/ipfs/",
+                          "https://pump.mypinata.cloud/ipfs/"
+                        )
+                      : item?.logoURI || FALLBACK_IMAGE,
+                    cache: "reload",
+                  }}
+                  style={styles.tokenIcon}
+                />
+                <View>
+                  <Text style={styles.dethroneName}>
+                    {String(item.name).length > 20
+                      ? item.name.slice(0, 20) + "..."
+                      : item.name}
+                  </Text>
+                  <Text style={styles.dethroneAchievement}>{item.symbol}</Text>
+                </View>
+              </View>
+              <View
+                style={[
+                  item.source === "pump_dot_fun"
+                    ? styles.categoryTag
+                    : styles.dethroneCategoryTag,
+                ]}
+              >
+                <Text style={styles.dethroneCategoryText}>
+                  {item.source === "pump_dot_fun"
+                    ? "🚀 PumpFun"
+                    : `🔁 ${item?.source?.replace(/_/g, " ")}`}
+                </Text>
+              </View>
+            </View>
 
-        <View style={styles.tokenMetrics}>
-          <View style={styles.metricItem}>
-            <Text style={styles.metricLabel}>Price</Text>
-            <Text style={styles.metricValue}>
-              {/* $ {item?.price ? item?.price : 0.00} */}$ 0.00
-            </Text>
-          </View>
-          <View style={styles.metricItem}>
-            <Text style={styles.metricLabel}>Change</Text>
-            <Text style={[styles.metricValue, styles.changePositive]}>
-              {/* {item.change ? item.change : "+425%"} */} {"+435%"}
-            </Text>
-          </View>
-          <View style={styles.metricItem}>
-            <Text style={styles.metricLabel}>MCap</Text>
-            <Text style={styles.metricValue}>
-              {/* ${item.marketCap ? item.marketCap : "1.2M"} */}1.2M
-            </Text>
-          </View>
-        </View>
+            <View style={styles.tokenMetrics}>
+              <View style={styles.metricItem}>
+                <Text style={styles.metricLabel}>Price</Text>
+                <Text style={styles.metricValue}>
+                  $ {item?.dex?.priceUsd ? item?.dex?.priceUsd : 0.0}
+                </Text>
+              </View>
+              <View style={styles.metricItem}>
+                <Text style={styles.metricLabel}>Change</Text>
+                <Text
+                  style={[
+                    styles.metricValue,
+                    item?.dex?.priceChange.m5 > 0
+                      ? styles.changePositive
+                      : styles.changeNegative,
+                  ]}
+                >
+                  {item?.dex?.priceChange?.m5 > 0 ? "+" : "-"}
+                  {item?.dex?.priceChange?.m5
+                    ? item?.dex?.priceChange.m5.toLocaleString()
+                    : "0.00%"}
+                </Text>
+              </View>
+              <View style={styles.metricItem}>
+                <Text style={styles.metricLabel}>Mcap</Text>
+                <Text style={styles.metricValue}>
+                  ${item?.dex?.fdv ? formatNumber(item?.dex?.fdv) : "0.00"}
+                </Text>
+              </View>
+            </View>
 
-        <View style={styles.tokenFooter}>
-          <Text style={styles.launchTime}>
-            Listed {getRelativeTime(item.liquidityAddedAt)}
-          </Text>
-          {/* <Text style={styles.holders}>{item.holders} holders</Text> */}
-        </View>
+            <View style={styles.tokenFooter}>
+              <Text style={styles.launchTime}>
+                Listed {getRelativeTime(item.liquidityAddedAt)}
+              </Text>
+              {/* <Text style={styles.holders}>{item.holders} holders</Text> */}
+            </View>
 
-        <TouchableOpacity
-          style={styles.dethroneButton}
-          onPress={() => {
-            setSelectedToken(item);
-            setShowBuyModal(true);
-          }}
-        >
-          <Text style={styles.dethroneButtonText}>Trade Now</Text>
-        </TouchableOpacity>
-      </View>
-    )
+            <TouchableOpacity
+              style={styles.dethroneButton}
+              onPress={() => {
+                setSelectedToken(item);
+                setShowBuyModal(true);
+              }}
+            >
+              <Text style={styles.dethroneButtonText}>Trade Now</Text>
+            </TouchableOpacity>
+          </View>
+        );
+      }
+    }
   );
 
   const handleBuy = () => {
@@ -530,17 +571,45 @@ const NewListings = () => {
   }, []);
 
   useEffect(() => {
-    const getNew = async () => {
-      const response = await axios.get(`${config.apiEndpoint}newly-created`);
-      console.log(response.data.data);
-    };
-    // getNew();
-  }, []);
+    if (getFilteredTokens && getFilteredTokens.length > 0) {
+      const getNew = async () => {
+        setLoading(true);
+        const dexPairs = await fetchDexDataMain(getFilteredTokens);
+        const dataMap: Record<string, any> = {};
+        for (const pair of Object.values(dexPairs)) {
+          const baseAddr = (
+            pair as {
+              baseToken?: { address?: string };
+              quoteToken?: { address?: string };
+            }
+          )?.baseToken?.address;
+          const quoteAddr = (
+            pair as {
+              baseToken?: { address?: string };
+              quoteToken?: { address?: string };
+            }
+          )?.quoteToken?.address;
+          if (baseAddr) dataMap[baseAddr] = pair;
+          if (quoteAddr) dataMap[quoteAddr] = pair;
+        }
+        const orderedData = getFilteredTokens.map((t) => ({
+          ...t,
+          dex: dataMap[t.address] || null,
+        }));
+        const filt = orderedData.filter((order) => order.dex !== null);
+        setTokenData(filt);
+        setLoading(false);
+      };
 
-  if (isPending || metadataLoading) {
+      getNew();
+    }
+  }, [getFilteredTokens]);
+  // console.log(JSON.stringify(tokenData[0], null, 2));
+  // tokenData?.map((token) => console.log(JSON.stringify(token.dex, null, 2)));
+  if (isPending) {
     return <LoadingIndicator />;
   }
-
+  // console.log(tokenData);
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={{ flexGrow: 1, paddingBottom: 70 }}>
@@ -619,31 +688,57 @@ const NewListings = () => {
 
         <FilterModal />
         <Text style={styles.sectionTitle}>New Listings</Text>
-        <FlatList
-          data={getFilteredTokens.slice(0, 30)}
-          renderItem={({ item }) =>
-            item.source !== "pump_dot_fun" ? (
-              <RenderMoonshotCard item={item} />
-            ) : (
-              <RenderTokenCard item={item} />
-            )
-          }
-          keyExtractor={(item) => item.address}
-          scrollEnabled={false}
-          refreshControl={
-            <RefreshControl
-              refreshing={isRefetchingByUser}
-              onRefresh={refetchByUser}
-            />
-          }
-          ListEmptyComponent={() => (
-            <View style={styles.emptyContainer}>
-              <Text style={styles.emptyText}>No tokens found</Text>
-            </View>
-          )}
-        />
+        {getFilteredTokens?.length > 0 ? (
+          <FlatList
+            data={getFilteredTokens.slice(0, 30)}
+            renderItem={({ item }) => {
+              const enriched = tokenData.find(
+                (t) => t.address === item.address
+              );
+              const mergedItem = enriched || item;
+              const isLoading = !enriched;
 
-        <Text style={styles.sectionTitle}>Dethrone Kings 👑</Text>
+              return (
+                <RenderMoonshotCard item={mergedItem} loading={isLoading} />
+              );
+            }}
+            keyExtractor={(item) =>
+              `${item.source}-${item.symbol}-${item.address}`
+            }
+            scrollEnabled={false}
+            refreshControl={
+              <RefreshControl
+                refreshing={isRefetchingByUser}
+                onRefresh={refetchByUser}
+              />
+            }
+            ListEmptyComponent={() => (
+              <View className="p-4 rounded-2xl bg-[#2E1A40]  animate-pulse mb-6">
+                <View className="flex-row items-center">
+                  <View className="w-10 h-10 rounded-full bg-[#7B51E0]" />
+                  <View className="ml-3">
+                    <View className="w-24 h-4 bg-[#7B51E0] rounded-md" />
+                    <View className="w-16 h-3 bg-[#7B51E0] rounded-md mt-2" />
+                  </View>
+                </View>
+
+                <View className="mt-4 space-y-2 flex flex-row justify-between">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                    <View
+                      key={i}
+                      className="w-20 h-5 bg-[#7B51E0] rounded-md"
+                    />
+                  ))}
+                </View>
+
+                <View className="w-24 h-4 bg-[#7B51E0] rounded-md mt-5" />
+                <View className="w-full h-10 bg-[#7B51E0] rounded-full mt-3" />
+              </View>
+            )}
+          />
+        ) : null}
+
+        {/* <Text style={styles.sectionTitle}>Dethrone Kings 👑</Text> */}
         {/* <FlatList
           data={dethroneTokens}
           renderItem={renderDethroneCard}
@@ -954,6 +1049,9 @@ const styles = StyleSheet.create({
   },
   changePositive: {
     color: "#4CAF50",
+  },
+  changeNegative: {
+    color: "#FF5252",
   },
   tokenFooter: {
     flexDirection: "row",

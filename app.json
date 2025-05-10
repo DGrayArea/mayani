@@ -17,9 +17,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.dgrayarea.apeit",
-      "permissions": [
-        "NOTIFICATIONS"
-      ]
+      "permissions": ["NOTIFICATIONS"]
     },
     "web": {
       "bundler": "metro",
