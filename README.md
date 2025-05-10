@@ -58,3 +58,7 @@
   borderColor: "#8C5BE6",
   alignSelf: "center",
   },
+
+# build command
+
+<code>eas build --profile preview --platform android</code>
